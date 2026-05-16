@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'post_api_service.dart';
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
@@ -80,19 +81,19 @@ class _CreatePostState extends State<CreatePost> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF4F3),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF4F3),
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Color(0xFFB41B00)),
+          icon: const Icon(Icons.close, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Create Post',
           style: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w800,
-            color: const Color(0xFFB41B00),
+            color: AppColors.primary,
             fontSize: 18,
           ),
         ),
@@ -126,6 +127,7 @@ class _CreatePostState extends State<CreatePost> {
                   contentController.text,
                   isPublic,
                   imageUrl,
+                    iconActivated.entries.where((e) => e.value).map((e) => e.key).firstOrNull
                 );
 
                 if (!context.mounted) return;
@@ -142,11 +144,11 @@ class _CreatePostState extends State<CreatePost> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB41B00),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
                 elevation: 4,
-                shadowColor: const Color(0xFFB41B00).withOpacity(0.4),
+                shadowColor: AppColors.primary.withOpacity(0.4),
               ),
               child: const Text(
                 'Post',
@@ -166,10 +168,10 @@ class _CreatePostState extends State<CreatePost> {
               width: double.infinity,
               height: 300,
               decoration: BoxDecoration(
-                color: Color(0xFFFFE1E1),
+                color: AppColors.surfaceContainer,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: const Color(0xFFB41B00).withOpacity(0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   width: 2,
                 ),
               ),
@@ -180,12 +182,12 @@ class _CreatePostState extends State<CreatePost> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFB41B00).withOpacity(0.1),
+                            color: AppColors.primary.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.add_a_photo,
-                            color: Color(0xFFB41B00),
+                            color: AppColors.primary,
                             size: 40,
                           ),
                         ),
@@ -206,7 +208,7 @@ class _CreatePostState extends State<CreatePost> {
                             'Share a photo or video to start climbing the rankings.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Color(0xFF834C4F),
+                              color: AppColors.onSurfaceVariant,
                               fontSize: 13,
                             ),
                           ),
@@ -244,7 +246,7 @@ class _CreatePostState extends State<CreatePost> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFEDEC),
+                color: AppColors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Column(
@@ -253,10 +255,10 @@ class _CreatePostState extends State<CreatePost> {
                     children: [
                       const CircleAvatar(
                         radius: 20,
-                        backgroundColor: Color(0xFFFFDADA),
+                        backgroundColor: AppColors.surfaceContainerHigh,
                         child: Text(
                           "ME",
-                          style: TextStyle(color: Color(0xFF4D2124)),
+                          style: TextStyle(color: AppColors.onSurface),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -277,7 +279,7 @@ class _CreatePostState extends State<CreatePost> {
                     decoration: const InputDecoration(
                       hintText: "Post Title",
                       border: InputBorder.none,
-                      hintStyle: TextStyle(color: Color(0xFFDF9C9E)),
+                      hintStyle: TextStyle(color: AppColors.outlineVariant),
                     ),
                   ),
                   TextField(
@@ -286,7 +288,7 @@ class _CreatePostState extends State<CreatePost> {
                     decoration: const InputDecoration(
                       hintText: "Write a caption...",
                       border: InputBorder.none,
-                      hintStyle: TextStyle(color: Color(0xFFDF9C9E)),
+                      hintStyle: TextStyle(color: AppColors.outlineVariant),
                     ),
                   ),
                   const Divider(color: Color(0x1F834C4F)),
@@ -294,15 +296,15 @@ class _CreatePostState extends State<CreatePost> {
                     children: [
                       const Icon(
                         Icons.alternate_email,
-                        color: Color(0xFFDF9C9E),
+                        color: AppColors.outlineVariant,
                         size: 20,
                       ),
                       const SizedBox(width: 16),
-                      const Icon(Icons.tag, color: Color(0xFFDF9C9E), size: 20),
+                      const Icon(Icons.tag, color: AppColors.outlineVariant, size: 20),
                       const SizedBox(width: 16),
                       const Icon(
                         Icons.mood,
-                        color: Color(0xFFDF9C9E),
+                        color: AppColors.outlineVariant,
                         size: 20,
                       ),
                       const Spacer(),
@@ -311,7 +313,7 @@ class _CreatePostState extends State<CreatePost> {
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFDF9C9E),
+                          color: AppColors.outlineVariant,
                         ),
                       ),
                     ],
@@ -325,7 +327,7 @@ class _CreatePostState extends State<CreatePost> {
             // 3. TAGS SECTION
             Row(
               children: [
-                const Icon(Icons.bolt, color: Color(0xFFB41B00)),
+                const Icon(Icons.bolt, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
                   "Tag your Pulse",
@@ -359,12 +361,12 @@ class _CreatePostState extends State<CreatePost> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFFFE1E1),
+                color: AppColors.surfaceContainer,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.public, color: Color(0xFF834C4F)),
+                  const Icon(Icons.public, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,7 +387,7 @@ class _CreatePostState extends State<CreatePost> {
                   const Spacer(),
                   Switch(
                     value: isPublic,
-                    activeColor: const Color(0xFFB41B00),
+                    activeColor: AppColors.primary,
                     onChanged: (val) => setState(() => isPublic = val),
                   ),
                 ],
@@ -401,12 +403,12 @@ class _CreatePostState extends State<CreatePost> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFDADA),
+        color: AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: const Color(0xFF4D2124)),
+          Icon(icon, size: 16, color: AppColors.onSurface),
           const SizedBox(width: 8),
           Text(
             label,
@@ -432,11 +434,11 @@ class _CreatePostState extends State<CreatePost> {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFE1E1),
+            color: AppColors.surfaceContainer,
             borderRadius: BorderRadius.circular(16),
             // Optional: Ein subtiler Rand, wenn aktiv
             border: isActive
-                ? Border.all(color: const Color(0xFFB41B00).withOpacity(0.5), width: 1)
+                ? Border.all(color: AppColors.primary.withOpacity(0.5), width: 1)
                 : Border.all(color: Colors.transparent, width: 1),
           ),
           child: Row(
@@ -444,10 +446,10 @@ class _CreatePostState extends State<CreatePost> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFDADA),
+                  color: AppColors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: const Color(0xFFB41B00)),
+                child: Icon(icon, color: AppColors.primary),
               ),
               const SizedBox(width: 12),
               Column(
@@ -476,12 +478,12 @@ class _CreatePostState extends State<CreatePost> {
                     ? Icon(
                   Icons.check,
                   key: const ValueKey('checkIcon'), // Eindeutiger Key
-                  color: const Color(0xFFB41B00), // Kräftigere Farbe für 'aktiv'
+                  color: AppColors.primary, // Kräftigere Farbe für 'aktiv'
                 )
                     : Icon(
                   Icons.add,
                   key: const ValueKey('addIcon'), // Eindeutiger Key
-                  color: const Color(0xFFDF9C9E),
+                  color: AppColors.outlineVariant,
                 ),
               ),
               // ------------------------------
@@ -499,7 +501,7 @@ void _showLoadingDialog(BuildContext context) {
   showDialog(
     context: context,
     barrierDismissible: false,
-    barrierColor: const Color(0xFF4D2124).withOpacity(0.55),
+    barrierColor: AppColors.onSurface.withOpacity(0.55),
     builder: (context) => const _RankedLoadingDialog(),
   );
 }
@@ -541,7 +543,7 @@ class _RankedLoadingDialogState extends State<_RankedLoadingDialog> {
       child: Container(
         padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF4F3),
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(28),
         ),
         child: Column(
@@ -552,8 +554,8 @@ class _RankedLoadingDialogState extends State<_RankedLoadingDialog> {
               height: 80,
               child: CircularProgressIndicator(
                 strokeWidth: 6,
-                color: const Color(0xFFB41B00),
-                backgroundColor: const Color(0xFFFFE1E1),
+                color: AppColors.primary,
+                backgroundColor: AppColors.surfaceContainer,
               ),
             ),
             const SizedBox(height: 24),
@@ -562,7 +564,7 @@ class _RankedLoadingDialogState extends State<_RankedLoadingDialog> {
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF4D2124),
+                color: AppColors.onSurface,
                 letterSpacing: -0.5,
               ),
             ),
@@ -572,7 +574,7 @@ class _RankedLoadingDialogState extends State<_RankedLoadingDialog> {
               child: Text(
                 _messages[_index],
                 key: ValueKey(_index),
-                style: const TextStyle(fontSize: 13, color: Color(0xFF834C4F)),
+                style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
               ),
             ),
             const SizedBox(height: 20),
@@ -633,7 +635,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
         width: 8,
         height: 8,
         decoration: const BoxDecoration(
-          color: Color(0xFFB41B00),
+          color: AppColors.primary,
           shape: BoxShape.circle,
         ),
       ),

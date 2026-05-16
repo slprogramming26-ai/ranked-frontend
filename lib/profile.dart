@@ -2,6 +2,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/api_service.dart';
+import 'app_colors.dart';
 
 
 class ProfileProvider extends ChangeNotifier {
@@ -35,16 +36,6 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-
-  // ── Color tokens ───────────────────────────────────────────────────────────
-  static const Color primary                 = Color(0xFFB41B00);
-  static const Color onBackground            = Color(0xFF4D2124);
-  static const Color onSurface               = Color(0xFF4D2124);
-  static const Color onSurfaceVariant        = Color(0xFF834C4F);
-  static const Color surface                 = Color(0xFFFFF4F3);
-  static const Color surfaceContainerLow     = Color(0xFFFFEDEC);
-  static const Color surfaceContainerHigh    = Color(0xFFFFDADA);
-  static const Color surfaceContainerHighest = Color(0xFFFFD2D3);
 
   static const Map<String, IconData> _vibeIcons = {
     'Gaming':       Icons.sports_esports,
@@ -95,8 +86,8 @@ class _ProfileState extends State<Profile> {
 
         if (provider.isLoading || !provider.hasFetched) {
           return const Scaffold(
-            backgroundColor: surface,
-            body: Center(child: CircularProgressIndicator(color: primary)),
+            backgroundColor: AppColors.surface,
+            body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
           );
         }
 
@@ -108,7 +99,7 @@ class _ProfileState extends State<Profile> {
         final String? vibe2     = data['vibe_factor_2'];
 
         return Scaffold(
-          backgroundColor: surface,
+          backgroundColor: AppColors.surface,
           body: Stack(
             children: [
               SingleChildScrollView(
@@ -129,10 +120,10 @@ class _ProfileState extends State<Profile> {
                             height: 128,
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: surfaceContainerHigh,
+                              color: AppColors.surfaceContainerHigh,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: primary.withOpacity(0.05),
+                                color: AppColors.primary.withOpacity(0.05),
                                 width: 4,
                               ),
                             ),
@@ -155,7 +146,7 @@ class _ProfileState extends State<Profile> {
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
-                              color: onBackground,
+                              color: AppColors.onSurface,
                               letterSpacing: -0.5,
                             ),
                           ),
@@ -167,7 +158,7 @@ class _ProfileState extends State<Profile> {
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: onSurfaceVariant,
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
 
@@ -178,7 +169,7 @@ class _ProfileState extends State<Profile> {
                             textAlign: TextAlign.center,
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: onSurface,
+                              color: AppColors.onSurface,
                               height: 1.6,
                             ),
                           ),
@@ -204,7 +195,7 @@ class _ProfileState extends State<Profile> {
                             decoration: BoxDecoration(
                               border: Border.symmetric(
                                 horizontal: BorderSide(
-                                  color: primary.withOpacity(0.07),
+                                  color: AppColors.primary.withOpacity(0.07),
                                 ),
                               ),
                             ),
@@ -247,10 +238,10 @@ class _ProfileState extends State<Profile> {
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 1.5,
-                                  color: onSurfaceVariant,
+                                  color: AppColors.onSurfaceVariant,
                                 ),
                               ),
-                              const Icon(Icons.sort, color: primary, size: 20),
+                              const Icon(Icons.sort, color: AppColors.primary, size: 20),
                             ],
                           ),
                           const SizedBox(height: 20),
@@ -280,14 +271,14 @@ class _ProfileState extends State<Profile> {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   Widget _avatarFallback(String name) => Container(
-    color: surfaceContainerHighest,
+    color: AppColors.surfaceContainerHighest,
     child: Center(
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: GoogleFonts.plusJakartaSans(
           fontSize: 48,
           fontWeight: FontWeight.w800,
-          color: primary,
+          color: AppColors.primary,
         ),
       ),
     ),
@@ -298,14 +289,14 @@ class _ProfileState extends State<Profile> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: surfaceContainerLow,
+        color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: primary.withOpacity(0.07)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.07)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: primary),
+          Icon(icon, size: 16, color: AppColors.primary),
           const SizedBox(width: 6),
           Text(
             vibe,
@@ -313,7 +304,7 @@ class _ProfileState extends State<Profile> {
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.8,
-              color: onSurfaceVariant,
+              color: AppColors.onSurfaceVariant,
             ),
           ),
         ],
@@ -329,7 +320,7 @@ class _ProfileState extends State<Profile> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: onBackground,
+            color: AppColors.onSurface,
           ),
         ),
         const SizedBox(height: 2),
@@ -339,7 +330,7 @@ class _ProfileState extends State<Profile> {
             fontSize: 9,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.5,
-            color: onSurfaceVariant,
+            color: AppColors.onSurfaceVariant,
           ),
         ),
       ],
@@ -349,7 +340,7 @@ class _ProfileState extends State<Profile> {
   Widget _statDivider() => Container(
     width: 1,
     height: 36,
-    color: primary.withOpacity(0.07),
+    color: AppColors.primary.withOpacity(0.07),
   );
 }
 
@@ -362,7 +353,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFFFF4F3).withOpacity(0.85),
+      color: AppColors.surface.withOpacity(0.85),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
         bottom: 12,
@@ -390,7 +381,7 @@ class _TopBar extends StatelessWidget {
             style: GoogleFonts.plusJakartaSans(
               fontWeight: FontWeight.w700,
               fontSize: 15,
-              color: const Color(0xFF4D2124),
+              color: AppColors.onSurface,
             ),
           ),
 
@@ -398,7 +389,7 @@ class _TopBar extends StatelessWidget {
           GestureDetector(
             onTap: () {},
             child: const Icon(Icons.settings_outlined,
-                color: Color(0xFFB41B00), size: 24),
+                color: AppColors.primary, size: 24),
           ),
         ],
       ),
@@ -406,14 +397,14 @@ class _TopBar extends StatelessWidget {
   }
 
   Widget _fallback() => Container(
-    color: const Color(0xFFFFD2D3),
+    color: AppColors.surfaceContainerHighest,
     child: Center(
       child: Text(
         username.isNotEmpty ? username[0].toUpperCase() : '?',
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w800,
-          color: Color(0xFFB41B00),
+          color: AppColors.primary,
         ),
       ),
     ),
@@ -449,11 +440,11 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: _pressed ? const Color(0xFF9E1700) : const Color(0xFFB41B00),
+            color: _pressed ? AppColors.primaryDark : AppColors.primary,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFB41B00).withOpacity(0.15),
+                color: AppColors.primary.withOpacity(0.15),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -465,7 +456,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFFFFEFEC),
+              color: AppColors.surfaceContainerLow,
             ),
           ),
         ),
@@ -499,10 +490,10 @@ class _ActivityItem extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFD2D3),
+              color: AppColors.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFFB41B00), size: 22),
+            child: Icon(icon, color: AppColors.primary, size: 22),
           ),
 
           const SizedBox(width: 16),
@@ -520,7 +511,7 @@ class _ActivityItem extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF4D2124),
+                          color: AppColors.onSurface,
                         ),
                       ),
                     ),
@@ -530,7 +521,7 @@ class _ActivityItem extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
-                        color: const Color(0xFF834C4F),
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -540,7 +531,7 @@ class _ActivityItem extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: const Color(0xFF834C4F),
+                    color: AppColors.onSurfaceVariant,
                     height: 1.4,
                   ),
                 ),

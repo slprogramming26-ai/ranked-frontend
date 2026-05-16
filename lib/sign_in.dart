@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'app_colors.dart';
 import 'package:ranked/main.dart';
 import 'api_service.dart';
 import 'package:email_validator/email_validator.dart';
@@ -93,7 +94,7 @@ class _SignInState extends State<SignIn> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFFFF4F3),
+      backgroundColor: AppColors.surface,
       body: Stack(
         children: [
           // Dekorative Kreise
@@ -105,7 +106,7 @@ class _SignInState extends State<SignIn> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFB41B00).withOpacity(0.05),
+                color: AppColors.primary.withOpacity(0.05),
               ),
             ),
           ),
@@ -117,7 +118,7 @@ class _SignInState extends State<SignIn> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF6C5A00).withOpacity(0.05),
+                color: AppColors.tertiary.withOpacity(0.05),
               ),
             ),
           ),
@@ -138,7 +139,7 @@ class _SignInState extends State<SignIn> {
                           fontSize: 22,
                           fontWeight: FontWeight.w900,
                           fontStyle: FontStyle.italic,
-                          color: Color(0xFFB41B00),
+                          color: AppColors.primary,
                           letterSpacing: -1,
                         ),
                       ),
@@ -151,7 +152,7 @@ class _SignInState extends State<SignIn> {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 34,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF4D2124),
+                          color: AppColors.onSurface,
                           letterSpacing: -1,
                         ),
                         children: [
@@ -159,7 +160,7 @@ class _SignInState extends State<SignIn> {
                           TextSpan(
                             text: 'Pulse',
                             style: TextStyle(
-                              color: Color(0xFFB41B00),
+                              color: AppColors.primary,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -171,7 +172,7 @@ class _SignInState extends State<SignIn> {
                       'Create your account to start climbing the global leaderboards.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Color(0xFF834C4F),
+                        color: AppColors.onSurfaceVariant,
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         height: 1.5,
@@ -210,7 +211,7 @@ class _SignInState extends State<SignIn> {
                           _obscurePassword
                               ? Icons.visibility
                               : Icons.visibility_off,
-                          color: Color(0xFF834C4F),
+                          color: AppColors.onSurfaceVariant,
                           size: 20,
                         ),
                       ),
@@ -249,12 +250,12 @@ class _SignInState extends State<SignIn> {
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFFB41B00), Color(0xFFFF775D)],
+                          colors: [AppColors.primary, AppColors.primaryContainer],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0xFFB41B00).withOpacity(0.25),
+                            color: AppColors.primary.withOpacity(0.25),
                             blurRadius: 20,
                             offset: Offset(0, 8),
                           ),
@@ -291,7 +292,7 @@ class _SignInState extends State<SignIn> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 10,
-                        color: Color(0xFF834C4F).withOpacity(0.6),
+                        color: AppColors.onSurfaceVariant.withOpacity(0.6),
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                       ),
@@ -306,7 +307,7 @@ class _SignInState extends State<SignIn> {
                         Text(
                           'Already have an account? ',
                           style: TextStyle(
-                            color: Color(0xFF834C4F),
+                            color: AppColors.onSurfaceVariant,
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -316,7 +317,7 @@ class _SignInState extends State<SignIn> {
                           child: Text(
                             'Log In',
                             style: TextStyle(
-                              color: Color(0xFFB41B00),
+                              color: AppColors.primary,
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
                             ),
@@ -346,25 +347,25 @@ class _SignInState extends State<SignIn> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFFFFD2D3),
+        color: AppColors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16),
       ),
       child: TextField(
         controller: controller,
         obscureText: obscure,
         style: TextStyle(
-          color: Color(0xFF4D2124),
+          color: AppColors.onSurface,
           fontWeight: FontWeight.w600,
           fontSize: 15,
         ),
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
-            color: Color(0xFF834C4F).withOpacity(0.5),
+            color: AppColors.onSurfaceVariant.withOpacity(0.5),
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: icon != null
-              ? Icon(icon, color: Color(0xFFB41B00).withOpacity(0.6), size: 20)
+              ? Icon(icon, color: AppColors.primary.withOpacity(0.6), size: 20)
               : prefixText != null
               ? Padding(
                   padding: const EdgeInsets.only(left: 16, right: 8),
@@ -373,7 +374,7 @@ class _SignInState extends State<SignIn> {
                     style: GoogleFonts.plusJakartaSans(
                       fontWeight: FontWeight.w800,
                       fontSize: 18,
-                      color: Color(0xFFB41B00),
+                      color: AppColors.primary,
                     ),
                   ),
                 )
@@ -474,7 +475,7 @@ class _IntroScreenState extends State<IntroScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF4F3),
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -490,7 +491,7 @@ class _IntroScreenState extends State<IntroScreen> {
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       fontStyle: FontStyle.italic,
-                      color: const Color(0xFFB41B00),
+                      color: AppColors.primary,
                     ),
                   ),
                   Row(
@@ -507,7 +508,7 @@ class _IntroScreenState extends State<IntroScreen> {
                         width: 40,
                         height: 6,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFE1E1),
+                          color: AppColors.surfaceContainer,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: FractionallySizedBox(
@@ -515,7 +516,7 @@ class _IntroScreenState extends State<IntroScreen> {
                           widthFactor: (_currentPage + 1) / 3,
                           child: Container(
                             decoration: BoxDecoration(
-                              color: const Color(0xFFB41B00),
+                              color: AppColors.primary,
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
@@ -555,12 +556,12 @@ class _IntroScreenState extends State<IntroScreen> {
                 height: 65,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFFB41B00), Color(0xFFFF775D)],
+                    colors: [AppColors.primary, AppColors.primaryContainer],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFB41B00).withOpacity(0.2),
+                      color: AppColors.primary.withOpacity(0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -615,7 +616,7 @@ class _IntroScreenState extends State<IntroScreen> {
               fontSize: 48,
               fontWeight: FontWeight.w900,
               height: 1,
-              color: const Color(0xFF4D2124),
+              color: AppColors.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -632,14 +633,14 @@ class _IntroScreenState extends State<IntroScreen> {
             Icons.analytics,
             "Post your life",
             "Share your daily Pulse. Authentic and raw.",
-            const Color(0xFFB41B00),
+            AppColors.primary,
             true,
           ),
           _bentoItem(
             Icons.military_tech,
             "Get Ranked",
             "The community evaluates your creativity.",
-            const Color(0xFFFFD709),
+            AppColors.tertiaryContainer,
             false,
           ),
           _bentoItem(
@@ -706,7 +707,7 @@ class _IntroScreenState extends State<IntroScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFEDEC),
+        color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Row(
@@ -759,12 +760,12 @@ class _IntroScreenState extends State<IntroScreen> {
         decoration: BoxDecoration(
           gradient: isActive
               ? const LinearGradient(
-                  colors: [Color(0xFFB41B00), Color(0xFFFF775D)],
+                  colors: [AppColors.primary, AppColors.primaryContainer],
                 )
               : null,
           color: vibeSelections[label] == true
               ? null
-              : const Color(0xFFFFEDEC),
+              : AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Column(
@@ -775,7 +776,7 @@ class _IntroScreenState extends State<IntroScreen> {
               icon,
               color: vibeSelections[label] == true
                   ? Colors.white
-                  : const Color(0xFFB41B00),
+                  : AppColors.primary,
               size: 32,
             ),
             const SizedBox(height: 10),
@@ -867,9 +868,9 @@ class _AboutMeStepState extends State<AboutMeStep> {
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
-                        Color(0xFFB41B00),
-                        Color(0xFFFF775D),
-                        Color(0xFFFFD709),
+                        AppColors.primary,
+                        AppColors.primaryContainer,
+                        AppColors.tertiaryContainer,
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -881,16 +882,16 @@ class _AboutMeStepState extends State<AboutMeStep> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFFFF4F3),
+                        color: AppColors.surface,
                         width: 3,
                       ),
-                      color: const Color(0xFFFFD2D3),
+                      color: AppColors.surfaceContainerHighest,
                     ),
                     child: ClipOval(
                       child: _isUploading
                           ? const Center(
                               child: CircularProgressIndicator(
-                                color: Color(0xFFB41B00),
+                                color: AppColors.primary,
                                 strokeWidth: 2,
                               ),
                             )
@@ -899,7 +900,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                           : const Icon(
                               Icons.person,
                               size: 44,
-                              color: Color(0xFFB41B00),
+                              color: AppColors.primary,
                             ),
                     ),
                   ),
@@ -907,11 +908,11 @@ class _AboutMeStepState extends State<AboutMeStep> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFB41B00),
+                    color: AppColors.primary,
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFB41B00).withOpacity(0.35),
+                        color: AppColors.primary.withOpacity(0.35),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -935,7 +936,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 26,
               fontWeight: FontWeight.w900,
-              color: const Color(0xFF4D2124),
+              color: AppColors.onSurface,
               letterSpacing: -0.5,
             ),
           ),
@@ -945,7 +946,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF834C4F),
+              color: AppColors.onSurfaceVariant,
               height: 1.5,
             ),
           ),
@@ -978,7 +979,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                 bottom: -4,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFDADA),
+                    color: AppColors.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
@@ -991,7 +992,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                   hintText:
                       "Share your story, your goals, or what makes you unique...",
                   hintStyle: const TextStyle(
-                    color: Color(0xFFDF9C9E),
+                    color: AppColors.outlineVariant,
                     fontSize: 13,
                     height: 1.6,
                   ),
@@ -1001,21 +1002,21 @@ class _AboutMeStepState extends State<AboutMeStep> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: const BorderSide(
-                      color: Color(0xFFFFD2D3),
+                      color: AppColors.surfaceContainerHighest,
                       width: 1.5,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: const BorderSide(
-                      color: Color(0xFFFFD2D3),
+                      color: AppColors.surfaceContainerHighest,
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: const BorderSide(
-                      color: Color(0xFFB41B00),
+                      color: AppColors.primary,
                       width: 1.5,
                     ),
                   ),
@@ -1049,7 +1050,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFEDEC),
+        color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -1058,10 +1059,10 @@ class _AboutMeStepState extends State<AboutMeStep> {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: const Color(0xFFFFE1E1),
+              color: AppColors.surfaceContainer,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: const Color(0xFFB41B00), size: 18),
+            child: Icon(icon, color: AppColors.primary, size: 18),
           ),
           const SizedBox(width: 10),
           Column(
@@ -1082,7 +1083,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF4D2124),
+                  color: AppColors.onSurface,
                 ),
               ),
             ],

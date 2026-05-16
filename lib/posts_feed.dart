@@ -4,16 +4,7 @@ import 'package:provider/provider.dart';
 import 'post_provider.dart';
 import 'post_api_service.dart';
 import 'dart:ui';
-
-// --- COLOR PALETTE FROM HTML ---
-const kColorPrimary = Color(0xFFB41B00);
-const kColorPrimaryContainer = Color(0xFFFF775D);
-const kColorBackground = Color(0xFFFFF4F3);
-const kColorSurfaceLow = Color(0xFFFFEDEC);
-const kColorSurfaceHighest = Color(0xFFFFD2D3);
-const kColorOnSurface = Color(0xFF4D2124);
-const kColorOnSurfaceVariant = Color(0xFF834C4F);
-const kColorTertiary = Color(0xFFFFD709);
+import 'app_colors.dart';
 
 class PostsFeed extends StatefulWidget {
   const PostsFeed({super.key});
@@ -41,7 +32,9 @@ class _PostsFeedState extends State<PostsFeed> {
 
   Future<void> _fetchMoreData() async {
     if (_isFetchingMore) return;
-    _isFetchingMore = true;
+    setState(() {
+      _isFetchingMore = true;
+    });
     final provider = Provider.of<PostProvider>(context, listen: false);
     int skip = provider.posts.length;
     final newPosts = await PostApiService.getPosts(
@@ -49,7 +42,9 @@ class _PostsFeedState extends State<PostsFeed> {
       skip.toString(),
     );
     if (newPosts.isNotEmpty) provider.addPosts(newPosts);
-    _isFetchingMore = false;
+    setState(() {
+      _isFetchingMore = false;
+    });
   }
 
   Future<void> _fetchData() async {
@@ -89,9 +84,9 @@ class _PostsFeedState extends State<PostsFeed> {
     final postProvider = Provider.of<PostProvider>(context);
 
     return Scaffold(
-      backgroundColor: kColorBackground,
+      backgroundColor: AppColors.surface,
       body: RefreshIndicator(
-        color: kColorPrimary,
+        color: AppColors.primary,
         onRefresh: () => _fetchData(),
         child: ListView.builder(
           controller: _scrollController,
@@ -111,7 +106,7 @@ class _PostsFeedState extends State<PostsFeed> {
                   ? const Padding(
                       padding: EdgeInsets.all(20),
                       child: Center(
-                        child: CircularProgressIndicator(color: kColorPrimary),
+                        child: CircularProgressIndicator(color: AppColors.primary),
                       ),
                     )
                   : const SizedBox(height: 100);
@@ -129,6 +124,7 @@ class _PostsFeedState extends State<PostsFeed> {
               profilePictureUrl:
                   postData['post']['owner']['profile_picture_url'].toString(),
               timeDifference: getTimeAgo(postData['post']['created_at']),
+              category: postData['post']['category'],
             );
           },
         ),
@@ -139,7 +135,7 @@ class _PostsFeedState extends State<PostsFeed> {
   Widget _buildStickyHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(top: 50, left: 24, right: 24, bottom: 16),
-      decoration: BoxDecoration(color: kColorBackground.withOpacity(0.7)),
+      decoration: BoxDecoration(color: AppColors.surface.withOpacity(0.7)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -151,12 +147,12 @@ class _PostsFeedState extends State<PostsFeed> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: kColorPrimary.withOpacity(0.2),
+                    color: AppColors.primary.withOpacity(0.2),
                     width: 2,
                   ),
                 ),
                 child: const CircleAvatar(
-                  backgroundColor: kColorSurfaceHighest,
+                  backgroundColor: AppColors.surfaceContainerHighest,
                 ),
               ),
               const SizedBox(width: 12),
@@ -166,13 +162,13 @@ class _PostsFeedState extends State<PostsFeed> {
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
-                  color: kColorPrimary,
+                  color: AppColors.primary,
                   letterSpacing: -1.5,
                 ),
               ),
             ],
           ),
-          const Icon(Icons.bolt, color: kColorPrimary, size: 28),
+          const Icon(Icons.bolt, color: AppColors.primary, size: 28),
         ],
       ),
     );
@@ -202,10 +198,10 @@ class _PostsFeedState extends State<PostsFeed> {
           height: 64,
           margin: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            color: kColorSurfaceHighest,
+            color: AppColors.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Center(child: Icon(Icons.add, color: kColorPrimary)),
+          child: const Center(child: Icon(Icons.add, color: AppColors.primary)),
         ),
         const SizedBox(height: 8),
         Text(
@@ -213,7 +209,7 @@ class _PostsFeedState extends State<PostsFeed> {
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.bold,
-            color: kColorOnSurfaceVariant,
+            color: AppColors.onSurfaceVariant,
           ),
         ),
       ],
@@ -221,7 +217,7 @@ class _PostsFeedState extends State<PostsFeed> {
   }
 }
 
-class TextPost extends StatelessWidget {
+class TextPost extends StatefulWidget {
   TextPost({
     super.key,
     required this.title,
@@ -232,6 +228,7 @@ class TextPost extends StatelessWidget {
     required this.post_id,
     this.imageUrl,
     this.profilePictureUrl,
+    this.category,
     required this.timeDifference,
   });
 
@@ -244,14 +241,34 @@ class TextPost extends StatelessWidget {
   final String? imageUrl;
   final String? profilePictureUrl;
   final String timeDifference;
+  final String? category;
 
+  @override
+  State<TextPost> createState() => _TextPostState();
+}
+
+class _TextPostState extends State<TextPost> {
   // Der Controller muss hier bleiben, damit deine Logik funktioniert
-  final commentController = TextEditingController();
+  late TextEditingController commentController;
+
+  @override
+  void initState() {
+    super.initState();
+    commentController = TextEditingController();
+  }
+
+
+  @override
+  void dispose() {
+    commentController.dispose();
+    super.dispose();
+  }
+
 
   Future<void> _fetchData(BuildContext context) async {
     final provider = Provider.of<PostProvider>(context, listen: false);
     provider.setLoadingComments(true);
-    final comments = await PostApiService.getComments(post_id);
+    final comments = await PostApiService.getComments(widget.post_id);
     provider.setComment(comments);
   }
 
@@ -267,7 +284,7 @@ class TextPost extends StatelessWidget {
         return Container(
           height: MediaQuery.of(context).size.height * 0.75,
           decoration: const BoxDecoration(
-            color: kColorBackground, // Nutzt die neue Background-Farbe
+            color: AppColors.surface, // Nutzt die neue Background-Farbe
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
           child: Column(
@@ -278,7 +295,7 @@ class TextPost extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: kColorPrimary.withOpacity(0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -289,7 +306,7 @@ class TextPost extends StatelessWidget {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: kColorOnSurface,
+                    color: AppColors.onSurface,
                   ),
                 ),
               ),
@@ -300,14 +317,14 @@ class TextPost extends StatelessWidget {
                   builder: (context, provider, child) {
                     if (provider.isLoadingComments) {
                       return const Center(
-                        child: CircularProgressIndicator(color: kColorPrimary),
+                        child: CircularProgressIndicator(color: AppColors.primary),
                       );
                     }
                     if (provider.comments.isEmpty) {
                       return Center(
                         child: Text(
                           "Be the first to pulse!",
-                          style: TextStyle(color: kColorOnSurfaceVariant),
+                          style: TextStyle(color: AppColors.onSurfaceVariant),
                         ),
                       );
                     }
@@ -341,10 +358,10 @@ class TextPost extends StatelessWidget {
                         decoration: InputDecoration(
                           hintText: "Write a comment...",
                           hintStyle: TextStyle(
-                            color: kColorOnSurfaceVariant.withOpacity(0.5),
+                            color: AppColors.onSurfaceVariant.withOpacity(0.5),
                           ),
                           filled: true,
-                          fillColor: kColorSurfaceHighest.withOpacity(0.3),
+                          fillColor: AppColors.surfaceContainerHighest.withOpacity(0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide.none,
@@ -361,14 +378,14 @@ class TextPost extends StatelessWidget {
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [kColorPrimary, kColorPrimaryContainer],
+                          colors: [AppColors.primary, AppColors.primaryContainer],
                         ),
                       ),
                       child: IconButton(
                         onPressed: () async {
                           if (commentController.text.trim().isEmpty) return;
                           final success = await PostApiService.postComment(
-                            post_id,
+                            widget.post_id,
                             commentController.text,
                           );
                           if (success) {
@@ -405,12 +422,12 @@ class TextPost extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: kColorSurfaceLow,
+        color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(32),
         border: Border.all(color: Colors.white.withOpacity(0.5)),
         boxShadow: [
           BoxShadow(
-            color: kColorPrimary.withOpacity(0.02),
+            color: AppColors.primary.withOpacity(0.02),
             blurRadius: 30,
             offset: const Offset(0, 4),
           ),
@@ -434,18 +451,18 @@ class TextPost extends StatelessWidget {
             height: 44,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: kColorSurfaceHighest,
+              color: AppColors.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             child: ClipOval(
-              child: profilePictureUrl != null
+              child: widget.profilePictureUrl != null
                   ? Image.network(
-                      profilePictureUrl.toString(),
+                      widget.profilePictureUrl.toString(),
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) =>
-                          _avatarFallback(owner_username),
+                          _avatarFallback(widget.owner_username),
                     )
-                  : _avatarFallback(owner_username),
+                  : _avatarFallback(widget.owner_username),
             ),
           ),
           Positioned(
@@ -454,9 +471,9 @@ class TextPost extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: kColorTertiary,
+                color: AppColors.tertiaryContainer,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: kColorSurfaceLow, width: 2),
+                border: Border.all(color: AppColors.surfaceContainerLow, width: 2),
               ),
               child: const Text(
                 "#1",
@@ -467,17 +484,17 @@ class TextPost extends StatelessWidget {
         ],
       ),
       title: Text(
-        owner_username,
+        widget.owner_username,
         style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
       ),
       subtitle: Text(
-        "$timeDifference • LIFESTYLE",
+        "${widget.timeDifference} • ${widget.category ?? ''}",
         style: TextStyle(fontSize: 10),
       ),
       trailing: IconButton(
         icon: const Icon(Icons.more_horiz),
         onPressed: () {
-          showMiniMenu(context, post_id.toString());
+          showMiniMenu(context, widget.post_id.toString());
         },
       ),
     );
@@ -501,7 +518,7 @@ class TextPost extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24.0),
-                border: Border.all(color: kColorPrimary.withOpacity(0.05)),
+                border: Border.all(color: AppColors.primary.withOpacity(0.05)),
               ),
               child: Column(
                 mainAxisSize:
@@ -510,7 +527,7 @@ class TextPost extends StatelessWidget {
                   _buildRankedButton(
                     icon: Icons.edit_outlined,
                     text: 'Edit Post',
-                    color: kColorOnSurface,
+                    color: AppColors.onSurface,
                     onTap: () {
                       // Deine Edit-Logik
                       Navigator.pop(context);
@@ -519,7 +536,7 @@ class TextPost extends StatelessWidget {
                   _buildRankedButton(
                     icon: Icons.link_rounded,
                     text: 'Copy Link',
-                    color: kColorOnSurface,
+                    color: AppColors.onSurface,
                     onTap: () {
                       Navigator.pop(context);
                     },
@@ -527,14 +544,14 @@ class TextPost extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Divider(
-                      color: kColorPrimary.withOpacity(0.1),
+                      color: AppColors.primary.withOpacity(0.1),
                       thickness: 1,
                     ),
                   ),
                   _buildRankedButton(
                     icon: Icons.delete_outline_rounded,
                     text: 'Delete Post',
-                    color: kColorPrimary,
+                    color: AppColors.primary,
                     isBold: true,
                     onTap: () async {
                       print('Ausgelöst');
@@ -562,8 +579,8 @@ class TextPost extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        highlightColor: kColorSurfaceLow,
-        splashColor: kColorSurfaceLow,
+        highlightColor: AppColors.surfaceContainerLow,
+        splashColor: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -588,14 +605,14 @@ class TextPost extends StatelessWidget {
   }
 
   Widget _avatarFallback(String name) => Container(
-    color: kColorSurfaceHighest,
+    color: AppColors.surfaceContainerHighest,
     child: Center(
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
         style: GoogleFonts.plusJakartaSans(
           fontSize: 48,
           fontWeight: FontWeight.w800,
-          color: Color(0xFFB41B00),
+          color: AppColors.primary,
         ),
       ),
     ),
@@ -608,20 +625,20 @@ class TextPost extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
           child: Text(
-            title,
+            widget.title,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 18,
               fontWeight: FontWeight.w800,
             ),
           ),
         ),
-        if (imageUrl != null)
+        if (widget.imageUrl != null)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
               child: Image.network(
-                imageUrl!,
+                widget.imageUrl!,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
@@ -630,8 +647,8 @@ class TextPost extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Text(
-            content,
-            style: const TextStyle(color: kColorOnSurfaceVariant),
+            widget.content,
+            style: const TextStyle(color: AppColors.onSurfaceVariant),
           ),
         ),
       ],
@@ -649,11 +666,11 @@ class TextPost extends StatelessWidget {
             onPressed: () => showCommentSection(context),
             icon: const Icon(
               Icons.chat_bubble_outline,
-              color: kColorOnSurfaceVariant,
+              color: AppColors.onSurfaceVariant,
             ),
           ),
           const Spacer(),
-          const Icon(Icons.share_outlined, color: kColorOnSurfaceVariant),
+          const Icon(Icons.share_outlined, color: AppColors.onSurfaceVariant),
         ],
       ),
     );
@@ -662,34 +679,34 @@ class TextPost extends StatelessWidget {
   Widget _buildHypeButton(BuildContext context) {
     return GestureDetector(
       onTap: () async {
-        final success = await PostApiService.createVote(post_id, 1);
+        final success = await PostApiService.createVote(widget.post_id, 1);
         if (success)
           Provider.of<PostProvider>(
             context,
             listen: false,
-          ).addLikeLocally(post_id);
+          ).addLikeLocally(widget.post_id);
       },
       onDoubleTap: () async {
-        final success = await PostApiService.createVote(post_id, 0);
+        final success = await PostApiService.createVote(widget.post_id, 0);
 
         if (success) {
           Provider.of<PostProvider>(
             context,
 
             listen: false,
-          ).removeLikeLocally(post_id);
+          ).removeLikeLocally(widget.post_id);
         } else {}
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [kColorPrimary, kColorPrimaryContainer],
+            colors: [AppColors.primary, AppColors.primaryContainer],
           ),
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: kColorPrimary.withOpacity(0.2),
+              color: AppColors.primary.withOpacity(0.2),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -700,7 +717,7 @@ class TextPost extends StatelessWidget {
             const Icon(Icons.bolt, color: Colors.white, size: 18),
             const SizedBox(width: 4),
             Text(
-              likes.toString(),
+              widget.likes.toString(),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
@@ -729,19 +746,19 @@ class ShowStoryAvatar extends StatelessWidget {
             padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [kColorPrimary, kColorPrimaryContainer],
+                colors: [AppColors.primary, AppColors.primaryContainer],
               ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Container(
               decoration: BoxDecoration(
-                color: kColorBackground,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: kColorBackground, width: 2),
+                border: Border.all(color: AppColors.surface, width: 2),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(15),
-                child: Container(color: kColorSurfaceHighest),
+                child: Container(color: AppColors.surfaceContainerHighest),
               ),
             ),
           ),
@@ -751,7 +768,7 @@ class ShowStoryAvatar extends StatelessWidget {
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w500,
-              color: kColorOnSurface,
+              color: AppColors.onSurface,
             ),
           ),
         ],
@@ -779,12 +796,12 @@ class Comment extends StatelessWidget {
         children: [
           // Avatar Kreis
           CircleAvatar(
-            backgroundColor: const Color(0xFFFFD2D3),
+            backgroundColor: AppColors.surfaceContainerHighest,
             radius: 18,
             child: Text(
               username[0].toUpperCase(),
               style: const TextStyle(
-                color: Color(0xFFB41B00),
+                color: AppColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -796,7 +813,7 @@ class Comment extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFFBB4B6).withOpacity(0.2),
+                color: AppColors.surfaceContainerHighest,
                 borderRadius: const BorderRadius.only(
                   topRight: Radius.circular(16),
                   bottomLeft: Radius.circular(16),
@@ -811,14 +828,14 @@ class Comment extends StatelessWidget {
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: Color(0xFF4D2124),
+                      color: AppColors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     comment,
                     style: const TextStyle(
-                      color: Color(0xFF4D2124),
+                      color: AppColors.onSurface,
                       fontSize: 14,
                     ),
                   ),

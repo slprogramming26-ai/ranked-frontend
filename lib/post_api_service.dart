@@ -26,7 +26,9 @@ class PostApiService {
   static Future<bool> createPost(String title,
       String content,
       bool published,
-      String? imageUrl,) async {
+      String? imageUrl,
+      String? category
+      ) async {
     final token = await TokenStorage.getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/posts/'),
@@ -39,6 +41,7 @@ class PostApiService {
         'content': content,
         'published': published,
         'image_url': imageUrl,
+        'category': category,
       }),
     );
 

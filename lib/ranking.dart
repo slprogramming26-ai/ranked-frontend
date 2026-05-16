@@ -6,22 +6,7 @@ import 'api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
-
-// ─── Brand Colors ────────────────────────────────────────────────────────────
-const _primary = Color(0xFFb41b00);
-const _primaryFixed = Color(0xFFff775d);
-const _surface = Color(0xFFfff4f3);
-const _surfaceContainer = Color(0xFFffe1e1);
-const _surfaceContainerLow = Color(0xFFffedec);
-const _surfaceContainerHighest = Color(0xFFffd2d3);
-const _onSurface = Color(0xFF4d2124);
-const _onSurfaceVariant = Color(0xFF834c4f);
-const _tertiary = Color(0xFF6c5a00);
-const _tertiaryContainer = Color(0xFFffd709);
-const _tertiaryFixedDim = Color(0xFFEFC900);
-const _secondaryFixed = Color(0xFFdde4e6);
-const _secondary = Color(0xFF565d5f);
-const _outlineVariant = Color(0xFFdf9c9e);
+import 'app_colors.dart';
 
 // ─── RankingHome ─────────────────────────────────────────────────────────────
 class RankingHome extends StatefulWidget {
@@ -51,8 +36,8 @@ class _RankingHomeState extends State<RankingHome> {
 
     if (provider.isLoadingHome || provider.userdata.isEmpty) {
       return const Scaffold(
-        backgroundColor: _surface,
-        body: Center(child: CircularProgressIndicator(color: _primary)),
+        backgroundColor: AppColors.surface,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
@@ -61,7 +46,7 @@ class _RankingHomeState extends State<RankingHome> {
     } else {
       // ── Opt-In Screen ──────────────────────────────────────────────────────
       return Scaffold(
-        backgroundColor: _surface,
+        backgroundColor: AppColors.surface,
         body: SafeArea(
           child: Stack(
             children: [
@@ -74,7 +59,7 @@ class _RankingHomeState extends State<RankingHome> {
                   height: 300,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _primary.withOpacity(0.05),
+                    color: AppColors.primary.withOpacity(0.05),
                   ),
                 ),
               ),
@@ -86,7 +71,7 @@ class _RankingHomeState extends State<RankingHome> {
                   height: 240,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _tertiary.withOpacity(0.05),
+                    color: AppColors.tertiary.withOpacity(0.05),
                   ),
                 ),
               ),
@@ -104,14 +89,14 @@ class _RankingHomeState extends State<RankingHome> {
                         height: 88,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [_primary, _primaryFixed],
+                            colors: [AppColors.primary, AppColors.primaryContainer],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: _primary.withOpacity(0.3),
+                              color: AppColors.primary.withOpacity(0.3),
                               blurRadius: 24,
                               offset: const Offset(0, 10),
                             ),
@@ -132,7 +117,7 @@ class _RankingHomeState extends State<RankingHome> {
                         fontSize: 40,
                         fontWeight: FontWeight.w900,
                         fontStyle: FontStyle.italic,
-                        color: _primary,
+                        color: AppColors.primary,
                         height: 1.0,
                       ),
                     ),
@@ -142,7 +127,7 @@ class _RankingHomeState extends State<RankingHome> {
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 15,
-                        color: _onSurfaceVariant,
+                        color: AppColors.onSurfaceVariant,
                         height: 1.5,
                       ),
                     ),
@@ -190,20 +175,22 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RankingProvider>(context);
     final leaderboard = provider.leaderboardData;
 
     return Scaffold(
-      backgroundColor: _surface,
+      backgroundColor: AppColors.surface,
       // ── AppBar ────────────────────────────────────────────────────────────
       appBar: AppBar(
-        backgroundColor: _surface,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: _primary),
+          icon: const Icon(Icons.menu, color: AppColors.primary),
           onPressed: () {},
         ),
         title: Text(
@@ -212,7 +199,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
             fontSize: 22,
             fontWeight: FontWeight.w900,
             fontStyle: FontStyle.italic,
-            color: _primary,
+            color: AppColors.primary,
             letterSpacing: -0.5,
           ),
         ),
@@ -220,7 +207,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
           IconButton(
             icon: const Icon(
               Icons.local_fire_department_rounded,
-              color: _primary,
+              color: AppColors.primary,
             ),
             onPressed: () {},
           ),
@@ -228,11 +215,11 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
       ),
       // ── Body ──────────────────────────────────────────────────────────────
       body: RefreshIndicator(
-        color: _primary,
+        color: AppColors.primary,
         onRefresh: () => provider._refreshLeaderboard(),
 
         child: provider.isLoadingLeaderboard
-            ? const Center(child: CircularProgressIndicator(color: _primary))
+            ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
             : Stack(
                 children: [
                   CustomScrollView(
@@ -267,7 +254,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                   children: [
                                     const Icon(
                                       Icons.military_tech_rounded,
-                                      color: _tertiary,
+                                      color: AppColors.tertiary,
                                       size: 22,
                                     ),
                                     const SizedBox(width: 6),
@@ -277,7 +264,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                         fontSize: 18,
                                         fontWeight: FontWeight.w900,
                                         fontStyle: FontStyle.italic,
-                                        color: _onSurface,
+                                        color: AppColors.onSurface,
                                       ),
                                     ),
                                   ],
@@ -288,8 +275,8 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                   children: [
                                     Expanded(
                                       child: _BentoCard(
-                                        bg: _tertiaryContainer,
-                                        fgColor: _tertiary,
+                                        bg: AppColors.tertiaryContainer,
+                                        fgColor: AppColors.tertiary,
                                         icon: Icons.trending_up_rounded,
                                         value: '+25%',
                                         label: 'GLOBAL VELOCITY',
@@ -298,7 +285,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: _BentoCard(
-                                        bg: const Color(0xFFff775d),
+                                        bg: AppColors.primaryContainer,
                                         fgColor: const Color(0xFF4c0600),
                                         icon: Icons.local_fire_department,
                                         value: 'High Heat',
@@ -396,7 +383,7 @@ class _TimeToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: _surfaceContainer,
+        color: AppColors.surfaceContainer,
         borderRadius: BorderRadius.circular(50),
       ),
       child: Row(
@@ -440,7 +427,7 @@ class _ToggleBtn extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: active
                 ? const LinearGradient(
-                    colors: [_primary, _primaryFixed],
+                    colors: [AppColors.primary, AppColors.primaryContainer],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   )
@@ -449,7 +436,7 @@ class _ToggleBtn extends StatelessWidget {
             boxShadow: active
                 ? [
                     BoxShadow(
-                      color: _primary.withOpacity(0.3),
+                      color: AppColors.primary.withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 3),
                     ),
@@ -462,7 +449,7 @@ class _ToggleBtn extends StatelessWidget {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: active ? Colors.white : _onSurfaceVariant,
+              color: active ? Colors.white : AppColors.onSurfaceVariant,
             ),
           ),
         ),
@@ -555,14 +542,14 @@ class _PodiumCard extends StatelessWidget {
     Color rankBg;
     Color rankFg;
     if (rank == 1) {
-      rankBg = _primary;
+      rankBg = AppColors.primary;
       rankFg = Colors.white;
     } else if (rank == 2) {
-      rankBg = _secondaryFixed;
-      rankFg = _secondary;
+      rankBg = AppColors.secondaryFixed;
+      rankFg = AppColors.secondary;
     } else {
-      rankBg = _tertiaryFixedDim;
-      rankFg = _tertiary;
+      rankBg = AppColors.tertiaryFixedDim;
+      rankFg = AppColors.tertiary;
     }
 
     return Column(
@@ -577,14 +564,14 @@ class _PodiumCard extends StatelessWidget {
               decoration: isFirst
                   ? BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [_tertiary, _tertiaryContainer],
+                        colors: [AppColors.tertiary, AppColors.tertiaryContainer],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: _tertiary.withOpacity(0.3),
+                          color: AppColors.tertiary.withOpacity(0.3),
                           blurRadius: 20,
                           spreadRadius: 2,
                         ),
@@ -593,7 +580,7 @@ class _PodiumCard extends StatelessWidget {
                   : null,
               child: CircleAvatar(
                 radius: avatarRadius,
-                backgroundColor: _surfaceContainerHighest,
+                backgroundColor: AppColors.surfaceContainerHighest,
                 backgroundImage: (picUrl != null && picUrl.isNotEmpty)
                     ? NetworkImage(picUrl)
                     : null,
@@ -602,7 +589,7 @@ class _PodiumCard extends StatelessWidget {
                     : Icon(
                         Icons.person,
                         size: avatarRadius,
-                        color: _onSurfaceVariant,
+                        color: AppColors.onSurfaceVariant,
                       ),
               ),
             ),
@@ -616,11 +603,11 @@ class _PodiumCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: rankBg,
                   shape: BoxShape.circle,
-                  border: Border.all(color: _surface, width: 2),
+                  border: Border.all(color: AppColors.surface, width: 2),
                   boxShadow: isFirst
                       ? [
                           BoxShadow(
-                            color: _primary.withOpacity(0.4),
+                            color: AppColors.primary.withOpacity(0.4),
                             blurRadius: 10,
                           ),
                         ]
@@ -654,7 +641,7 @@ class _PodiumCard extends StatelessWidget {
           style: GoogleFonts.plusJakartaSans(
             fontSize: isFirst ? 15 : 12,
             fontWeight: isFirst ? FontWeight.w800 : FontWeight.w700,
-            color: _onSurface,
+            color: AppColors.onSurface,
           ),
         ),
         const SizedBox(height: 4),
@@ -665,11 +652,11 @@ class _PodiumCard extends StatelessWidget {
           decoration: isFirst
               ? BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [_primary, _primaryFixed],
+                    colors: [AppColors.primary, AppColors.primaryContainer],
                   ),
                   borderRadius: BorderRadius.circular(50),
                   boxShadow: [
-                    BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 6),
+                    BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 6),
                   ],
                 )
               : null,
@@ -679,14 +666,14 @@ class _PodiumCard extends StatelessWidget {
               Icon(
                 Icons.bolt_rounded,
                 size: isFirst ? 14 : 12,
-                color: isFirst ? Colors.white : _primary,
+                color: isFirst ? Colors.white : AppColors.primary,
               ),
               Text(
                 score,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: isFirst ? 13 : 11,
                   fontWeight: FontWeight.w900,
-                  color: isFirst ? Colors.white : _primary,
+                  color: isFirst ? Colors.white : AppColors.primary,
                 ),
               ),
             ],
@@ -721,7 +708,7 @@ class _RankListTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: _surfaceContainerLow,
+        color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -734,19 +721,19 @@ class _RankListTile extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w900,
                 fontStyle: FontStyle.italic,
-                color: _onSurfaceVariant,
+                color: AppColors.onSurfaceVariant,
               ),
             ),
           ),
           const SizedBox(width: 8),
           CircleAvatar(
             radius: 22,
-            backgroundColor: _surfaceContainerHighest,
+            backgroundColor: AppColors.surfaceContainerHighest,
             backgroundImage: (picUrl != null && picUrl.isNotEmpty)
                 ? NetworkImage(picUrl)
                 : null,
             child: picUrl == null
-                ? const Icon(Icons.person, color: _onSurfaceVariant, size: 22)
+                ? const Icon(Icons.person, color: AppColors.onSurfaceVariant, size: 22)
                 : null,
           ),
           const SizedBox(width: 12),
@@ -759,7 +746,7 @@ class _RankListTile extends StatelessWidget {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: _onSurface,
+                    color: AppColors.onSurface,
                   ),
                 ),
                 Text(
@@ -767,7 +754,7 @@ class _RankListTile extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: _onSurfaceVariant,
+                    color: AppColors.onSurfaceVariant,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -776,13 +763,13 @@ class _RankListTile extends StatelessWidget {
           ),
           Row(
             children: [
-              const Icon(Icons.bolt_rounded, size: 16, color: _primary),
+              const Icon(Icons.bolt_rounded, size: 16, color: AppColors.primary),
               Text(
                 _avgScore().toStringAsFixed(1),
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  color: _primary,
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -866,7 +853,7 @@ class _EmptyLeaderboard extends StatelessWidget {
           const Icon(
             Icons.leaderboard_outlined,
             size: 56,
-            color: _outlineVariant,
+            color: AppColors.outlineVariant,
           ),
           const SizedBox(height: 16),
           Text(
@@ -874,7 +861,7 @@ class _EmptyLeaderboard extends StatelessWidget {
             style: GoogleFonts.plusJakartaSans(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: _onSurfaceVariant,
+              color: AppColors.onSurfaceVariant,
             ),
           ),
         ],
@@ -897,11 +884,11 @@ class _BottomActionBar extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: _surface.withOpacity(0.7),
+            color: AppColors.surface.withOpacity(0.7),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
-                color: _primary.withOpacity(0.08),
+                color: AppColors.primary.withOpacity(0.08),
                 blurRadius: 40,
                 offset: const Offset(0, -4),
               ),
@@ -937,14 +924,14 @@ class _GradientButton extends StatelessWidget {
       height: 60,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [_primary, _primaryFixed],
+          colors: [AppColors.primary, AppColors.primaryContainer],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: _primary.withOpacity(0.35),
+            color: AppColors.primary.withOpacity(0.35),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -1023,7 +1010,7 @@ class _RankingPagesState extends State<RankingPages> {
         itemBuilder: (context, index) {
           if (index == 0) {
             return Container(
-              color: const Color(0xFFfff4f3),
+              color: AppColors.surface,
               child: Center(
                 child: Text(
                   'Dein daily target:\nScrolle rechts zum Bewerten!',
@@ -1031,7 +1018,7 @@ class _RankingPagesState extends State<RankingPages> {
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
-                    color: const Color(0xFFb41b00),
+                    color: AppColors.primary,
                   ),
                 ),
               ),
@@ -1176,7 +1163,7 @@ class SingleRankingPostPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(2),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFffd709),
+                        color: AppColors.tertiaryContainer,
                         shape: BoxShape.circle,
                       ),
                       child: const CircleAvatar(
@@ -1258,7 +1245,7 @@ class SingleRankingPostPage extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFb41b00), Color(0xFFff775d)],
+                            colors: [AppColors.primary, AppColors.primaryContainer],
                           ),
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -1338,7 +1325,7 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFfff4f3),
+      color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Stack(
         clipBehavior: Clip.none,
@@ -1351,7 +1338,7 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFB41B00).withOpacity(0.05),
+                color: AppColors.primary.withOpacity(0.05),
               ),
             ),
           ),
@@ -1363,7 +1350,7 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF6C5A00).withOpacity(0.05),
+                color: AppColors.tertiary.withOpacity(0.05),
               ),
             ),
           ),
@@ -1376,7 +1363,7 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
-                  color: const Color(0xFF9e1700),
+                  color: AppColors.primaryDark,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1384,7 +1371,7 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
                 widget.description,
                 style: GoogleFonts.inter(
                   fontSize: 16,
-                  color: const Color(0xFF834c4f),
+                  color: AppColors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -1394,7 +1381,7 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 80,
                   fontWeight: FontWeight.w900,
-                  color: const Color(0xFFb41b00),
+                  color: AppColors.primary,
                 ),
               ),
               Text(
@@ -1405,10 +1392,10 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
               SliderTheme(
                 data: SliderThemeData(
                   trackHeight: 60,
-                  activeTrackColor: const Color(0xFFffe1e1),
-                  inactiveTrackColor: const Color(0xFFffe1e1),
-                  thumbColor: const Color(0xFFb41b00),
-                  overlayColor: const Color(0xFFb41b00).withOpacity(0.2),
+                  activeTrackColor: AppColors.surfaceContainer,
+                  inactiveTrackColor: AppColors.surfaceContainer,
+                  thumbColor: AppColors.primary,
+                  overlayColor: AppColors.primary.withOpacity(0.2),
                   thumbShape: const RoundSliderThumbShape(
                     enabledThumbRadius: 30,
                     elevation: 10,
@@ -1459,14 +1446,14 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
                     height: 70,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFFb41b00), Color(0xFFff775d)],
+                        colors: [AppColors.primary, AppColors.primaryContainer],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(35),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFb41b00).withOpacity(0.3),
+                          color: AppColors.primary.withOpacity(0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),

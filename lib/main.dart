@@ -11,6 +11,8 @@ import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'post_provider.dart';
 import 'sign_in.dart';
+import 'app_colors.dart';
+
 
 void main() {
   runApp(
@@ -151,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     if (loged_in == true)
       return Scaffold(
-        backgroundColor: Color(0xFFFFF4F3),
+        backgroundColor: AppColors.surface,
         body: currentScreen,
         floatingActionButton: _currentIndex == 0
             ? FloatingActionButton(
@@ -161,7 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     MaterialPageRoute(builder: (context) => CreatePost()),
                   );
                 },
-                backgroundColor: Color(0xFFBA1C00),
+                backgroundColor: AppColors.primary,
                 child: Text(
                   '+',
                   style: TextStyle(color: Colors.white, fontSize: 30),
@@ -174,11 +176,11 @@ class _MyHomePageState extends State<MyHomePage> {
           margin: const EdgeInsets.all(20), // Lässt die Bar "schweben"
           height: 80,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF4F3).withOpacity(0.8),
+            color: AppColors.surface.withOpacity(0.8),
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFB41B00).withOpacity(0.1),
+                color: AppColors.primary.withOpacity(0.1),
                 blurRadius: 20,
                 offset: const Offset(0, -5),
               ),
@@ -203,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
     else
       return Scaffold(
         resizeToAvoidBottomInset: true,
-        backgroundColor: const Color(0xFFFFF4F3), // surface-bright
+        backgroundColor: AppColors.surface, // surface-bright
         body: Center(
           child: SingleChildScrollView(
             child: Column(
@@ -220,7 +222,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Color(0xFFB41B00), Color(0xFFFF775D)],
+                            colors: [AppColors.primary, AppColors.primaryContainer],
                           ),
                         ),
                         child: const Center(
@@ -253,7 +255,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF4D2124), // on-surface
+                          color: AppColors.onSurface, // on-surface
                           letterSpacing: -1,
                         ),
                       ),
@@ -262,7 +264,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF834C4F), // on-surface-variant
+                          color: AppColors.onSurfaceVariant, // on-surface-variant
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -291,7 +293,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           onPressed: () {},
                           child: const Text(
                             "Forgot password?",
-                            style: TextStyle(color: Color(0xFFB41B00), fontWeight: FontWeight.bold),
+                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -309,12 +311,12 @@ class _MyHomePageState extends State<MyHomePage> {
                         height: 60,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFB41B00), Color(0xFFFF775D)],
+                            colors: [AppColors.primary, AppColors.primaryContainer],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFB41B00).withOpacity(0.2),
+                              color: AppColors.primary.withOpacity(0.2),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             )
@@ -344,12 +346,12 @@ class _MyHomePageState extends State<MyHomePage> {
                       // 6. DIVIDER
                       Row(
                         children: [
-                          Expanded(child: Divider(color: const Color(0xFF4D2124).withOpacity(0.1))),
+                          Expanded(child: Divider(color: AppColors.onSurface.withOpacity(0.1))),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text("OR CONTINUE WITH", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF834C4F))),
+                            child: Text("OR CONTINUE WITH", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant)),
                           ),
-                          Expanded(child: Divider(color: const Color(0xFF4D2124).withOpacity(0.1))),
+                          Expanded(child: Divider(color: AppColors.onSurface.withOpacity(0.1))),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -369,10 +371,10 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("New to Ranked?", style: TextStyle(color: Color(0xFF834C4F))),
+                            const Text("New to Ranked?", style: TextStyle(color: AppColors.onSurfaceVariant)),
                             TextButton(
                               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignIn())),
-                              child: const Text("Sign Up", style: TextStyle(color: Color(0xFFB41B00), fontWeight: FontWeight.w900)),
+                              child: const Text("Sign Up", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900)),
                             ),
                           ],
                         ),
@@ -392,7 +394,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: Color(0xFF834C4F))),
+      child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: AppColors.onSurfaceVariant)),
     );
   }
 
@@ -401,11 +403,11 @@ class _MyHomePageState extends State<MyHomePage> {
       controller: controller,
       obscureText: isPassword,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: const Color(0xFF834C4F).withOpacity(0.5)),
+        prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant.withOpacity(0.5)),
         hintText: hint,
-        hintStyle: TextStyle(color: const Color(0xFF4D2124).withOpacity(0.3)),
+        hintStyle: TextStyle(color: AppColors.onSurface.withOpacity(0.3)),
         filled: true,
-        fillColor: const Color(0xFFFFD2D3).withOpacity(0.3), // surface-container-highest
+        fillColor: AppColors.surfaceContainerHighest.withOpacity(0.3), // surface-container-highest
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
         contentPadding: const EdgeInsets.symmetric(vertical: 20),
       ),
@@ -416,11 +418,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFDADA), // surface-container-high
+        color: AppColors.surfaceContainerHigh, // surface-container-high
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF4D2124).withOpacity(0.05)),
+        border: Border.all(color: AppColors.onSurface.withOpacity(0.05)),
       ),
-      child: Center(child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4D2124)))),
+      child: Center(child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.onSurface))),
     );
   }
 
@@ -435,7 +437,7 @@ class _MyHomePageState extends State<MyHomePage> {
         decoration: isSelected
             ? BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFFB41B00), Color(0xFFFF775D)],
+                  colors: [AppColors.primary, AppColors.primaryContainer],
                 ),
                 borderRadius: BorderRadius.circular(20),
               )
@@ -445,7 +447,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : const Color(0xFF4D2124),
+              color: isSelected ? Colors.white : AppColors.onSurface,
             ),
             if (isSelected)
               Text(
