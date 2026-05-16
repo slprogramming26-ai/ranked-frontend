@@ -3,15 +3,11 @@ import 'package:ranked/ranking.dart';
 import 'posts_feed.dart';
 import 'profile.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart';
-import 'dart:convert';
 import 'token_storage.dart';
 import 'api_service.dart';
-import 'messenger.dart';
 import 'create_post.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'post_provider.dart';
 import 'sign_in.dart';
@@ -150,8 +146,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    double width = MediaQuery.sizeOf(context).width;
-    double height = MediaQuery.sizeOf(context).height;
 
     final dynamic currentScreen = _screens[_currentIndex];
 

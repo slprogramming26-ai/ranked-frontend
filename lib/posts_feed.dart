@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'post_provider.dart';
 import 'post_api_service.dart';
+import 'dart:ui';
 
 // --- COLOR PALETTE FROM HTML ---
 const kColorPrimary = Color(0xFFB41B00);
@@ -125,7 +126,8 @@ class _PostsFeedState extends State<PostsFeed> {
               likes: postData['votes'],
               post_id: postData['post']['id'],
               imageUrl: postData['post']['image_url'],
-              profilePictureUrl: postData['post']['owner']['profile_picture_url'].toString(),
+              profilePictureUrl:
+                  postData['post']['owner']['profile_picture_url'].toString(),
               timeDifference: getTimeAgo(postData['post']['created_at']),
             );
           },
@@ -230,7 +232,7 @@ class TextPost extends StatelessWidget {
     required this.post_id,
     this.imageUrl,
     this.profilePictureUrl,
-    required this.timeDifference
+    required this.timeDifference,
   });
 
   final String title;
@@ -416,12 +418,12 @@ class TextPost extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [_buildHeader(), _buildBody(), _buildFooter(context)],
+        children: [_buildHeader(context), _buildBody(), _buildFooter(context)],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       leading: Stack(
@@ -438,11 +440,11 @@ class TextPost extends StatelessWidget {
             child: ClipOval(
               child: profilePictureUrl != null
                   ? Image.network(
-                profilePictureUrl.toString(),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    _avatarFallback(owner_username),
-              )
+                      profilePictureUrl.toString(),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          _avatarFallback(owner_username),
+                    )
                   : _avatarFallback(owner_username),
             ),
           ),
@@ -472,7 +474,116 @@ class TextPost extends StatelessWidget {
         "$timeDifference • LIFESTYLE",
         style: TextStyle(fontSize: 10),
       ),
-      trailing: const Icon(Icons.more_horiz),
+      trailing: IconButton(
+        icon: const Icon(Icons.more_horiz),
+        onPressed: () {
+          showMiniMenu(context, post_id.toString());
+        },
+      ),
+    );
+  }
+
+  void showMiniMenu(BuildContext context, String post_id) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.1), // Sanfterer Backdrop
+      builder: (_) {
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          child: Dialog(
+            insetPadding: EdgeInsets.symmetric(horizontal: 40),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24.0), // 2xl Style
+            ),
+            backgroundColor: Colors.white,
+            elevation: 10,
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24.0),
+                border: Border.all(color: kColorPrimary.withOpacity(0.05)),
+              ),
+              child: Column(
+                mainAxisSize:
+                    MainAxisSize.min, // Dialog passt sich dem Inhalt an
+                children: [
+                  _buildRankedButton(
+                    icon: Icons.edit_outlined,
+                    text: 'Edit Post',
+                    color: kColorOnSurface,
+                    onTap: () {
+                      // Deine Edit-Logik
+                      Navigator.pop(context);
+                    },
+                  ),
+                  _buildRankedButton(
+                    icon: Icons.link_rounded,
+                    text: 'Copy Link',
+                    color: kColorOnSurface,
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Divider(
+                      color: kColorPrimary.withOpacity(0.1),
+                      thickness: 1,
+                    ),
+                  ),
+                  _buildRankedButton(
+                    icon: Icons.delete_outline_rounded,
+                    text: 'Delete Post',
+                    color: kColorPrimary,
+                    isBold: true,
+                    onTap: () async {
+                      print('Ausgelöst');
+                      // final success = await PostApiService.deletePost(post_id);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRankedButton({
+    required IconData icon,
+    required String text,
+    required Color color,
+    required VoidCallback onTap,
+    bool isBold = false,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        highlightColor: kColorSurfaceLow,
+        splashColor: kColorSurfaceLow,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: color),
+              SizedBox(width: 14),
+              Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 16,
+                  fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
+                  fontFamily: 'Plus Jakarta Sans', // Falls im Projekt vorhanden
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -567,9 +678,7 @@ class TextPost extends StatelessWidget {
 
             listen: false,
           ).removeLikeLocally(post_id);
-        } else {
-
-        }
+        } else {}
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

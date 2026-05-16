@@ -1,9 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'token_storage.dart';
-import 'dart:io';
-import 'package:http_parser/http_parser.dart';
 
 class RankingApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
@@ -18,11 +15,8 @@ class RankingApiService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print(data);
       return data;
     }
-    print(response.statusCode);
-    print('Fehler');
     return {};
   }
 
@@ -39,8 +33,9 @@ class RankingApiService {
       final data = jsonDecode(response.body) as List<dynamic>;
       return data.cast<Map<String, dynamic>>();
     }
-    print(response.statusCode);
-    print('Fehler');
+    if (response.statusCode == 400) {
+      return [{'message': 'You already voted today'}];
+    }
     return [];
   }
 
@@ -79,8 +74,6 @@ class RankingApiService {
       final data = jsonDecode(response.body) as List<dynamic>;
       return data.cast<Map<String, dynamic>>();
     }
-    print(response.statusCode);
-    print('Fehler');
     return [];
 
   }

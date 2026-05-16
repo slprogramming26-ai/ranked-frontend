@@ -1,10 +1,7 @@
 import 'dart:io';
-import 'dart:math';
 import 'post_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ranked/main.dart';
-import 'api_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 
@@ -109,14 +106,19 @@ class _CreatePostState extends State<CreatePost> {
                 // Erst Bild hochladen falls vorhanden
                 if (_image != null) {
                   imageUrl = await PostApiService.uploadPostImage(_image!);
+
+                  if (!context.mounted) return;
+
                   if (imageUrl == null) {
-                    Navigator.pop(context); // Dialog schließen
-                    // Fehlermeldung zeigen
+                    Navigator.pop(context);
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Bild-Upload fehlgeschlagen')),
                     );
-                    return; // Abbruch, kein Post erstellen
+
+                    return;
                   }
+
                 }
 
                 final success = await PostApiService.createPost(
@@ -126,6 +128,7 @@ class _CreatePostState extends State<CreatePost> {
                   imageUrl,
                 );
 
+                if (!context.mounted) return;
                 Navigator.pop(context);
 
                 if (success) {

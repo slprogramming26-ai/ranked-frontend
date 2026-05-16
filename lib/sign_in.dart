@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/main.dart';
-import 'package:ranked/posts_feed.dart';
 import 'api_service.dart';
 import 'package:email_validator/email_validator.dart';
 import 'token_storage.dart';

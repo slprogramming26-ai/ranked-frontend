@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'token_storage.dart';
@@ -12,13 +11,10 @@ class PostApiService {
   static Future<List<Map<String, dynamic>>> getPosts(String limit,
       String skip) async {
     final token = await TokenStorage.getToken();
-    print("Token: $token"); // NEU
     final response = await http.get(
       Uri.parse('$baseUrl/posts/?limit=$limit&skip=$skip'),
       headers: {'Authorization': 'Bearer $token'},
     );
-    print("Status: ${response.statusCode}"); // NEU
-    print("Body: ${response.body}"); // NEU
 
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
@@ -61,7 +57,6 @@ class PostApiService {
       },
       body: jsonEncode({"post_id": post_id, "dir": dir}),
     );
-    print("Sende Vote an: $baseUrl/votes mit ID: $post_id");
     return response.statusCode == 201;
   }
 
@@ -86,7 +81,6 @@ class PostApiService {
 
     // Ersetze die print Zeile mit:
     final error = jsonDecode(body);
-    print('Upload fehlgeschlagen: ${response.statusCode} - ${error['detail']}');
     return null;
 
   }
@@ -123,4 +117,16 @@ class PostApiService {
 
     return response.statusCode == 201;
   }
+
+  static Future<bool> deletePost(int id) async {
+    final token = await TokenStorage.getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/posts/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return response.statusCode == 204;
+  }
+
 }

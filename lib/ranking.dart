@@ -1,35 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:ranked/create_post.dart';
 import 'package:ranked/ranking_api_service.dart';
 import "main.dart";
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart';
 import 'api_service.dart';
-import 'post_provider.dart';
 import 'package:provider/provider.dart';
-import 'post_api_service.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
 
 // ─── Brand Colors ────────────────────────────────────────────────────────────
 const _primary = Color(0xFFb41b00);
-const _primaryDim = Color(0xFF9e1700);
 const _primaryFixed = Color(0xFFff775d);
-const _inversePrimary = Color(0xFFff5537);
 const _surface = Color(0xFFfff4f3);
 const _surfaceContainer = Color(0xFFffe1e1);
 const _surfaceContainerLow = Color(0xFFffedec);
-const _surfaceContainerHigh = Color(0xFFffdada);
 const _surfaceContainerHighest = Color(0xFFffd2d3);
 const _onSurface = Color(0xFF4d2124);
 const _onSurfaceVariant = Color(0xFF834c4f);
 const _tertiary = Color(0xFF6c5a00);
 const _tertiaryContainer = Color(0xFFffd709);
-const _tertiaryFixed = Color(0xFFffd709);
 const _tertiaryFixedDim = Color(0xFFEFC900);
 const _secondaryFixed = Color(0xFFdde4e6);
 const _secondary = Color(0xFF565d5f);
-const _outline = Color(0xFFa26769);
 const _outlineVariant = Color(0xFFdf9c9e);
 
 // ─── RankingHome ─────────────────────────────────────────────────────────────
@@ -61,9 +52,7 @@ class _RankingHomeState extends State<RankingHome> {
     if (provider.isLoadingHome || provider.userdata.isEmpty) {
       return const Scaffold(
         backgroundColor: _surface,
-        body: Center(
-          child: CircularProgressIndicator(color: _primary),
-        ),
+        body: Center(child: CircularProgressIndicator(color: _primary)),
       );
     }
 
@@ -229,135 +218,167 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.local_fire_department_rounded, color: _primary),
+            icon: const Icon(
+              Icons.local_fire_department_rounded,
+              color: _primary,
+            ),
             onPressed: () {},
           ),
         ],
       ),
       // ── Body ──────────────────────────────────────────────────────────────
-      body: provider.isLoadingLeaderboard
-          ? const Center(child: CircularProgressIndicator(color: _primary))
-          : Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // ── Time Toggle ───────────────────────────────
-                      _TimeToggle(
-                        isToday: _isToday,
-                        onToggle: (val) => setState(() => _isToday = val),
-                      ),
-                      const SizedBox(height: 28),
+      body: RefreshIndicator(
+        color: _primary,
+        onRefresh: () => provider._refreshLeaderboard(),
 
-                      // ── Podium ────────────────────────────────────
-                      if (leaderboard.length >= 3)
-                        _Podium(leaderboard: leaderboard)
-                      else if (leaderboard.isEmpty)
-                        _EmptyLeaderboard()
-                      else
-                        _Podium(leaderboard: leaderboard),
-
-                      const SizedBox(height: 24),
-
-                      // ── Daily Feats Header ────────────────────────
-                      if (leaderboard.isNotEmpty) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.military_tech_rounded,
-                              color: _tertiary,
-                              size: 22,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'DAILY FEATS',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                fontStyle: FontStyle.italic,
-                                color: _onSurface,
+        child: provider.isLoadingLeaderboard
+            ? const Center(child: CircularProgressIndicator(color: _primary))
+            : Stack(
+                children: [
+                  CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // ── Time Toggle ───────────────────────────────
+                              _TimeToggle(
+                                isToday: _isToday,
+                                onToggle: (val) =>
+                                    setState(() => _isToday = val),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        // Bento grid
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _BentoCard(
-                                bg: _tertiaryContainer,
-                                fgColor: _tertiary,
-                                icon: Icons.trending_up_rounded,
-                                value: '+25%',
-                                label: 'GLOBAL VELOCITY',
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _BentoCard(
-                                bg: const Color(0xFFff775d),
-                                fgColor: const Color(0xFF4c0600),
-                                icon: Icons.local_fire_department,
-                                value: 'High Heat',
-                                label: 'COMMUNITY PEAK',
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                              const SizedBox(height: 28),
 
-                      // ── Ranks 4+ list ─────────────────────────────
-                      if (leaderboard.length > 3)
-                        ...leaderboard.skip(3).toList().asMap().entries.map(
-                              (e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _RankListTile(
-                              rank: e.key + 4,
-                              entry: e.value,
-                            ),
+                              // ── Podium ────────────────────────────────────
+                              if (leaderboard.length >= 3)
+                                _Podium(leaderboard: leaderboard)
+                              else if (leaderboard.isEmpty)
+                                _EmptyLeaderboard()
+                              else
+                                _Podium(leaderboard: leaderboard),
+
+                              const SizedBox(height: 24),
+
+                              // ── Daily Feats Header ────────────────────────
+                              if (leaderboard.isNotEmpty) ...[
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.military_tech_rounded,
+                                      color: _tertiary,
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'DAILY FEATS',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                        fontStyle: FontStyle.italic,
+                                        color: _onSurface,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                // Bento grid
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _BentoCard(
+                                        bg: _tertiaryContainer,
+                                        fgColor: _tertiary,
+                                        icon: Icons.trending_up_rounded,
+                                        value: '+25%',
+                                        label: 'GLOBAL VELOCITY',
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _BentoCard(
+                                        bg: const Color(0xFFff775d),
+                                        fgColor: const Color(0xFF4c0600),
+                                        icon: Icons.local_fire_department,
+                                        value: 'High Heat',
+                                        label: 'COMMUNITY PEAK',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+
+                              // ── Ranks 4+ list ─────────────────────────────
+                              if (leaderboard.length > 3)
+                                ...leaderboard
+                                    .skip(3)
+                                    .toList()
+                                    .asMap()
+                                    .entries
+                                    .map(
+                                      (e) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        child: _RankListTile(
+                                          rank: e.key + 4,
+                                          entry: e.value,
+                                        ),
+                                      ),
+                                    ),
+
+                              // Bottom padding for FAB
+                              const SizedBox(height: 120),
+                            ],
                           ),
                         ),
-
-                      // Bottom padding for FAB
-                      const SizedBox(height: 120),
+                      ),
                     ],
                   ),
-                ),
-              ),
-            ],
-          ),
 
-          // ── Sticky Bottom Button ──────────────────────────────────
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 100,
-            child: _BottomActionBar(
-              isLoading: _isLoading,
-              onPressed: () async {
-                setState(() => _isLoading = true);
-                final target = await RankingApiService.getRandomTarget();
-                if (context.mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          RankingPages(target_user_id: target['id']),
+                  // ── Sticky Bottom Button ──────────────────────────────────
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 100,
+                    child: _BottomActionBar(
+                      isLoading: _isLoading,
+                      onPressed: () async {
+                        setState(() => _isLoading = true);
+                        final target =
+                            await RankingApiService.getRandomTarget();
+                        print(target);
+
+                        //hier morgen weiter
+                        if (context.mounted) {
+                          if (target.isEmpty) {
+                            // Fehler oder bereits abgestimmt
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Du hast heute schon abgestimmt oder ein Fehler ist aufgetreten.',
+                                ),
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    RankingPages(target_user_id: target['id']),
+                              ),
+                            );
+                          }
+                        }
+
+                        if (mounted) setState(() => _isLoading = false);
+                      },
                     ),
-                  );
-                }
-                if (mounted) setState(() => _isLoading = false);
-              },
-            ),
-          ),
-        ],
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -419,20 +440,20 @@ class _ToggleBtn extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: active
                 ? const LinearGradient(
-              colors: [_primary, _primaryFixed],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            )
+                    colors: [_primary, _primaryFixed],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
                 : null,
             borderRadius: BorderRadius.circular(50),
             boxShadow: active
                 ? [
-              BoxShadow(
-                color: _primary.withOpacity(0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ]
+                    BoxShadow(
+                      color: _primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
                 : [],
           ),
           child: Text(
@@ -555,20 +576,20 @@ class _PodiumCard extends StatelessWidget {
               padding: isFirst ? const EdgeInsets.all(3) : EdgeInsets.zero,
               decoration: isFirst
                   ? BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [_tertiary, _tertiaryContainer],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: _tertiary.withOpacity(0.3),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                ],
-              )
+                      gradient: const LinearGradient(
+                        colors: [_tertiary, _tertiaryContainer],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _tertiary.withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    )
                   : null,
               child: CircleAvatar(
                 radius: avatarRadius,
@@ -577,12 +598,12 @@ class _PodiumCard extends StatelessWidget {
                     ? NetworkImage(picUrl)
                     : null,
                 child: (picUrl != null && picUrl.isNotEmpty)
-                    ? Icon(
-                  Icons.person,
-                  size: avatarRadius,
-                  color: _onSurfaceVariant,
-                )
-                    : null,
+                    ? null
+                    : Icon(
+                        Icons.person,
+                        size: avatarRadius,
+                        color: _onSurfaceVariant,
+                      ),
               ),
             ),
             // Rank badge
@@ -598,28 +619,28 @@ class _PodiumCard extends StatelessWidget {
                   border: Border.all(color: _surface, width: 2),
                   boxShadow: isFirst
                       ? [
-                    BoxShadow(
-                      color: _primary.withOpacity(0.4),
-                      blurRadius: 10,
-                    ),
-                  ]
+                          BoxShadow(
+                            color: _primary.withOpacity(0.4),
+                            blurRadius: 10,
+                          ),
+                        ]
                       : [],
                 ),
                 child: Center(
                   child: isFirst
                       ? const Icon(
-                    Icons.workspace_premium_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  )
+                          Icons.workspace_premium_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        )
                       : Text(
-                    '$rank',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: rankFg,
-                    ),
-                  ),
+                          '$rank',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: rankFg,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -632,8 +653,7 @@ class _PodiumCard extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: GoogleFonts.plusJakartaSans(
             fontSize: isFirst ? 15 : 12,
-            fontWeight:
-            isFirst ? FontWeight.w800 : FontWeight.w700,
+            fontWeight: isFirst ? FontWeight.w800 : FontWeight.w700,
             color: _onSurface,
           ),
         ),
@@ -644,17 +664,14 @@ class _PodiumCard extends StatelessWidget {
               : EdgeInsets.zero,
           decoration: isFirst
               ? BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [_primary, _primaryFixed],
-            ),
-            borderRadius: BorderRadius.circular(50),
-            boxShadow: [
-              BoxShadow(
-                color: _primary.withOpacity(0.3),
-                blurRadius: 6,
-              ),
-            ],
-          )
+                  gradient: const LinearGradient(
+                    colors: [_primary, _primaryFixed],
+                  ),
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(color: _primary.withOpacity(0.3), blurRadius: 6),
+                  ],
+                )
               : null,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -725,8 +742,9 @@ class _RankListTile extends StatelessWidget {
           CircleAvatar(
             radius: 22,
             backgroundColor: _surfaceContainerHighest,
-            backgroundImage:
-            (picUrl != null && picUrl.isNotEmpty) ? NetworkImage(picUrl) : null,
+            backgroundImage: (picUrl != null && picUrl.isNotEmpty)
+                ? NetworkImage(picUrl)
+                : null,
             child: picUrl == null
                 ? const Icon(Icons.person, color: _onSurfaceVariant, size: 22)
                 : null,
@@ -845,7 +863,11 @@ class _EmptyLeaderboard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
-          const Icon(Icons.leaderboard_outlined, size: 56, color: _outlineVariant),
+          const Icon(
+            Icons.leaderboard_outlined,
+            size: 56,
+            color: _outlineVariant,
+          ),
           const SizedBox(height: 16),
           Text(
             'Noch keine Rankings heute',
@@ -939,22 +961,22 @@ class _GradientButton extends StatelessWidget {
         ),
         child: isLoading
             ? const SizedBox(
-          width: 24,
-          height: 24,
-          child: CircularProgressIndicator(
-            color: Colors.white,
-            strokeWidth: 2.5,
-          ),
-        )
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
             : Text(
-          label,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 15,
-            fontWeight: FontWeight.w900,
-            color: Colors.white,
-            letterSpacing: 1.0,
-          ),
-        ),
+                label,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: 1.0,
+                ),
+              ),
       ),
     );
   }
@@ -980,7 +1002,9 @@ class _RankingPagesState extends State<RankingPages> {
   }
 
   Future<void> _loadData() async {
-    final data = await RankingApiService.getLastWeekPosts(widget.target_user_id);
+    final data = await RankingApiService.getLastWeekPosts(
+      widget.target_user_id,
+    );
     if (mounted) {
       setState(() {
         weekPosts = data;
@@ -1037,8 +1061,10 @@ class _RankingPagesState extends State<RankingPages> {
               description: categories[sliderIndex]['label']!,
               isLast: sliderIndex == categories.length - 1,
               onChanged: (double value) {
-                final provider =
-                Provider.of<RankingProvider>(context, listen: false);
+                final provider = Provider.of<RankingProvider>(
+                  context,
+                  listen: false,
+                );
                 int intValue = (value * 10).round();
                 provider.updateScore(
                   categories[sliderIndex]['name'].toString(),
@@ -1046,8 +1072,10 @@ class _RankingPagesState extends State<RankingPages> {
                 );
               },
               onComplete: () async {
-                final provider =
-                Provider.of<RankingProvider>(context, listen: false);
+                final provider = Provider.of<RankingProvider>(
+                  context,
+                  listen: false,
+                );
                 provider.trueLoading();
 
                 bool success = await RankingApiService.pushRankingScores(
@@ -1115,8 +1143,10 @@ class SingleRankingPostPage extends StatelessWidget {
                 alignment: Alignment.center,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: const Color(0xFF240306),
-                  child: const Icon(Icons.image_not_supported,
-                      color: Colors.white),
+                  child: const Icon(
+                    Icons.image_not_supported,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
@@ -1152,7 +1182,11 @@ class SingleRankingPostPage extends StatelessWidget {
                       child: const CircleAvatar(
                         radius: 18,
                         backgroundColor: Colors.grey,
-                        child: Icon(Icons.person, size: 20, color: Colors.white),
+                        child: Icon(
+                          Icons.person,
+                          size: 20,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -1219,7 +1253,9 @@ class SingleRankingPostPage extends StatelessWidget {
                       const SizedBox(height: 24),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 10),
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xFFb41b00), Color(0xFFff775d)],
@@ -1229,8 +1265,11 @@ class SingleRankingPostPage extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.favorite,
-                                color: Colors.white, size: 18),
+                            const Icon(
+                              Icons.favorite,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Text(
                               'RANK IT',
@@ -1358,8 +1397,10 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
                   color: const Color(0xFFb41b00),
                 ),
               ),
-              Text(getEmoji(_currentValue),
-                  style: const TextStyle(fontSize: 48)),
+              Text(
+                getEmoji(_currentValue),
+                style: const TextStyle(fontSize: 48),
+              ),
               const SizedBox(height: 48),
               SliderTheme(
                 data: SliderThemeData(
@@ -1390,16 +1431,22 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("LOW",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: Colors.black26)),
-                    Text("PEAK",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: Colors.black26)),
+                    Text(
+                      "LOW",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.black26,
+                      ),
+                    ),
+                    Text(
+                      "PEAK",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.black26,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1517,6 +1564,19 @@ class RankingProvider extends ChangeNotifier {
     _isLoadingLeaderboard = true;
     notifyListeners();
 
+    try {
+      final data = await RankingApiService.getLeaderboard();
+      _leaderboardData = data;
+      _hasFetchedLeaderboard = true;
+    } catch (e) {
+      print("Fehler beim Laden: $e");
+    } finally {
+      _isLoadingLeaderboard = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _refreshLeaderboard() async {
     try {
       final data = await RankingApiService.getLeaderboard();
       _leaderboardData = data;

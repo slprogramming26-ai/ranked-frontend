@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'token_storage.dart';
@@ -40,11 +39,8 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print(data);
       return data;
     }
-    print(response.statusCode);
-    print('Fehler');
     return {};
   }
 
@@ -63,19 +59,15 @@ class ApiService {
       }),
     );
     if (response.statusCode == 201) {
-      print("Nutzer $email konnte erfolgreich erstellt werden");
       return {};
     } else if (response.statusCode == 409) {
       return {"Fehler": "Email oder username schon benutzt"};
     }
-    print(response.statusCode);
-    print('Fehler');
     return {};
   }
 
   static Future<Map<String, dynamic>> addUserDetails(String vibe_factor_1, String vibe_factor_2, String imageUrl, String bio) async {
     final token = await TokenStorage.getToken();
-    print(vibe_factor_1);
 
     final response = await http.put(
       Uri.parse('$baseUrl/users/'),
@@ -90,7 +82,6 @@ class ApiService {
         "biography": bio
       }),
     );
-    print(response.statusCode);
     return {};
 }
 
@@ -106,7 +97,6 @@ class ApiService {
         "ranking_enabled": rankingEnabled,
       }),
     );
-    print(response.statusCode);
     return {};
   }
 
@@ -128,7 +118,6 @@ class ApiService {
       final data = jsonDecode(body);
       return data['image_url'] as String;
     }
-    print('Upload fehlgeschlagen: ${response.statusCode}');
     return null;
   }
 
