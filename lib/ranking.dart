@@ -1535,7 +1535,7 @@ class RankingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await ApiService.getUser();
+      final data = await ApiService.getCurrentUser();
       _userdata = data;
       _hasFetched = true;
     } catch (e) {

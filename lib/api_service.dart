@@ -30,10 +30,24 @@ class ApiService {
 
 
 
-  static Future<Map<String, dynamic>> getUser() async {
+  static Future<Map<String, dynamic>> getCurrentUser() async {
     final token = await TokenStorage.getToken();
     final response = await http.get(
       Uri.parse('$baseUrl/users/'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    }
+    return {};
+  }
+
+  static Future<Map<String, dynamic>> getUser(int userId) async {
+    final token = await TokenStorage.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/users/$userId'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -119,6 +133,20 @@ class ApiService {
       return data['image_url'] as String;
     }
     return null;
+  }
+
+
+  static Future<bool> createFollow(int followeeId, int dir) async {
+    final token = await TokenStorage.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/follow/'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({"followee_id": followeeId, "dir": dir}),
+    );
+    return response.statusCode == 201;
   }
 
 

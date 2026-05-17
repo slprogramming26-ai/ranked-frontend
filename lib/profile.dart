@@ -19,7 +19,7 @@ class ProfileProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final data  = await ApiService.getUser();
+    final data  = await ApiService.getCurrentUser();
     _userdata   = data;
     _isLoading  = false;
     _hasFetched = true;
@@ -29,7 +29,8 @@ class ProfileProvider extends ChangeNotifier {
 
 
 class Profile extends StatefulWidget {
-  const Profile({super.key});
+  final int? targetUserId; // null = eigenes Profil
+  const Profile({super.key, this.targetUserId});
 
   @override
   State<Profile> createState() => _ProfileState();
@@ -47,6 +48,14 @@ class _ProfileState extends State<Profile> {
     'Reading':      Icons.book,
     'Music':        Icons.music_note,
   };
+
+  // Zustand für fremdes Profil
+  Map<String, dynamic> _foreignData = {};
+  bool _foreignLoading = false;
+  bool _isFollowing = false;
+  bool _followLoading = false;
+
+  bool get _isOwn => widget.targetUserId == null;
 
   final List<Map<String, dynamic>> _recentActivity = [
     {
@@ -72,199 +81,243 @@ class _ProfileState extends State<Profile> {
   @override
   void initState() {
     super.initState();
-    // postFrameCallback: context ist in initState noch nicht sicher nutzbar
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ProfileProvider>(context, listen: false).fetchUser();
+      if (_isOwn) {
+        Provider.of<ProfileProvider>(context, listen: false).fetchUser();
+      } else {
+        _fetchForeignUser();
+      }
     });
+  }
+
+  Future<void> _fetchForeignUser() async {
+    setState(() => _foreignLoading = true);
+    final data = await ApiService.getUser(widget.targetUserId!);
+    if (mounted) {
+      setState(() {
+        _foreignData = data;
+        _isFollowing = data['is_followed'] as bool? ?? false;
+        _foreignLoading = false;
+      });
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    setState(() => _followLoading = true);
+    final success = await ApiService.createFollow(
+      widget.targetUserId!,
+      _isFollowing ? 0 : 1,
+    );
+    if (mounted) {
+      setState(() {
+        if (success) _isFollowing = !_isFollowing;
+        _followLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Consumer rebuilt automatisch bei notifyListeners() — kein setState nötig
-    return Consumer<ProfileProvider>(
-      builder: (context, provider, _) {
+    if (_isOwn) {
+      return Consumer<ProfileProvider>(
+        builder: (context, provider, _) {
+          if (provider.isLoading || !provider.hasFetched) {
+            return _loadingScaffold();
+          }
+          return _buildScaffold(provider.userdata);
+        },
+      );
+    }
 
-        if (provider.isLoading || !provider.hasFetched) {
-          return const Scaffold(
-            backgroundColor: AppColors.surface,
-            body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          );
-        }
+    if (_foreignLoading || _foreignData.isEmpty) {
+      return _loadingScaffold();
+    }
+    return _buildScaffold(_foreignData);
+  }
 
-        final data          = provider.userdata;
-        final String username   = data['username']          ?? '';
-        final String biography  = data['biography']         ?? '';
-        final String? avatarUrl = data['profile_picture_url'];
-        final String? vibe1     = data['vibe_factor_1'];
-        final String? vibe2     = data['vibe_factor_2'];
+  Widget _loadingScaffold() => const Scaffold(
+    backgroundColor: AppColors.surface,
+    body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+  );
 
-        return Scaffold(
-          backgroundColor: AppColors.surface,
-          body: Stack(
-            children: [
-              SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).padding.top + 72,
-                  bottom: 32,
+  Widget _buildScaffold(Map<String, dynamic> data) {
+    final String username   = data['username']          ?? '';
+    final String biography  = data['biography']         ?? '';
+    final String? avatarUrl = data['profile_picture_url'];
+    final String? vibe1     = data['vibe_factor_1'];
+    final String? vibe2     = data['vibe_factor_2'];
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 72,
+              bottom: 32,
+            ),
+            child: Column(
+              children: [
+                // ── Profile hero ───────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      // Avatar
+                      Container(
+                        width: 128,
+                        height: 128,
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerHigh,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primary.withOpacity(0.05),
+                            width: 4,
+                          ),
+                        ),
+                        child: ClipOval(
+                          child: avatarUrl != null
+                              ? Image.network(
+                            avatarUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _avatarFallback(username),
+                          )
+                              : _avatarFallback(username),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Text(
+                        username,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.onSurface,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        '@$username',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Text(
+                        biography,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppColors.onSurface,
+                          height: 1.6,
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Vibe chips
+                      if (vibe1 != null || vibe2 != null)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (vibe1 != null) _vibeChip(vibe1),
+                            if (vibe1 != null && vibe2 != null)
+                              const SizedBox(width: 12),
+                            if (vibe2 != null) _vibeChip(vibe2),
+                          ],
+                        ),
+
+                      const SizedBox(height: 28),
+
+                      // Stats row
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.symmetric(
+                            horizontal: BorderSide(
+                              color: AppColors.primary.withOpacity(0.07),
+                            ),
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Row(
+                          children: [
+                            _statCell('#42', 'RANK'),
+                            _statDivider(),
+                            _statCell('12.8k', 'POINTS'),
+                            _statDivider(),
+                            _statCell('982', 'FOLLOWERS'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    // ── Profile hero ───────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
+
+                const SizedBox(height: 32),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: _isOwn
+                      ? _PrimaryButton(label: 'Rank Pulse', onTap: () {})
+                      : _FollowButton(
+                          isFollowing: _isFollowing,
+                          isLoading: _followLoading,
+                          onTap: _toggleFollow,
+                        ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Recent Activity
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Avatar
-                          Container(
-                            width: 128,
-                            height: 128,
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceContainerHigh,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.primary.withOpacity(0.05),
-                                width: 4,
-                              ),
-                            ),
-                            child: ClipOval(
-                              child: avatarUrl != null
-                                  ? Image.network(
-                                avatarUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _avatarFallback(username),
-                              )
-                                  : _avatarFallback(username),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
                           Text(
-                            username,
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.onSurface,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          Text(
-                            '@$username',
+                            'RECENT ACTIVITY',
                             style: GoogleFonts.inter(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.5,
                               color: AppColors.onSurfaceVariant,
                             ),
                           ),
-
-                          const SizedBox(height: 16),
-
-                          Text(
-                            biography,
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: AppColors.onSurface,
-                              height: 1.6,
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Vibe chips
-                          if (vibe1 != null || vibe2 != null)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (vibe1 != null) _vibeChip(vibe1),
-                                if (vibe1 != null && vibe2 != null)
-                                  const SizedBox(width: 12),
-                                if (vibe2 != null) _vibeChip(vibe2),
-                              ],
-                            ),
-
-                          const SizedBox(height: 28),
-
-                          // Stats row
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.symmetric(
-                                horizontal: BorderSide(
-                                  color: AppColors.primary.withOpacity(0.07),
-                                ),
-                              ),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 20),
-                            child: Row(
-                              children: [
-                                _statCell('#42', 'RANK'),
-                                _statDivider(),
-                                _statCell('12.8k', 'POINTS'),
-                                _statDivider(),
-                                _statCell('982', 'FOLLOWERS'),
-                              ],
-                            ),
-                          ),
+                          const Icon(Icons.sort, color: AppColors.primary, size: 20),
                         ],
                       ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: _PrimaryButton(label: 'Rank Pulse', onTap: () {}),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Recent Activity
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'RECENT ACTIVITY',
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1.5,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                              const Icon(Icons.sort, color: AppColors.primary, size: 20),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-                          ..._recentActivity.map((item) => _ActivityItem(
-                            icon:     item['icon']     as IconData,
-                            title:    item['title']    as String,
-                            subtitle: item['subtitle'] as String,
-                            time:     item['time']     as String,
-                          )),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 60),
-                  ],
+                      const SizedBox(height: 20),
+                      ..._recentActivity.map((item) => _ActivityItem(
+                        icon:     item['icon']     as IconData,
+                        title:    item['title']    as String,
+                        subtitle: item['subtitle'] as String,
+                        time:     item['time']     as String,
+                      )),
+                    ],
+                  ),
                 ),
-              ),
 
-              _TopBar(username: username, avatarUrl: avatarUrl),
-            ],
+                const SizedBox(height: 60),
+              ],
+            ),
           ),
-        );
-      },
+
+          _TopBar(username: username, avatarUrl: avatarUrl, isOwn: _isOwn),
+        ],
+      ),
     );
   }
 
@@ -348,7 +401,8 @@ class _ProfileState extends State<Profile> {
 class _TopBar extends StatelessWidget {
   final String username;
   final String? avatarUrl;
-  const _TopBar({required this.username, this.avatarUrl});
+  final bool isOwn;
+  const _TopBar({required this.username, this.avatarUrl, required this.isOwn});
 
   @override
   Widget build(BuildContext context) {
@@ -363,17 +417,23 @@ class _TopBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Mini avatar
-          Container(
-            width: 32,
-            height: 32,
-            clipBehavior: Clip.antiAlias,
-            decoration: const BoxDecoration(shape: BoxShape.circle),
-            child: avatarUrl != null
-                ? Image.network(avatarUrl!, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _fallback())
-                : _fallback(),
-          ),
+          // Links: Mini-Avatar (eigen) oder Zurück-Button (fremd)
+          if (isOwn)
+            Container(
+              width: 32,
+              height: 32,
+              clipBehavior: Clip.antiAlias,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: avatarUrl != null
+                  ? Image.network(avatarUrl!, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _fallback())
+                  : _fallback(),
+            )
+          else
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: const Icon(Icons.arrow_back, color: AppColors.primary, size: 24),
+            ),
 
           // @username
           Text(
@@ -385,12 +445,15 @@ class _TopBar extends StatelessWidget {
             ),
           ),
 
-          // Settings icon
-          GestureDetector(
-            onTap: () {},
-            child: const Icon(Icons.settings_outlined,
-                color: AppColors.primary, size: 24),
-          ),
+          // Rechts: Settings (eigen) oder Platzhalter (fremd)
+          if (isOwn)
+            GestureDetector(
+              onTap: () {},
+              child: const Icon(Icons.settings_outlined,
+                  color: AppColors.primary, size: 24),
+            )
+          else
+            const SizedBox(width: 24),
         ],
       ),
     );
@@ -460,6 +523,66 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ── Follow Button ─────────────────────────────────────────────────────────────
+class _FollowButton extends StatelessWidget {
+  final bool isFollowing;
+  final bool isLoading;
+  final VoidCallback onTap;
+  const _FollowButton({
+    required this.isFollowing,
+    required this.isLoading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isLoading ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isFollowing ? AppColors.surfaceContainerHigh : AppColors.primary,
+          borderRadius: BorderRadius.circular(12),
+          border: isFollowing
+              ? Border.all(color: AppColors.primary.withOpacity(0.3))
+              : null,
+          boxShadow: isFollowing
+              ? null
+              : [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.15),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+        ),
+        alignment: Alignment.center,
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.primary,
+                ),
+              )
+            : Text(
+                isFollowing ? 'Following' : 'Follow',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: isFollowing
+                      ? AppColors.onSurface
+                      : AppColors.surfaceContainerLow,
+                ),
+              ),
       ),
     );
   }

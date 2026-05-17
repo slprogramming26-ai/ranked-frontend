@@ -151,27 +151,28 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final dynamic currentScreen = _screens[_currentIndex];
 
-    if (loged_in == true)
+    if (loged_in == true) {
       return Scaffold(
         backgroundColor: AppColors.surface,
         body: currentScreen,
         floatingActionButton: _currentIndex == 0
             ? FloatingActionButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CreatePost()),
-                  );
-                },
-                backgroundColor: AppColors.primary,
-                child: Text(
-                  '+',
-                  style: TextStyle(color: Colors.white, fontSize: 30),
-                ),
-              )
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CreatePost()),
+            );
+          },
+          backgroundColor: AppColors.primary,
+          child: Text(
+            '+',
+            style: TextStyle(color: Colors.white, fontSize: 30),
+          ),
+        )
             : null,
         extendBody:
-            true, // WICHTIG: Erlaubt dem Body, hinter die Nav-Bar zu fließen
+        true,
+        // WICHTIG: Erlaubt dem Body, hinter die Nav-Bar zu fließen
         bottomNavigationBar: Container(
           margin: const EdgeInsets.all(20), // Lässt die Bar "schweben"
           height: 80,
@@ -202,7 +203,8 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       );
-    else
+    }
+    else {
       return Scaffold(
         resizeToAvoidBottomInset: true,
         backgroundColor: AppColors.surface, // surface-bright
@@ -222,7 +224,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [AppColors.primary, AppColors.primaryContainer],
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primaryContainer
+                            ],
                           ),
                         ),
                         child: const Center(
@@ -230,7 +235,8 @@ class _MyHomePageState extends State<MyHomePage> {
                             'RANKED',
                             style: TextStyle(
                               fontSize: 52,
-                              fontFamily: 'Plus Jakarta Sans', // Falls installiert
+                              fontFamily: 'Plus Jakarta Sans',
+                              // Falls installiert
                               fontWeight: FontWeight.w900,
                               fontStyle: FontStyle.italic,
                               color: Colors.white,
@@ -264,7 +270,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.onSurfaceVariant, // on-surface-variant
+                          color: AppColors
+                              .onSurfaceVariant, // on-surface-variant
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -293,7 +300,8 @@ class _MyHomePageState extends State<MyHomePage> {
                           onPressed: () {},
                           child: const Text(
                             "Forgot password?",
-                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: AppColors.primary,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -302,7 +310,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       if (_errorMessage != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                          child: Text(_errorMessage!, style: const TextStyle(
+                              color: Colors.red)),
                         ),
 
                       // 5. LOGIN BUTTON
@@ -311,7 +320,10 @@ class _MyHomePageState extends State<MyHomePage> {
                         height: 60,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.primaryContainer],
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primaryContainer
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
@@ -326,15 +338,20 @@ class _MyHomePageState extends State<MyHomePage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20)),
                           ),
                           onPressed: _isLoading ? null : _handleLogin,
                           child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(color: Colors
+                              .white)
                               : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text("Login to Feed", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                              Text("Login to Feed", style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold)),
                               SizedBox(width: 10),
                               Icon(Icons.arrow_forward, color: Colors.white),
                             ],
@@ -346,12 +363,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       // 6. DIVIDER
                       Row(
                         children: [
-                          Expanded(child: Divider(color: AppColors.onSurface.withOpacity(0.1))),
+                          Expanded(child: Divider(
+                              color: AppColors.onSurface.withOpacity(0.1))),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text("OR CONTINUE WITH", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant)),
+                            child: Text("OR CONTINUE WITH", style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.onSurfaceVariant)),
                           ),
-                          Expanded(child: Divider(color: AppColors.onSurface.withOpacity(0.1))),
+                          Expanded(child: Divider(
+                              color: AppColors.onSurface.withOpacity(0.1))),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -359,7 +381,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       // 7. SOCIAL LOGINS
                       Row(
                         children: [
-                          Expanded(child: _buildSocialButton("Google", "G")), // Platzhalter für Logo
+                          Expanded(child: _buildSocialButton("Google", "G")),
+                          // Platzhalter für Logo
                           const SizedBox(width: 16),
                           Expanded(child: _buildSocialButton("Apple", "A")),
                         ],
@@ -371,10 +394,15 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("New to Ranked?", style: TextStyle(color: AppColors.onSurfaceVariant)),
+                            const Text("New to Ranked?", style: TextStyle(
+                                color: AppColors.onSurfaceVariant)),
                             TextButton(
-                              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignIn())),
-                              child: const Text("Sign Up", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900)),
+                              onPressed: () =>
+                                  Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) => const SignIn())),
+                              child: const Text("Sign Up", style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w900)),
                             ),
                           ],
                         ),
@@ -388,6 +416,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       );
+    }
   }
 
 // HELPER WIDGETS FÜR DEN CLEANEN LOOK

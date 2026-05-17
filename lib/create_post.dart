@@ -5,6 +5,7 @@ import 'app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
+import 'package:image/image.dart' as img;
 
 class CreatePost extends StatefulWidget {
   const CreatePost({super.key});
@@ -35,11 +36,19 @@ class _CreatePostState extends State<CreatePost> {
 
   final _picker = ImagePicker();
 
+  Future<File?> _fixOrientation(String path) async {
+    final bytes = await File(path).readAsBytes();
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) return null;
+    final fixed = img.encodeJpg(decoded);
+    return await File(path).writeAsBytes(fixed);
+  }
+
   pickImageFromGallery() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      _image = File(pickedFile.path);
+      _image = await _fixOrientation(pickedFile.path) ?? File(pickedFile.path);
       setState(() {});
     }
   }
@@ -48,7 +57,7 @@ class _CreatePostState extends State<CreatePost> {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
-      _image = File(pickedFile.path);
+      _image = await _fixOrientation(pickedFile.path) ?? File(pickedFile.path);
       setState(() {});
     }
   }
