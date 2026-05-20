@@ -1,7 +1,7 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:ranked/api_service.dart';
+import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
 
 
@@ -19,7 +19,7 @@ class ProfileProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final data  = await ApiService.getCurrentUser();
+    final data  = await UserApiService.getCurrentUser();
     _userdata   = data;
     _isLoading  = false;
     _hasFetched = true;
@@ -92,7 +92,7 @@ class _ProfileState extends State<Profile> {
 
   Future<void> _fetchForeignUser() async {
     setState(() => _foreignLoading = true);
-    final data = await ApiService.getUser(widget.targetUserId!);
+    final data = await UserApiService.getUser(widget.targetUserId!);
     if (mounted) {
       setState(() {
         _foreignData = data;
@@ -104,7 +104,7 @@ class _ProfileState extends State<Profile> {
 
   Future<void> _toggleFollow() async {
     setState(() => _followLoading = true);
-    final success = await ApiService.createFollow(
+    final success = await UserApiService.createFollow(
       widget.targetUserId!,
       _isFollowing ? 0 : 1,
     );
@@ -146,6 +146,7 @@ class _ProfileState extends State<Profile> {
     final String? avatarUrl = data['profile_picture_url'];
     final String? vibe1     = data['vibe_factor_1'];
     final String? vibe2     = data['vibe_factor_2'];
+    final int? followerCount = data['follower_count'];
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -255,7 +256,7 @@ class _ProfileState extends State<Profile> {
                             _statDivider(),
                             _statCell('12.8k', 'POINTS'),
                             _statDivider(),
-                            _statCell('982', 'FOLLOWERS'),
+                            _statCell('$followerCount', 'FOLLOWERS'),
                           ],
                         ),
                       ),

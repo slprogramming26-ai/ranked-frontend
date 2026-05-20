@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'package:ranked/main.dart';
-import 'api_service.dart';
+import 'user_api_service.dart';
 import 'package:email_validator/email_validator.dart';
 import 'token_storage.dart';
 import 'dart:io';
@@ -60,7 +60,7 @@ class _SignInState extends State<SignIn> {
       _errorMessage = null;
     });
 
-    final response = await ApiService.createUser(
+    final response = await UserApiService.createUser(
       email_editing_controller.text,
       username_editing_controller.text,
       password_editing_controller.text,
@@ -74,7 +74,7 @@ class _SignInState extends State<SignIn> {
       return;
     }
 
-    final token = await ApiService.login(
+    final token = await UserApiService.login(
       email_editing_controller.text.trim(),
       password_editing_controller.text,
     );
@@ -452,7 +452,7 @@ class _IntroScreenState extends State<IntroScreen> {
     }
 
     try {
-      await ApiService.addUserDetails(
+      await UserApiService.addUserDetails(
         selectedVibes[0],
         selectedVibes[1],
         _finalImageUrl,
@@ -840,7 +840,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
       _isUploading = true;
     });
 
-    final url = await ApiService.uploadUserImage(_image!);
+    final url = await UserApiService.uploadUserImage(_image!);
     if (url != null) {
       widget.onImageUploaded(url);
     }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:ranked/search.dart';
 import 'post_provider.dart';
 import 'post_api_service.dart';
 import 'dart:ui';
@@ -168,7 +169,9 @@ class _PostsFeedState extends State<PostsFeed> {
               ),
             ],
           ),
-          const Icon(Icons.bolt, color: AppColors.primary, size: 28),
+          IconButton(icon: Icon(Icons.search, color: AppColors.primary, size: 28), onPressed: () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => SearchPage()));
+          }),
         ],
       ),
     );
@@ -554,8 +557,8 @@ class _TextPostState extends State<TextPost> {
                     color: AppColors.primary,
                     isBold: true,
                     onTap: () async {
-                      print('Ausgelöst');
-                      // final success = await PostApiService.deletePost(post_id);
+
+                      final success = await PostApiService.deletePost(widget.post_id);
                       Navigator.pop(context);
                     },
                   ),

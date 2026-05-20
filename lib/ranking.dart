@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ranked/ranking_api_service.dart';
 import "main.dart";
 import 'package:google_fonts/google_fonts.dart';
-import 'api_service.dart';
+import 'user_api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
@@ -138,7 +138,7 @@ class _RankingHomeState extends State<RankingHome> {
                       isLoading: _isLoading,
                       onPressed: () async {
                         setState(() => _isLoading = true);
-                        await ApiService.setRankingEnabled(true);
+                        await UserApiService.setRankingEnabled(true);
                         await provider._fetch_user_credentials();
                         setState(() => _isLoading = false);
                       },
@@ -1535,7 +1535,7 @@ class RankingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final data = await ApiService.getCurrentUser();
+      final data = await UserApiService.getCurrentUser();
       _userdata = data;
       _hasFetched = true;
     } catch (e) {

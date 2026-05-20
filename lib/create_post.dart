@@ -87,23 +87,47 @@ class _CreatePostState extends State<CreatePost> {
     return 1.0;
   }
 
+  static const _kPremiumShadow = [
+    BoxShadow(
+      color: Color(0x0DB41B00),
+      blurRadius: 30,
+      offset: Offset(0, 10),
+      spreadRadius: -5,
+    ),
+    BoxShadow(
+      color: Color(0x05000000),
+      blurRadius: 15,
+      offset: Offset(0, 4),
+      spreadRadius: -5,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: const Color(0xFFFFFAF9),
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: Colors.white.withOpacity(0.6),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: AppColors.primary),
-          onPressed: () => Navigator.pop(context),
+        surfaceTintColor: Colors.transparent,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: AppColors.outlineVariant.withOpacity(0.1)),
+        ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: IconButton(
+            icon: Icon(Icons.close, color: AppColors.onSurface.withOpacity(0.7)),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
         title: Text(
           'Create Post',
           style: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w800,
             color: AppColors.primary,
-            fontSize: 18,
+            fontSize: 20,
+            letterSpacing: -0.5,
           ),
         ),
         actions: [
@@ -113,7 +137,6 @@ class _CreatePostState extends State<CreatePost> {
               onPressed: () async {
                 String? imageUrl;
                 _showLoadingDialog(context);
-                // Erst Bild hochladen falls vorhanden
                 if (_image != null) {
                   imageUrl = await PostApiService.uploadPostImage(_image!);
 
@@ -123,12 +146,11 @@ class _CreatePostState extends State<CreatePost> {
                     Navigator.pop(context);
 
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Bild-Upload fehlgeschlagen')),
+                      const SnackBar(content: Text('Bild-Upload fehlgeschlagen')),
                     );
 
                     return;
                   }
-
                 }
 
                 final success = await PostApiService.createPost(
@@ -136,19 +158,17 @@ class _CreatePostState extends State<CreatePost> {
                   contentController.text,
                   isPublic,
                   imageUrl,
-                    iconActivated.entries.where((e) => e.value).map((e) => e.key).firstOrNull
+                  iconActivated.entries.where((e) => e.value).map((e) => e.key).firstOrNull,
                 );
 
                 if (!context.mounted) return;
                 Navigator.pop(context);
 
                 if (success) {
-                  Navigator.pop(context); // CreatePost schließen
+                  Navigator.pop(context);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Post konnte nicht erstellt werden'),
-                    ),
+                    const SnackBar(content: Text('Post konnte nicht erstellt werden')),
                   );
                 }
               },
@@ -157,172 +177,244 @@ class _CreatePostState extends State<CreatePost> {
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.4),
+                shadowColor: AppColors.primary.withOpacity(0.3),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
               ),
-              child: const Text(
+              child: Text(
                 'Post',
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
               ),
             ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. MEDIA SELECTION AREA (Bento Style)
-            Container(
-              width: double.infinity,
-              height: 300,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainer,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: AppColors.primary.withOpacity(0.1),
-                  width: 2,
-                ),
-              ),
+            // 1. MEDIA UPLOAD AREA
+            AspectRatio(
+              aspectRatio: 4 / 5,
               child: _image == null
-                  ? Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.add_a_photo,
-                            color: AppColors.primary,
-                            size: 40,
-                          ),
+                  ? CustomPaint(
+                      painter: _DashedBorderPainter(
+                        color: AppColors.outlineVariant.withOpacity(0.4),
+                        strokeWidth: 2,
+                        borderRadius: 28,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.02),
+                          borderRadius: BorderRadius.circular(28),
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Drop your Pulse',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 20,
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 40,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            'Share a photo or video to start climbing the rankings.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppColors.onSurfaceVariant,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            InkWell(
-                              onTap: () {
-                                pickImageFromGallery();
-                              },
-                              child: _buildMediaButton(Icons.image, "Library"),
-                            ),
-                            const SizedBox(width: 12),
-                            InkWell(
-                              onTap: () {
-                                pickImageFromCamera();
-                              },
-                              child: _buildMediaButton(
-                                Icons.videocam,
-                                "Camera",
+                            Container(
+                              width: 96,
+                              height: 96,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: _kPremiumShadow,
                               ),
+                              child: const Icon(
+                                Icons.add_a_photo_outlined,
+                                color: AppColors.primary,
+                                size: 44,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              'Drop your Pulse',
+                              style: GoogleFonts.plusJakartaSans(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 22,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 48),
+                              child: Text(
+                                'Share a photo or video to start climbing the rankings.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.onSurfaceVariant.withOpacity(0.8),
+                                  fontSize: 13,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                GestureDetector(
+                                  onTap: pickImageFromGallery,
+                                  child: _buildMediaButton(Icons.image_outlined, 'Library'),
+                                ),
+                                const SizedBox(width: 12),
+                                GestureDetector(
+                                  onTap: pickImageFromCamera,
+                                  child: _buildMediaButton(Icons.videocam_outlined, 'Camera'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
+                      ),
                     )
-                  : Image.file(_image!),
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Image.file(
+                        _image!,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: double.infinity,
+                      ),
+                    ),
             ),
 
             const SizedBox(height: 24),
 
-            // 2. CAPTION AREA
+            // 2. CAPTION CARD
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainerLow,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.outlineVariant.withOpacity(0.1)),
+                boxShadow: _kPremiumShadow,
               ),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      const CircleAvatar(
-                        radius: 20,
-                        backgroundColor: AppColors.surfaceContainerHigh,
-                        child: Text(
-                          "ME",
-                          style: TextStyle(color: AppColors.onSurface),
-                        ),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.person, color: AppColors.onSurfaceVariant, size: 24),
+                          ),
+                          Positioned(
+                            bottom: -2,
+                            right: -2,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        "Ich",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w700,
-                        ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ich',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Creator',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurfaceVariant.withOpacity(0.6),
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                  const SizedBox(height: 4),
                   TextField(
                     controller: titleController,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
                     ),
-                    decoration: const InputDecoration(
-                      hintText: "Post Title",
+                    decoration: InputDecoration(
+                      hintText: 'Post title...',
                       border: InputBorder.none,
-                      hintStyle: TextStyle(color: AppColors.outlineVariant),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      hintStyle: TextStyle(
+                        color: AppColors.outlineVariant.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                   TextField(
                     controller: contentController,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      hintText: "Write a caption...",
+                    maxLines: 5,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: AppColors.onSurface,
+                      height: 1.55,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Tell your story...',
                       border: InputBorder.none,
-                      hintStyle: TextStyle(color: AppColors.outlineVariant),
+                      contentPadding: EdgeInsets.zero,
+                      hintStyle: TextStyle(
+                        color: AppColors.outlineVariant.withOpacity(0.7),
+                        fontSize: 15,
+                      ),
                     ),
                   ),
-                  const Divider(color: Color(0x1F834C4F)),
+                  const SizedBox(height: 16),
+                  Divider(color: AppColors.outlineVariant.withOpacity(0.15), height: 1),
+                  const SizedBox(height: 14),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.alternate_email,
-                        color: AppColors.outlineVariant,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 16),
-                      const Icon(Icons.tag, color: AppColors.outlineVariant, size: 20),
-                      const SizedBox(width: 16),
-                      const Icon(
-                        Icons.mood,
-                        color: AppColors.outlineVariant,
-                        size: 20,
-                      ),
+                      _buildCaptionAction(Icons.alternate_email),
+                      const SizedBox(width: 20),
+                      _buildCaptionAction(Icons.tag),
+                      const SizedBox(width: 20),
+                      _buildCaptionAction(Icons.mood_outlined),
                       const Spacer(),
-                      Text(
-                        "${contentController.text.length}/2200",
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.outlineVariant,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${contentController.text.length}/2200',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.outlineVariant,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
                     ],
@@ -331,65 +423,91 @@ class _CreatePostState extends State<CreatePost> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // 3. TAGS SECTION
             Row(
               children: [
-                const Icon(Icons.bolt, color: AppColors.primary),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.bolt, color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 10),
                 Text(
-                  "Tag your Pulse",
+                  'Tag your Pulse',
                   style: GoogleFonts.plusJakartaSans(
                     fontWeight: FontWeight.w800,
-                    fontSize: 18,
+                    fontSize: 20,
+                    letterSpacing: -0.5,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            _buildCategoryItem(
-              Icons.rocket_launch,
-              "Productivity",
-              "Climb the efficiency ladder",
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 2, bottom: 16),
+              child: Text(
+                'Categorize your post to compete in specific leaderboards.',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.onSurfaceVariant.withOpacity(0.7),
+                ),
+              ),
             ),
-            _buildCategoryItem(
-              Icons.palette,
-              "Creativity",
-              "Express the inner vision",
-            ),
-            _buildCategoryItem(
-              Icons.chat,
-              "Engagement",
-              "Drive the conversation",
-            ),
+            _buildCategoryItem(Icons.rocket_launch_outlined, 'Productivity', 'Climb the efficiency ladder'),
+            _buildCategoryItem(Icons.palette_outlined, 'Creativity', 'Express the inner vision'),
+            _buildCategoryItem(Icons.forum_outlined, 'Engagement', 'Drive the conversation'),
 
             const SizedBox(height: 24),
 
             // 4. VISIBILITY SWITCH
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
-                color: AppColors.surfaceContainer,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.outlineVariant.withOpacity(0.1)),
+                boxShadow: _kPremiumShadow,
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.public, color: AppColors.onSurfaceVariant),
-                  const SizedBox(width: 12),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerHigh,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.public,
+                      color: AppColors.onSurfaceVariant,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Public Post",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                      Text(
+                        'Public Post',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        "Visible to the global Pulse",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                        'Visible to the global Pulse',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.onSurfaceVariant.withOpacity(0.7),
+                        ),
                       ),
                     ],
                   ),
@@ -402,18 +520,32 @@ class _CreatePostState extends State<CreatePost> {
                 ],
               ),
             ),
+
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildCaptionAction(IconData icon) {
+    return Icon(icon, color: AppColors.onSurfaceVariant.withOpacity(0.7), size: 20);
+  }
+
   Widget _buildMediaButton(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white.withOpacity(0.85),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -421,7 +553,10 @@ class _CreatePostState extends State<CreatePost> {
           const SizedBox(width: 8),
           Text(
             label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            style: GoogleFonts.plusJakartaSans(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
           ),
         ],
       ),
@@ -432,78 +567,127 @@ class _CreatePostState extends State<CreatePost> {
     bool isActive = iconActivated[title] ?? false;
 
     return GestureDetector(
-      onTap: () {
-        _toggleIcon(title);
-      },
+      onTap: () => _toggleIcon(title),
       child: AnimatedOpacity(
-        // Nutzt die Hilfsmethode für den Opacity-Wert
         opacity: _getOpacityForTag(title),
-        duration: const Duration(milliseconds: 250), // Sanfter Übergang beim Ghosting
+        duration: const Duration(milliseconds: 250),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainer,
-            borderRadius: BorderRadius.circular(16),
-            // Optional: Ein subtiler Rand, wenn aktiv
-            border: isActive
-                ? Border.all(color: AppColors.primary.withOpacity(0.5), width: 1)
-                : Border.all(color: Colors.transparent, width: 1),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isActive
+                  ? AppColors.primary.withOpacity(0.25)
+                  : AppColors.outlineVariant.withOpacity(0.12),
+            ),
+            boxShadow: isActive ? _kPremiumShadow : [],
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(8),
+                  color: isActive
+                      ? AppColors.primary.withOpacity(0.1)
+                      : AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: AppColors.primary),
+                child: Icon(icon, color: AppColors.primary, size: 22),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text(subtitle,
-                      style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic)),
+                  Text(
+                    title,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      color: isActive ? AppColors.primary : AppColors.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.onSurfaceVariant.withOpacity(0.6),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
               const Spacer(),
-
-              // --- HIER IST DIE ANIMATION ---
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300), // Dauer der Drehung/Fades
+                duration: const Duration(milliseconds: 300),
                 transitionBuilder: (Widget child, Animation<double> animation) {
-                  // Das neue Icon dreht sich von -90 Grad (pi/2) auf 0 Grad
                   return RotationTransition(
                     turns: Tween<double>(begin: -0.25, end: 0.0).animate(animation),
                     child: FadeTransition(opacity: animation, child: child),
                   );
                 },
-                // WICHTIG: Das 'key' Attribut sagt Flutter, welches Icon sich ändert
                 child: isActive
                     ? Icon(
-                  Icons.check,
-                  key: const ValueKey('checkIcon'), // Eindeutiger Key
-                  color: AppColors.primary, // Kräftigere Farbe für 'aktiv'
-                )
+                        Icons.check_circle_rounded,
+                        key: const ValueKey('checkIcon'),
+                        color: AppColors.primary,
+                        size: 26,
+                      )
                     : Icon(
-                  Icons.add,
-                  key: const ValueKey('addIcon'), // Eindeutiger Key
-                  color: AppColors.outlineVariant,
-                ),
+                        Icons.add_circle_outline_rounded,
+                        key: const ValueKey('addIcon'),
+                        color: AppColors.outlineVariant,
+                        size: 26,
+                      ),
               ),
-              // ------------------------------
             ],
           ),
         ),
       ),
     );
   }
+}
 
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double borderRadius;
 
+  const _DashedBorderPainter({
+    required this.color,
+    required this.strokeWidth,
+    required this.borderRadius,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    const dashWidth = 10.0;
+    const dashSpace = 7.0;
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+        Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth),
+        Radius.circular(borderRadius),
+      ));
+
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(metric.extractPath(distance, distance + dashWidth), paint);
+        distance += dashWidth + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 void _showLoadingDialog(BuildContext context) {

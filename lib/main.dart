@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:ranked/messenger.dart';
 import 'package:ranked/ranking.dart';
 import 'posts_feed.dart';
 import 'profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'token_storage.dart';
-import 'api_service.dart';
+import 'user_api_service.dart';
 import 'create_post.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
@@ -12,6 +13,7 @@ import 'package:provider/provider.dart';
 import 'post_provider.dart';
 import 'sign_in.dart';
 import 'app_colors.dart';
+import 'search.dart';
 
 
 void main() {
@@ -92,10 +94,14 @@ class _MyHomePageState extends State<MyHomePage> {
   late TextEditingController email_editing_controller;
   late TextEditingController password_editing_controller;
   bool? loged_in = false;
+  // Nav order: Feed(0) | Ranked(1) | [+Create] | Messenger(2) | Profile(3)
+  // SearchPage at index 4 – not in nav bar, add as 5th item later
   final List<Widget> _screens = [
     PostsFeed(),
     RankingHome(),
+    MessengerHomescreen(),
     Profile(),
+    SearchPage(),
   ];
 
   @override
@@ -127,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _errorMessage = null;
     });
 
-    final token = await ApiService.login(
+    final token = await UserApiService.login(
       email_editing_controller.text.trim(),
       password_editing_controller.text,
     );
@@ -154,54 +160,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if (loged_in == true) {
       return Scaffold(
         backgroundColor: AppColors.surface,
+        extendBody: true,
         body: currentScreen,
-        floatingActionButton: _currentIndex == 0
-            ? FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => CreatePost()),
-            );
-          },
-          backgroundColor: AppColors.primary,
-          child: Text(
-            '+',
-            style: TextStyle(color: Colors.white, fontSize: 30),
-          ),
-        )
-            : null,
-        extendBody:
-        true,
-        // WICHTIG: Erlaubt dem Body, hinter die Nav-Bar zu fließen
-        bottomNavigationBar: Container(
-          margin: const EdgeInsets.all(20), // Lässt die Bar "schweben"
-          height: 80,
-          decoration: BoxDecoration(
-            color: AppColors.surface.withOpacity(0.8),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(30),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Glass-Effekt
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildNavItem(Icons.dynamic_feed, "Feed", 0),
-                  _buildNavItem(Icons.leaderboard, "Rank", 1),
-                  _buildNavItem(Icons.person, "Profile", 2),
-                ],
-              ),
-            ),
-          ),
-        ),
+        bottomNavigationBar: _buildFloatingNav(context),
       );
     }
     else {
@@ -456,37 +417,132 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
-    bool isSelected = _currentIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: isSelected
-            ? BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryContainer],
-                ),
-                borderRadius: BorderRadius.circular(20),
-              )
-            : null,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildFloatingNav(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: SizedBox(
+        height: 76,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : AppColors.onSurface,
-            ),
-            if (isSelected)
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
+            // Glass bar
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.88),
+                  borderRadius: BorderRadius.circular(40),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.6),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.12),
+                      blurRadius: 40,
+                      offset: const Offset(0, 10),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Row(
+                      children: [
+                        _buildNavTab(Icons.home_outlined, Icons.home_rounded, 0),
+                        _buildNavTab(Icons.leaderboard_outlined, Icons.leaderboard_rounded, 1),
+                        const SizedBox(width: 72),
+                        _buildNavTab(Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 2),
+                        _buildNavTab(Icons.person_outline_rounded, Icons.person_rounded, 3),
+                      ],
+                    ),
+                  ),
                 ),
               ),
+            ),
+
+            // Center Create button (elevated above bar)
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreatePost()),
+              ),
+              child: Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryContainer],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.45),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavTab(IconData icon, IconData activeIcon, int index) {
+    final bool isSelected = _currentIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _currentIndex = index),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) => ScaleTransition(
+                scale: animation,
+                child: FadeTransition(opacity: animation, child: child),
+              ),
+              child: Icon(
+                isSelected ? activeIcon : icon,
+                key: ValueKey(isSelected),
+                color: isSelected
+                    ? AppColors.primary
+                    : AppColors.onSurfaceVariant.withOpacity(0.45),
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 5),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutBack,
+              width: isSelected ? 20 : 4,
+              height: 3,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ],
         ),
       ),

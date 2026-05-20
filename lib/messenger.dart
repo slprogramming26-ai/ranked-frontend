@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 
-class Messenger_Homescreen extends StatefulWidget {
-  const Messenger_Homescreen({super.key});
+class MessengerHomescreen extends StatefulWidget {
+  const MessengerHomescreen({super.key});
 
   @override
-  State<Messenger_Homescreen> createState() => _Messenger_HomescreenState();
+  State<MessengerHomescreen> createState() => _MessengerHomescreenState();
 }
 
-class _Messenger_HomescreenState extends State<Messenger_Homescreen> {
+class _MessengerHomescreenState extends State<MessengerHomescreen> {
   @override
   Widget build(BuildContext context) {
     return const Placeholder();

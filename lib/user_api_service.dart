@@ -4,7 +4,7 @@ import 'token_storage.dart';
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 
-class ApiService {
+class UserApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
   static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
 
@@ -56,6 +56,23 @@ class ApiService {
       return data;
     }
     return {};
+  }
+
+  static Future<List<Map<String, dynamic>>> getUserByUsername(String username) async {
+    final token = await TokenStorage.getToken();
+    final uri = Uri.parse('$baseUrl/users/search').replace(
+      queryParameters: {'search': username},
+    );
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+      return data.cast<Map<String, dynamic>>();
+    }
+    return [];
   }
 
   static Future<Map<String, dynamic>> createUser(
