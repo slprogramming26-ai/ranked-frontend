@@ -1,0 +1,4 @@
+- [User profile](user_profile.md) — German-speaking Flutter learner, wants teaching-style explanations
+- [Project: Ranked chat](project_chat.md) — FastAPI WebSocket backend + Flutter frontend in progress
+- [Feedback: pacing](feedback_pace.md) — one tiny building block per reply, wait for "verstanden" before next step
+- [Feedback: learn logic not design](feedback_learning_logic.md) — teach the logic deeply; design can be generated without explanation

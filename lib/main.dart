@@ -14,15 +14,19 @@ import 'post_provider.dart';
 import 'sign_in.dart';
 import 'app_colors.dart';
 import 'search.dart';
+import "local_data/database.dart";
 
 
 void main() {
+  final db = AppDatabase();
+  
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => RankingProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
-        ChangeNotifierProvider(create: (_) => ProfileProvider())
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        Provider.value(value: db)
       ],
       child: const MyApp(),
     ),
@@ -56,7 +60,7 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );

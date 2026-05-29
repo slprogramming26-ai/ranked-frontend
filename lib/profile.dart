@@ -110,8 +110,8 @@ class _ProfileState extends State<Profile> {
     );
     if (mounted) {
       setState(() {
-        if (success) _isFollowing = !_isFollowing;
         _followLoading = false;
+        if (success) _isFollowing = !_isFollowing;
       });
     }
   }
@@ -588,6 +588,9 @@ class _FollowButton extends StatelessWidget {
     );
   }
 }
+
+
+
 
 // ── Activity Item ─────────────────────────────────────────────────────────────
 class _ActivityItem extends StatelessWidget {

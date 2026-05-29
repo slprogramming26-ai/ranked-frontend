@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
 import 'profile.dart';
+import 'local_data/database.dart';
+import 'package:provider/provider.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -28,9 +30,68 @@ class _SearchPageState extends State<SearchPage> {
     super.dispose();
   }
 
+  Future<void> _confirmClearHistory(BuildContext context) async {
+    final db = context.read<AppDatabase>();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceContainerHigh,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Clear search history?',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          'This will remove all recent searches from this device.',
+          style: GoogleFonts.inter(
+            color: AppColors.onSurfaceVariant,
+            fontSize: 14,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Clear',
+              style: GoogleFonts.inter(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await db.clearSearchHistory();
+    }
+  }
 
+  void _openProfile(
+    int userId,
+    String username, {
+    String? avatarUrl,
+    String? vibe1,
+    String? vibe2,
+  }) {
+    final db = Provider.of<AppDatabase>(context, listen: false);
 
-  void _openProfile(int userId) {
+    unawaited(
+      db.saveUserSearchHistory(
+        userId,
+        username,
+        avatarUrl: avatarUrl,
+        vibe1: vibe1,
+        vibe2: vibe2,
+      ),
+    );
     _searchController.closeView(null);
     Navigator.push(
       context,
@@ -58,13 +119,71 @@ class _SearchPageState extends State<SearchPage> {
                   icon: const Icon(Icons.arrow_back, color: AppColors.primary),
                   onPressed: () => _searchController.closeView(null),
                 ),
-                builder: (context, controller) => _SearchBarStub(
-                  onTap: controller.openView,
-                ),
+                builder: (context, controller) =>
+                    _SearchBarStub(onTap: controller.openView),
                 // Hier passiert jetzt die Magie – kurz und knackig:
                 suggestionsBuilder: (context, controller) {
                   return _handleSearch(controller.text.trim(), controller);
                 },
+              ),
+              const SizedBox(height: 28),
+              Expanded(
+                child: StreamBuilder<List<UserSearchHistoryData>>(
+                  stream: context.read<AppDatabase>().watchRecentSearches(
+                    limit: 10,
+                  ),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const _HistoryLoading();
+                    }
+                    final history = snapshot.data!;
+
+                    if (history.isEmpty) {
+                      return const _HistoryEmpty();
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _HistoryHeader(
+                          count: history.length,
+                          onClear: () => _confirmClearHistory(context),
+                        ),
+                        const SizedBox(height: 12),
+                        Expanded(
+                          child: ListView.separated(
+                            padding: const EdgeInsets.only(bottom: 24),
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: history.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 6),
+                            itemBuilder: (context, index) {
+                              final entry = history[index];
+                              return _HistoryTile(
+                                key: ValueKey(entry.id),
+                                username: entry.username,
+                                avatarUrl: entry.avatarUrl,
+                                vibe1: entry.vibe1,
+                                vibe2: entry.vibe2,
+                                clickedAt: entry.clickedAt,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => Profile(
+                                        targetUserId: entry.userId,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -75,7 +194,9 @@ class _SearchPageState extends State<SearchPage> {
 
   Iterable<Widget> _renderResults(List<Map<String, dynamic>> results) {
     if (results.isEmpty) {
-      return const [_HintTile(icon: Icons.person_off_outlined, text: 'No users found')];
+      return const [
+        _HintTile(icon: Icons.person_off_outlined, text: 'No users found'),
+      ];
     }
 
     return results.map((user) {
@@ -86,15 +207,26 @@ class _SearchPageState extends State<SearchPage> {
         avatarUrl: user['profile_picture_url'] as String?,
         vibe1: user['vibe_factor_1'] as String?,
         vibe2: user['vibe_factor_2'] as String?,
-        onTap: () => _openProfile(id),
+        onTap: () => _openProfile(
+          id,
+          (user['username'] as String?) ?? '',
+          avatarUrl: user['profile_picture_url'] as String?,
+          vibe1: user['vibe_factor_1'] as String?,
+          vibe2: user['vibe_factor_2'] as String?,
+        ),
       );
     });
   }
 
-  Future<Iterable<Widget>> _handleSearch(String text, SearchController controller) async {
+  Future<Iterable<Widget>> _handleSearch(
+    String text,
+    SearchController controller,
+  ) async {
     // 1. Zu kurz? Sofort Hinweis zurückgeben
     if (text.length < _minQueryLength) {
-      return const [_HintTile(icon: Icons.search, text: 'Type at least 2 characters')];
+      return const [
+        _HintTile(icon: Icons.search, text: 'Type at least 2 characters'),
+      ];
     }
 
     // 2. Haben wir das schon mal gesucht? Cache nutzen!
@@ -116,10 +248,11 @@ class _SearchPageState extends State<SearchPage> {
 
       return _renderResults(results);
     } catch (_) {
-      return const [_HintTile(icon: Icons.error_outline, text: 'Something went wrong.')];
+      return const [
+        _HintTile(icon: Icons.error_outline, text: 'Something went wrong.'),
+      ];
     }
   }
-
 }
 
 class _SearchBarStub extends StatelessWidget {
@@ -175,8 +308,10 @@ class _UserResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtitle =
-        [vibe1, vibe2].whereType<String>().where((s) => s.isNotEmpty).join(' · ');
+    final subtitle = [
+      vibe1,
+      vibe2,
+    ].whereType<String>().where((s) => s.isNotEmpty).join(' · ');
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -225,8 +360,11 @@ class _UserResultTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right,
-                color: AppColors.onSurfaceVariant, size: 20),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.onSurfaceVariant,
+              size: 20,
+            ),
           ],
         ),
       ),
@@ -234,17 +372,17 @@ class _UserResultTile extends StatelessWidget {
   }
 
   Widget _avatarFallback(String name) => Container(
-        color: AppColors.surfaceContainerHighest,
-        alignment: Alignment.center,
-        child: Text(
-          name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            color: AppColors.primary,
-          ),
-        ),
-      );
+    color: AppColors.surfaceContainerHighest,
+    alignment: Alignment.center,
+    child: Text(
+      name.isNotEmpty ? name[0].toUpperCase() : '?',
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+        color: AppColors.primary,
+      ),
+    ),
+  );
 }
 
 class _HintTile extends StatelessWidget {
@@ -288,6 +426,303 @@ class _LoadingTile extends StatelessWidget {
             strokeWidth: 2,
             color: AppColors.primary,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryHeader extends StatelessWidget {
+  final int count;
+  final VoidCallback onClear;
+  const _HistoryHeader({required this.count, required this.onClear});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 16,
+          decoration: BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          'Recent',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            color: AppColors.onSurface,
+            letterSpacing: -0.3,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '$count',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+        const Spacer(),
+        TextButton.icon(
+          onPressed: onClear,
+          style: TextButton.styleFrom(
+            foregroundColor: AppColors.onSurfaceVariant,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+          icon: const Icon(Icons.delete_outline, size: 16),
+          label: Text(
+            'Clear',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HistoryTile extends StatelessWidget {
+  final String username;
+  final String? avatarUrl;
+  final String? vibe1;
+  final String? vibe2;
+  final DateTime clickedAt;
+  final VoidCallback onTap;
+
+  const _HistoryTile({
+    super.key,
+    required this.username,
+    required this.avatarUrl,
+    required this.vibe1,
+    required this.vibe2,
+    required this.clickedAt,
+    required this.onTap,
+  });
+
+  String _formatRelative(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${(diff.inDays / 7).floor()}w ago';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final subtitle = [vibe1, vibe2]
+        .whereType<String>()
+        .where((s) => s.isNotEmpty)
+        .join(' · ');
+
+    return Material(
+      color: AppColors.surfaceContainerHigh.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceContainerHighest,
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    width: 1.5,
+                  ),
+                ),
+                child: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                    ? Image.network(
+                        avatarUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => _avatarFallback(),
+                      )
+                    : _avatarFallback(),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '@$username',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.history_rounded,
+                          size: 12,
+                          color: AppColors.onSurfaceVariant.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatRelative(clickedAt),
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                        if (subtitle.isNotEmpty) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 3,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              color: AppColors.onSurfaceVariant.withValues(
+                                alpha: 0.4,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_outward_rounded,
+                  color: AppColors.primary,
+                  size: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _avatarFallback() => Container(
+        color: AppColors.surfaceContainerHighest,
+        alignment: Alignment.center,
+        child: Text(
+          username.isNotEmpty ? username[0].toUpperCase() : '?',
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: AppColors.primary,
+          ),
+        ),
+      );
+}
+
+class _HistoryEmpty extends StatelessWidget {
+  const _HistoryEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.travel_explore_rounded,
+              color: AppColors.primary,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'No recent searches',
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Start exploring – your last searches\nwill show up here.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.onSurfaceVariant,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistoryLoading extends StatelessWidget {
+  const _HistoryLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.only(top: 40, bottom: 24),
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: 4,
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (_, __) => Container(
+        height: 70,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHigh.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(18),
         ),
       ),
     );
