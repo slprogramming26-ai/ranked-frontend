@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:ranked/ranking_api_service.dart';
-import "main.dart";
+import 'package:ranked/ranking/ranking_api_service.dart';
+import "../main.dart";
 import 'package:google_fonts/google_fonts.dart';
-import 'user_api_service.dart';
+import '../user_api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:ui';
-import 'app_colors.dart';
+import '../app_colors.dart';
+import 'package:flutter/services.dart';
 
 // ─── RankingHome ─────────────────────────────────────────────────────────────
 class RankingHome extends StatefulWidget {
@@ -37,7 +38,9 @@ class _RankingHomeState extends State<RankingHome> {
     if (provider.isLoadingHome || provider.userdata.isEmpty) {
       return const Scaffold(
         backgroundColor: AppColors.surface,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
@@ -89,7 +92,10 @@ class _RankingHomeState extends State<RankingHome> {
                         height: 88,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.primaryContainer],
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primaryContainer,
+                            ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -175,8 +181,6 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RankingProvider>(context);
@@ -219,7 +223,9 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
         onRefresh: () => provider._refreshLeaderboard(),
 
         child: provider.isLoadingLeaderboard
-            ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
             : Stack(
                 children: [
                   CustomScrollView(
@@ -564,7 +570,10 @@ class _PodiumCard extends StatelessWidget {
               decoration: isFirst
                   ? BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [AppColors.tertiary, AppColors.tertiaryContainer],
+                        colors: [
+                          AppColors.tertiary,
+                          AppColors.tertiaryContainer,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -656,7 +665,10 @@ class _PodiumCard extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(50),
                   boxShadow: [
-                    BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 6),
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 6,
+                    ),
                   ],
                 )
               : null,
@@ -733,7 +745,11 @@ class _RankListTile extends StatelessWidget {
                 ? NetworkImage(picUrl)
                 : null,
             child: picUrl == null
-                ? const Icon(Icons.person, color: AppColors.onSurfaceVariant, size: 22)
+                ? const Icon(
+                    Icons.person,
+                    color: AppColors.onSurfaceVariant,
+                    size: 22,
+                  )
                 : null,
           ),
           const SizedBox(width: 12),
@@ -763,7 +779,11 @@ class _RankListTile extends StatelessWidget {
           ),
           Row(
             children: [
-              const Icon(Icons.bolt_rounded, size: 16, color: AppColors.primary),
+              const Icon(
+                Icons.bolt_rounded,
+                size: 16,
+                color: AppColors.primary,
+              ),
               Text(
                 _avgScore().toStringAsFixed(1),
                 style: GoogleFonts.plusJakartaSans(
@@ -1245,7 +1265,10 @@ class SingleRankingPostPage extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.primaryContainer],
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primaryContainer,
+                            ],
                           ),
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -1410,6 +1433,10 @@ class _RankedSliderPageState extends State<RankedSliderPage> {
                   onChanged: (value) {
                     setState(() => _currentValue = value);
                     widget.onChanged(value);
+
+                    if ((value * 10).round() % 10 == 0) {
+                      HapticFeedback.heavyImpact();
+                    }
                   },
                 ),
               ),

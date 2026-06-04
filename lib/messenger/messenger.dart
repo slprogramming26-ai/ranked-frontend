@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:drift/drift.dart' hide Column;
-import 'package:ranked/conversation.dart';
+import 'package:ranked/messenger/conversation.dart';
 import 'package:ranked/local_data/database.dart';
 import 'messenger_api_service.dart';
-import 'profile.dart';
+import '../profile.dart';
 import 'chat_screen.dart';
-import 'app_colors.dart';
-import 'user_api_service.dart';
+import '../app_colors.dart';
+import '../user_api_service.dart';
 
 class MessengerHomescreen extends StatefulWidget {
   const MessengerHomescreen({super.key});

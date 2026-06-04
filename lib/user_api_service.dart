@@ -167,4 +167,28 @@ class UserApiService {
   }
 
 
+  static Future<bool> blockUser(int blockedId) async {
+    final token = await TokenStorage.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/users/block/$blockedId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return response.statusCode == 201;
+  }
+
+  static Future<bool> deleteBlock(int blockedId) async {
+    final token = await TokenStorage.getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/users/block/$blockedId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return response.statusCode == 200;
+  }
+
+
+
 }

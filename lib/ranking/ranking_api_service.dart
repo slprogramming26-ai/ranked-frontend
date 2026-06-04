@@ -1,6 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'token_storage.dart';
+import '../token_storage.dart';
 
 class RankingApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP

@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/search.dart';
 import 'post_provider.dart';
-import 'post_api_service.dart';
+import '../post_api_service.dart';
 import 'dart:ui';
-import 'app_colors.dart';
+import '../app_colors.dart';
 
 class PostsFeed extends StatefulWidget {
   const PostsFeed({super.key});

@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'token_storage.dart';
+import '../token_storage.dart';
 import 'package:http/http.dart' as http;
-import 'local_data/database.dart';
-import 'user_api_service.dart';
+import '../local_data/database.dart';
+import '../user_api_service.dart';
 import 'dart:async';
 import 'package:drift/drift.dart' hide Column;
 

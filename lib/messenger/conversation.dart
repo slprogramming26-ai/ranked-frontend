@@ -1,4 +1,4 @@
-import 'local_data/database.dart';
+import '../local_data/database.dart';
 import 'messenger_api_service.dart';
 
 class ChatMessage {

@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'post_api_service.dart';
+import '../post_api_service.dart';
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import '../app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
