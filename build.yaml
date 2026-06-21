@@ -1,0 +1,9 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # DateTime-Spalten als ISO8601-Text speichern statt als Unix-Sekunden.
+          # Behält Mikrosekunden + Zeitzone verlustfrei -> exakte Sync-Marker,
+          # keine Refetch-Duplikate an der Sekundengrenze.
+          store_date_time_values_as_text: true

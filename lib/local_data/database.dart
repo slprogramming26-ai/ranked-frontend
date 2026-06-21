@@ -4,23 +4,49 @@ import 'tables.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [UserSearchHistory, DmChatHistory, GroupChatHistory, OpenChats])
+@DriftDatabase(
+  tables: [UserSearchHistory, DmChatHistory, GroupChatHistory, OpenChats, SyncMarkers],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'ranked'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) => m.createAll(),
     onUpgrade: (m, from, to) async {
-      if (from < 3) {
+      if (from < 6) {
+        // Wechsel auf Text-Storage macht die alten Integer-Zeitwerte unlesbar.
+        // Alle Tabellen mit DateTime-Spalten sind reiner Cache -> verwerfen und
+        // neu bauen; der Sync vom Server fuellt sie wieder.
+        await m.deleteTable('user_search_history');
+        await m.deleteTable('dm_chat_history');
+        await m.deleteTable('group_chat_history');
+        await m.createTable(userSearchHistory);
         await m.createTable(dmChatHistory);
         await m.createTable(groupChatHistory);
+
+        // OpenChats behalten (Gruppen-Mitgliedschaften kann der Client nicht neu
+        // vom Server holen), nur die alte lastSyncedAt-Spalte entfernen.
+        await m.alterTable(TableMigration(openChats));
+
+        // Neue zentrale Marker-Tabelle.
+        await m.createTable(syncMarkers);
       }
-      if (from < 4) {
-        await m.createTable(openChats); // 'contacts' wird von Drift klein geschrieben generiert
+      if (from < 7) {
+        // client_msg_id (Idempotenz-Key) kommt an die Message-Tabellen.
+        // SQLite kann eine UNIQUE-Spalte nicht per ALTER nachruesten -> wir
+        // bauen die reinen Cache-Tabellen neu. Die Marker werfen wir mit weg,
+        // damit der naechste connect() einen VOLLEN Re-Sync macht und die neue
+        // Spalte fuellt (sonst blieben die alten Zeilen ohne Key liegen).
+        await m.deleteTable('dm_chat_history');
+        await m.deleteTable('group_chat_history');
+        await m.deleteTable('sync_markers');
+        await m.createTable(dmChatHistory);
+        await m.createTable(groupChatHistory);
+        await m.createTable(syncMarkers);
       }
     },
   );
@@ -68,14 +94,21 @@ class AppDatabase extends _$AppDatabase {
     required int recipientId,
     required String message,
     required DateTime createdAt,
+    String? clientMsgId,
   }) async {
+    // insertOrIgnore: kollidiert clientMsgId mit einer schon vorhandenen Zeile
+    // (Echo <-> spaeter gesyncte Server-Zeile), wird der zweite Insert verworfen
+    // statt zu duplizieren. clientMsgId == null -> kein Konflikt (mehrere NULLs
+    // erlaubt), verhaelt sich wie ein normaler Insert.
     await into(dmChatHistory).insert(
       DmChatHistoryCompanion(
         senderId: Value(senderId),
         recipientId: Value(recipientId),
         message: Value(message),
         createdAt: Value(createdAt),
+        clientMsgId: Value(clientMsgId),
       ),
+      mode: InsertMode.insertOrIgnore,
     );
   }
 
@@ -84,6 +117,7 @@ class AppDatabase extends _$AppDatabase {
     required int groupChatId,
     required String message,
     required DateTime createdAt,
+    String? clientMsgId,
   }) async {
     await into(groupChatHistory).insert(
       GroupChatHistoryCompanion(
@@ -91,7 +125,9 @@ class AppDatabase extends _$AppDatabase {
         groupChatId: Value(groupChatId),
         message: Value(message),
         createdAt: Value(createdAt),
+        clientMsgId: Value(clientMsgId),
       ),
+      mode: InsertMode.insertOrIgnore,
     );
   }
 
@@ -138,4 +174,30 @@ class AppDatabase extends _$AppDatabase {
     return select(openChats).watch();
   }
 
+  // Liest den Marker fuer einen Scope ("dm" / "group:<id>").
+  // null = noch nie gesynct -> Aufrufer holt kompletten Verlauf.
+  Future<DateTime?> getSyncMarker(String key) async {
+    final row = await (select(syncMarkers)..where((t) => t.key.equals(key)))
+        .getSingleOrNull();
+    return row?.lastSyncedAt;
+  }
+
+  // Setzt den Marker auf max(bestehend, ts). Aelteres ueberschreibt nie.
+  Future<void> updateSyncMarker(String key, DateTime ts) async {
+    final existing = await getSyncMarker(key);
+    if (existing != null && !ts.isAfter(existing)) return;
+    await into(syncMarkers).insertOnConflictUpdate(
+      SyncMarkersCompanion(key: Value(key), lastSyncedAt: Value(ts)),
+    );
+  }
+
+  Future<List<OpenChat>> getAllContacts() => select(openChats).get();
+
+  Future<void> clearDatabase() async {
+    await transaction(() async {
+      for (final table in allTables.toList().reversed) {
+        await delete(table).go();
+      }
+    });
+  }
 }

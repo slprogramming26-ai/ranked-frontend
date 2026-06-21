@@ -340,7 +340,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
             final contacts = snapshot.data!;
             if (contacts.isEmpty) return const _EmptyChats();
             return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
               physics: const BouncingScrollPhysics(),
               itemCount: contacts.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),

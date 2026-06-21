@@ -1,13 +1,17 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:ranked/messenger/messenger.dart';
 import 'package:ranked/ranking/ranking.dart';
 import 'post/posts_feed.dart';
 import 'profile.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'token_storage.dart';
 import 'user_api_service.dart';
+import 'api_client.dart';
+import 'token_storage.dart';
 import 'post/create_post.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'post/post_provider.dart';
@@ -16,17 +20,16 @@ import 'app_colors.dart';
 import 'search.dart';
 import "local_data/database.dart";
 
-
 void main() {
   final db = AppDatabase();
-  
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => RankingProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        Provider.value(value: db)
+        Provider.value(value: db),
       ],
       child: const MyApp(),
     ),
@@ -68,8 +71,6 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-
-
   const MyHomePage({
     super.key,
     required this.title,
@@ -93,13 +94,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   int _currentIndex = 0;
   late TextEditingController email_editing_controller;
   late TextEditingController password_editing_controller;
-  bool? loged_in = false;
-  // Nav order: Feed(0) | Ranked(1) | [+Create] | Messenger(2) | Profile(3)
-  // SearchPage at index 4 – not in nav bar, add as 5th item later
+  bool? loggedIn; // null = loading, true = eingeloggt, false = Login-Screen
+  StreamSubscription<void>? _logoutSub;
   final List<Widget> _screens = [
     PostsFeed(),
     RankingHome(),
@@ -112,41 +111,62 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    loged_in = widget.initialLoggedIn;
     email_editing_controller = TextEditingController();
     password_editing_controller = TextEditingController();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
+    _checkExistingSession();
+    _logoutSub = ApiClient.forceLogoutStream.listen((_) async {
+      if (mounted) {
+        final db = context.read<AppDatabase>();
+        await db.clearDatabase();
+        if (mounted) {
+          setState(() => loggedIn = false);
+        }
+      }
+    });
+  }
 
+  Future<void> _checkExistingSession() async {
+    final refreshToken = await TokenStorage.getRefreshToken();
+    if (refreshToken == null) {
+      setState(() => loggedIn = false);
+      return;
+    }
+    final ok = await ApiClient.tryRefreshOnStart();
+    setState(() => loggedIn = ok);
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     email_editing_controller.dispose();
     password_editing_controller.dispose();
+    _logoutSub?.cancel();
     super.dispose();
   }
 
   bool _isLoading = false;
   String? _errorMessage;
 
-  // In deiner _MyHomePageState:
   Future<void> _handleLogin() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
-    final token = await UserApiService.login(
+    final success = await UserApiService.login(
       email_editing_controller.text.trim(),
       password_editing_controller.text,
     );
 
-    if (token != null) {
-      await TokenStorage.saveToken(token);
-      setState(() {
-        loged_in = true; // Jetzt als State-Variable statt final bool
-      });
+    if (success == true) {
+      if (!mounted) return;
+      final db = context.read<AppDatabase>();
+      await db.clearDatabase();
+      if (mounted) {
+        setState(() {
+          loggedIn = true;
+        });
+      }
     } else {
       setState(() {
         _errorMessage = 'Ungültige E-Mail oder Passwort';
@@ -158,18 +178,20 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-
     final dynamic currentScreen = _screens[_currentIndex];
 
-    if (loged_in == true) {
+    if (loggedIn == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (loggedIn == true) {
       return Scaffold(
         backgroundColor: AppColors.surface,
         extendBody: true,
         body: currentScreen,
         bottomNavigationBar: _buildFloatingNav(context),
       );
-    }
-    else {
+    } else {
       return Scaffold(
         resizeToAvoidBottomInset: true,
         backgroundColor: AppColors.surface, // surface-bright
@@ -191,7 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             end: Alignment.bottomRight,
                             colors: [
                               AppColors.primary,
-                              AppColors.primaryContainer
+                              AppColors.primaryContainer,
                             ],
                           ),
                         ),
@@ -235,8 +257,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: AppColors
-                              .onSurfaceVariant, // on-surface-variant
+                          color:
+                              AppColors.onSurfaceVariant, // on-surface-variant
                         ),
                       ),
                       const SizedBox(height: 32),
@@ -265,8 +287,10 @@ class _MyHomePageState extends State<MyHomePage> {
                           onPressed: () {},
                           child: const Text(
                             "Forgot password?",
-                            style: TextStyle(color: AppColors.primary,
-                                fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ),
@@ -275,8 +299,10 @@ class _MyHomePageState extends State<MyHomePage> {
                       if (_errorMessage != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(_errorMessage!, style: const TextStyle(
-                              color: Colors.red)),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
                         ),
 
                       // 5. LOGIN BUTTON
@@ -287,7 +313,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           gradient: const LinearGradient(
                             colors: [
                               AppColors.primary,
-                              AppColors.primaryContainer
+                              AppColors.primaryContainer,
                             ],
                           ),
                           borderRadius: BorderRadius.circular(20),
@@ -296,7 +322,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               color: AppColors.primary.withOpacity(0.2),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
-                            )
+                            ),
                           ],
                         ),
                         child: ElevatedButton(
@@ -304,23 +330,32 @@ class _MyHomePageState extends State<MyHomePage> {
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20)),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                           ),
                           onPressed: _isLoading ? null : _handleLogin,
                           child: _isLoading
-                              ? const CircularProgressIndicator(color: Colors
-                              .white)
-                              : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text("Login to Feed", style: TextStyle(
+                              ? const CircularProgressIndicator(
                                   color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold)),
-                              SizedBox(width: 10),
-                              Icon(Icons.arrow_forward, color: Colors.white),
-                            ],
-                          ),
+                                )
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Login to Feed",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Icon(
+                                      Icons.arrow_forward,
+                                      color: Colors.white,
+                                    ),
+                                  ],
+                                ),
                         ),
                       ),
 
@@ -328,17 +363,27 @@ class _MyHomePageState extends State<MyHomePage> {
                       // 6. DIVIDER
                       Row(
                         children: [
-                          Expanded(child: Divider(
-                              color: AppColors.onSurface.withOpacity(0.1))),
+                          Expanded(
+                            child: Divider(
+                              color: AppColors.onSurface.withOpacity(0.1),
+                            ),
+                          ),
                           const Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
-                            child: Text("OR CONTINUE WITH", style: TextStyle(
+                            child: Text(
+                              "OR CONTINUE WITH",
+                              style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.onSurfaceVariant)),
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
                           ),
-                          Expanded(child: Divider(
-                              color: AppColors.onSurface.withOpacity(0.1))),
+                          Expanded(
+                            child: Divider(
+                              color: AppColors.onSurface.withOpacity(0.1),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -359,15 +404,26 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("New to Ranked?", style: TextStyle(
-                                color: AppColors.onSurfaceVariant)),
+                            const Text(
+                              "New to Ranked?",
+                              style: TextStyle(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
                             TextButton(
-                              onPressed: () =>
-                                  Navigator.push(context, MaterialPageRoute(
-                                      builder: (context) => const SignIn())),
-                              child: const Text("Sign Up", style: TextStyle(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignIn(),
+                                ),
+                              ),
+                              child: const Text(
+                                "Sign Up",
+                                style: TextStyle(
                                   color: AppColors.primary,
-                                  fontWeight: FontWeight.w900)),
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -384,25 +440,46 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-// HELPER WIDGETS FÜR DEN CLEANEN LOOK
+  // HELPER WIDGETS FÜR DEN CLEANEN LOOK
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: AppColors.onSurfaceVariant)),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+          color: AppColors.onSurfaceVariant,
+        ),
+      ),
     );
   }
 
-  Widget _buildCustomTextField({required TextEditingController controller, required String hint, required IconData icon, bool isPassword = false}) {
+  Widget _buildCustomTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+  }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
       decoration: InputDecoration(
-        prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant.withOpacity(0.5)),
+        prefixIcon: Icon(
+          icon,
+          color: AppColors.onSurfaceVariant.withOpacity(0.5),
+        ),
         hintText: hint,
         hintStyle: TextStyle(color: AppColors.onSurface.withOpacity(0.3)),
         filled: true,
-        fillColor: AppColors.surfaceContainerHighest.withOpacity(0.3), // surface-container-highest
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
+        fillColor: AppColors.surfaceContainerHighest.withOpacity(
+          0.3,
+        ), // surface-container-highest
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
         contentPadding: const EdgeInsets.symmetric(vertical: 20),
       ),
     );
@@ -416,10 +493,17 @@ class _MyHomePageState extends State<MyHomePage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.onSurface.withOpacity(0.05)),
       ),
-      child: Center(child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.onSurface))),
+      child: Center(
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.onSurface,
+          ),
+        ),
+      ),
     );
   }
-
 
   Widget _buildFloatingNav(BuildContext context) {
     return Padding(
@@ -458,11 +542,27 @@ class _MyHomePageState extends State<MyHomePage> {
                     filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                     child: Row(
                       children: [
-                        _buildNavTab(Icons.home_outlined, Icons.home_rounded, 0),
-                        _buildNavTab(Icons.leaderboard_outlined, Icons.leaderboard_rounded, 1),
+                        _buildNavTab(
+                          Icons.home_outlined,
+                          Icons.home_rounded,
+                          0,
+                        ),
+                        _buildNavTab(
+                          Icons.leaderboard_outlined,
+                          Icons.leaderboard_rounded,
+                          1,
+                        ),
                         const SizedBox(width: 72),
-                        _buildNavTab(Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 2),
-                        _buildNavTab(Icons.person_outline_rounded, Icons.person_rounded, 3),
+                        _buildNavTab(
+                          Icons.chat_bubble_outline_rounded,
+                          Icons.chat_bubble_rounded,
+                          2,
+                        ),
+                        _buildNavTab(
+                          Icons.person_outline_rounded,
+                          Icons.person_rounded,
+                          3,
+                        ),
                       ],
                     ),
                   ),

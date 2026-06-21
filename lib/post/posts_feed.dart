@@ -125,7 +125,7 @@ class _PostsFeedState extends State<PostsFeed> {
               profilePictureUrl:
                   postData['post']['owner']['profile_picture_url'].toString(),
               timeDifference: getTimeAgo(postData['post']['created_at']),
-              category: postData['post']['category'],
+              flag: postData['post']['flag'],
             );
           },
         ),
@@ -231,7 +231,7 @@ class TextPost extends StatefulWidget {
     required this.post_id,
     this.imageUrl,
     this.profilePictureUrl,
-    this.category,
+    this.flag,
     required this.timeDifference,
   });
 
@@ -244,7 +244,7 @@ class TextPost extends StatefulWidget {
   final String? imageUrl;
   final String? profilePictureUrl;
   final String timeDifference;
-  final String? category;
+  final String? flag;
 
   @override
   State<TextPost> createState() => _TextPostState();
@@ -491,7 +491,7 @@ class _TextPostState extends State<TextPost> {
         style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
       ),
       subtitle: Text(
-        "${widget.timeDifference} • ${widget.category ?? ''}",
+        "${widget.timeDifference} • ${widget.flag ?? ''}",
         style: TextStyle(fontSize: 10),
       ),
       trailing: IconButton(

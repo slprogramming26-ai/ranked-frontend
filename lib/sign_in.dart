@@ -4,7 +4,6 @@ import 'app_colors.dart';
 import 'package:ranked/main.dart';
 import 'user_api_service.dart';
 import 'package:email_validator/email_validator.dart';
-import 'token_storage.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -74,13 +73,12 @@ class _SignInState extends State<SignIn> {
       return;
     }
 
-    final token = await UserApiService.login(
+    final success = await UserApiService.login(
       email_editing_controller.text.trim(),
       password_editing_controller.text,
     );
 
-    if (token != null) {
-      await TokenStorage.saveToken(token);
+    if (success == true) {
 
       setState(() => _isLoading = false);
       Navigator.pushReplacement(

@@ -158,7 +158,7 @@ class _CreatePostState extends State<CreatePost> {
                   contentController.text,
                   isPublic,
                   imageUrl,
-                  iconActivated.entries.where((e) => e.value).map((e) => e.key).firstOrNull,
+                  iconActivated.entries.where((e) => e.value).map((e) => e.key).firstOrNull?.toLowerCase(),
                 );
 
                 if (!context.mounted) return;

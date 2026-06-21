@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:ranked/ranking/ranking_api_service.dart';
-import "../main.dart";
 import 'package:google_fonts/google_fonts.dart';
 import '../user_api_service.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 import 'dart:ui';
 import '../app_colors.dart';
 import 'package:flutter/services.dart';
+import 'package:ranked/streak.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ─── RankingHome ─────────────────────────────────────────────────────────────
 class RankingHome extends StatefulWidget {
@@ -27,7 +29,7 @@ class _RankingHomeState extends State<RankingHome> {
       Provider.of<RankingProvider>(
         context,
         listen: false,
-      )._fetch_user_credentials();
+      )._fetchUserCredentials();
     });
   }
 
@@ -145,7 +147,7 @@ class _RankingHomeState extends State<RankingHome> {
                       onPressed: () async {
                         setState(() => _isLoading = true);
                         await UserApiService.setRankingEnabled(true);
-                        await provider._fetch_user_credentials();
+                        await provider._fetchUserCredentials();
                         setState(() => _isLoading = false);
                       },
                     ),
@@ -170,15 +172,29 @@ class RankingEnabledView extends StatefulWidget {
 }
 
 class _RankingEnabledViewState extends State<RankingEnabledView> {
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isToday = true; // Toggle state (Today / Yesterday) — UI only
+  bool didRanking = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RankingProvider>(context, listen: false)._fetchLeaderboard();
+      final provider = Provider.of<RankingProvider>(context, listen: false);
+      provider._fetchLeaderboard();
+      provider.fetchStreak();
+      _refreshDidRanking();
     });
+  }
+
+  // Holt den "heute schon gerankt?"-Status und baut die UI neu auf (setState!).
+  // Wird beim Öffnen UND nach Rückkehr vom Swipen aufgerufen.
+  Future<void> _refreshDidRanking() async {
+    final ranked = await Provider.of<RankingProvider>(
+      context,
+      listen: false,
+    ).getDidRanking();
+    if (mounted) setState(() => didRanking = ranked);
   }
 
   @override
@@ -208,12 +224,27 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.local_fire_department_rounded,
-              color: AppColors.primary,
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.local_fire_department_rounded,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  '${provider.streak}',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
             ),
-            onPressed: () {},
           ),
         ],
       ),
@@ -338,35 +369,18 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                     bottom: 100,
                     child: _BottomActionBar(
                       isLoading: _isLoading,
+                      rankedToday: didRanking,
                       onPressed: () async {
-                        setState(() => _isLoading = true);
-                        final target =
-                            await RankingApiService.getRandomTarget();
-                        print(target);
-
-                        //hier morgen weiter
-                        if (context.mounted) {
-                          if (target.isEmpty) {
-                            // Fehler oder bereits abgestimmt
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Du hast heute schon abgestimmt oder ein Fehler ist aufgetreten.',
-                                ),
-                              ),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    RankingPages(target_user_id: target['id']),
-                              ),
-                            );
-                          }
-                        }
-
-                        if (mounted) setState(() => _isLoading = false);
+                        // RankingPages holt Target + Posts selbst (my_target)
+                        // und behandelt Leerzustände intern.
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RankingPages(),
+                          ),
+                        );
+                        // Zurück vom Swipen -> evtl. gerade gewertet -> Lock neu prüfen.
+                        await _refreshDidRanking();
                       },
                     ),
                   ),
@@ -469,14 +483,9 @@ class _Podium extends StatelessWidget {
   final List<Map<String, dynamic>> leaderboard;
   const _Podium({required this.leaderboard});
 
-  double _avgScore(Map<String, dynamic> e) {
-    final p = (e['avg_productivity'] as num?)?.toDouble() ?? 0;
-    final c = (e['avg_creativity'] as num?)?.toDouble() ?? 0;
-    final en = (e['avg_engagement'] as num?)?.toDouble() ?? 0;
-    return (p + c + en) / 3;
-  }
-
-  String _fmt(double v) => v.toStringAsFixed(1);
+  // Server liefert die fertige Punkte-Summe (int) — kein Mitteln mehr.
+  String _points(Map<String, dynamic> e) =>
+      '${(e['total_points'] as num?)?.toInt() ?? 0}';
 
   @override
   Widget build(BuildContext context) {
@@ -494,7 +503,7 @@ class _Podium extends StatelessWidget {
             entry: second,
             avatarRadius: 32,
             isFirst: false,
-            score: second != null ? _fmt(_avgScore(second)) : '-',
+            score: second != null ? _points(second) : '-',
           ),
         ),
         // Rank 1 (center, elevated)
@@ -506,7 +515,7 @@ class _Podium extends StatelessWidget {
               entry: first,
               avatarRadius: 44,
               isFirst: true,
-              score: _fmt(_avgScore(first)),
+              score: _points(first),
             ),
           ),
         ),
@@ -517,7 +526,7 @@ class _Podium extends StatelessWidget {
             entry: third,
             avatarRadius: 32,
             isFirst: false,
-            score: third != null ? _fmt(_avgScore(third)) : '-',
+            score: third != null ? _points(third) : '-',
           ),
         ),
       ],
@@ -704,18 +713,12 @@ class _RankListTile extends StatelessWidget {
 
   const _RankListTile({required this.rank, required this.entry});
 
-  double _avgScore() {
-    final p = (entry['avg_productivity'] as num?)?.toDouble() ?? 0;
-    final c = (entry['avg_creativity'] as num?)?.toDouble() ?? 0;
-    final e = (entry['avg_engagement'] as num?)?.toDouble() ?? 0;
-    return (p + c + e) / 3;
-  }
-
   @override
   Widget build(BuildContext context) {
     final username = entry['username'] as String? ?? '—';
     final picUrl = entry['profile_picture_url'] as String?;
-    final total = entry['total_ratings'] as int? ?? 0;
+    final ratings = (entry['total_ratings'] as num?)?.toInt() ?? 0;
+    final points = (entry['total_points'] as num?)?.toInt() ?? 0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -766,7 +769,7 @@ class _RankListTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '$total RATINGS',
+                  '$ratings RATINGS',
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -785,7 +788,7 @@ class _RankListTile extends StatelessWidget {
                 color: AppColors.primary,
               ),
               Text(
-                _avgScore().toStringAsFixed(1),
+                '$points',
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
@@ -893,9 +896,14 @@ class _EmptyLeaderboard extends StatelessWidget {
 // ─── Bottom Action Bar ────────────────────────────────────────────────────────
 class _BottomActionBar extends StatelessWidget {
   final bool isLoading;
+  final bool rankedToday;
   final VoidCallback onPressed;
 
-  const _BottomActionBar({required this.isLoading, required this.onPressed});
+  const _BottomActionBar({
+    required this.isLoading,
+    required this.rankedToday,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -915,10 +923,16 @@ class _BottomActionBar extends StatelessWidget {
             ],
           ),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
-          child: _GradientButton(
-            label: 'GET YOUR RANKED PARTNER',
-            isLoading: isLoading,
-            onPressed: onPressed,
+          child: Opacity(
+            // rankedToday -> ausgegraut + null onPressed = wirklich deaktiviert.
+            opacity: rankedToday ? 0.5 : 1.0,
+            child: _GradientButton(
+              label: rankedToday
+                  ? 'HEUTE SCHON GEWERTET'
+                  : 'GET YOUR RANKED PARTNER',
+              isLoading: isLoading,
+              onPressed: rankedToday ? null : onPressed,
+            ),
           ),
         ),
       ),
@@ -989,314 +1003,203 @@ class _GradientButton extends StatelessWidget {
   }
 }
 
-// ─── RankingPages (unverändert) ───────────────────────────────────────────────
+// ─── RankingPages: Tinder-Style Swipe ─────────────────────────────────────────
 class RankingPages extends StatefulWidget {
-  const RankingPages({super.key, required this.target_user_id});
-  final int target_user_id;
+  const RankingPages({super.key});
 
   @override
   State<RankingPages> createState() => _RankingPagesState();
 }
 
 class _RankingPagesState extends State<RankingPages> {
-  List<dynamic> weekPosts = [];
-  bool isLoading = true;
+  final CardSwiperController _controller = CardSwiperController();
+
+  // Sammelt pro Post {post_id, direction}. Lokal -> neue Instanz = frische Session.
+  final List<Map<String, dynamic>> _swipes = [];
+
+  List<dynamic> _posts = [];
+  int? _targetUserId;
+  bool _isLoading = true;
+  bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
-    final data = await RankingApiService.getLastWeekPosts(
-      widget.target_user_id,
-    );
-    if (mounted) {
-      setState(() {
-        weekPosts = data;
-        isLoading = false;
-      });
+    final data = await RankingApiService.getRandomTarget(); // {user_data, posts}
+    if (!mounted) return;
+    setState(() {
+      _posts = (data['posts'] as List<dynamic>?) ?? [];
+      _targetUserId = data['user_data']?['id'] as int?;
+      _isLoading = false;
+    });
+  }
+
+  bool _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
+    final post = _posts[previousIndex];
+    final isRight = direction == CardSwiperDirection.right;
+    _swipes.add({'post_id': post['id'], 'direction': isRight});
+    HapticFeedback.lightImpact();
+    return true;
+  }
+
+  Future<void> _submitSession() async {
+    if (_submitting || _targetUserId == null) return;
+    setState(() => _submitting = true);
+
+    final result =
+        await RankingApiService.submitSwipeSession(_targetUserId!, _swipes);
+    if (!mounted) return;
+
+    if (result['success'] != true) {
+      final status = result['status'] as int?;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _SwipeErrorScreen(
+            alreadyVoted: status == 409,
+            detail: result['detail'] as String?,
+          ),
+        ),
+      );
+      return;
     }
+
+    final provider = Provider.of<RankingProvider>(context, listen: false);
+    provider._refreshLeaderboard();
+    await Streak.recordActivity();
+    provider.refreshStreak();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => _SwipeResultScreen(result: result)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.surface,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
 
-    return Scaffold(
-      body: PageView.builder(
-        itemCount: weekPosts.length + 4,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Container(
-              color: AppColors.surface,
-              child: Center(
-                child: Text(
-                  'Dein daily target:\nScrolle rechts zum Bewerten!',
+    if (_posts.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: const BackButton(color: AppColors.primary),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.inbox_rounded,
+                    size: 56, color: AppColors.outlineVariant),
+                const SizedBox(height: 16),
+                Text(
+                  'Aktuell keine Teilnehmer zum Bewerten verfügbar.',
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSurfaceVariant,
                   ),
                 ),
-              ),
-            );
-          }
-
-          if (index <= weekPosts.length) {
-            final postData = weekPosts[index - 1]['post'];
-            return SingleRankingPostPage(
-              title: postData['title'],
-              content: postData['content'],
-              imageUrl: postData['image_url'] ?? '',
-              createdAt: DateTime.parse(postData['created_at']),
-            );
-          }
-
-          final sliderIndex = index - weekPosts.length - 1;
-          final categories = [
-            {'name': 'Productivity', 'label': 'Wie effizient war der Output?'},
-            {'name': 'Creativity', 'label': 'Wie originell war der Ansatz?'},
-            {'name': 'Engagement', 'label': 'Wie stark war die Wirkung?'},
-          ];
-
-          if (sliderIndex < categories.length) {
-            return RankedSliderPage(
-              category: categories[sliderIndex]['name']!,
-              description: categories[sliderIndex]['label']!,
-              isLast: sliderIndex == categories.length - 1,
-              onChanged: (double value) {
-                final provider = Provider.of<RankingProvider>(
-                  context,
-                  listen: false,
-                );
-                int intValue = (value * 10).round();
-                provider.updateScore(
-                  categories[sliderIndex]['name'].toString(),
-                  intValue,
-                );
-              },
-              onComplete: () async {
-                final provider = Provider.of<RankingProvider>(
-                  context,
-                  listen: false,
-                );
-                provider.trueLoading();
-
-                bool success = await RankingApiService.pushRankingScores(
-                  widget.target_user_id,
-                  provider.scores['Productivity'] ?? 75,
-                  provider.scores['Creativity'] ?? 75,
-                  provider.scores['Engagement'] ?? 75,
-                );
-
-                if (success && context.mounted) {
-                  provider.falseLoading();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MyHomePage(
-                        title: 'Ranked',
-                        initialLoggedIn: true,
-                      ),
-                    ),
-                  );
-                }
-              },
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
-      ),
-    );
-  }
-}
-
-// ─── SingleRankingPostPage (unverändert) ──────────────────────────────────────
-class SingleRankingPostPage extends StatelessWidget {
-  const SingleRankingPostPage({
-    super.key,
-    required this.title,
-    required this.content,
-    required this.imageUrl,
-    required this.createdAt,
-  });
-
-  final String title;
-  final String content;
-  final String imageUrl;
-  final DateTime createdAt;
-
-  @override
-  Widget build(BuildContext context) {
-    final String dateString = DateFormat('dd.MM.yyyy').format(createdAt);
-    final size = MediaQuery.of(context).size;
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      body: SizedBox(
-        height: size.height,
-        width: size.width,
-        child: Stack(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Column(
           children: [
-            Positioned.fill(
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                alignment: Alignment.center,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: const Color(0xFF240306),
-                  child: const Icon(
-                    Icons.image_not_supported,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.6),
-                      Colors.transparent,
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.85),
-                    ],
-                    stops: const [0.0, 0.15, 0.6, 1.0],
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: AppColors.tertiaryContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.grey,
-                        child: Icon(
-                          Icons.person,
-                          size: 20,
-                          color: Colors.white,
-                        ),
-                      ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+              child: Row(
+                children: [
+                  const BackButton(color: AppColors.primary),
+                  Text(
+                    'RANK IT',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.primary,
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'DAILY TARGET',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Text(
-                          dateString,
-                          style: GoogleFonts.inter(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _submitting
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.primary),
+                    )
+                  : CardSwiper(
+                      controller: _controller,
+                      cardsCount: _posts.length,
+                      isLoop: false,
+                      numberOfCardsDisplayed: _posts.length >= 2 ? 2 : 1,
+                      allowedSwipeDirection:
+                          const AllowedSwipeDirection.only(left: true, right: true),
+                      padding: const EdgeInsets.all(20),
+                      onSwipe: _onSwipe,
+                      onEnd: _submitSession,
+                      cardBuilder:
+                          (context, index, hThresh, vThresh) {
+                        final post = _posts[index];
+                        return _SwipeCard(
+                          title: post['title']?.toString() ?? '',
+                          content: post['content']?.toString() ?? '',
+                          imageUrl: post['image_url']?.toString() ?? '',
+                          flag: post['flag']?.toString(),
+                          createdAt: DateTime.parse(post['created_at']),
+                          horizontalThreshold: hThresh.toDouble(),
+                        );
+                      },
+                    ),
+            ),
+            // Like / Nope Buttons
+            if (!_submitting)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(40, 8, 40, 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _SwipeActionButton(
+                      icon: Icons.close_rounded,
+                      color: AppColors.secondary,
+                      onTap: () => _controller.swipe(CardSwiperDirection.left),
+                    ),
+                    _SwipeActionButton(
+                      icon: Icons.favorite_rounded,
+                      color: AppColors.primary,
+                      onTap: () => _controller.swipe(CardSwiperDirection.right),
                     ),
                   ],
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title.toUpperCase(),
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          fontStyle: FontStyle.italic,
-                          height: 1.0,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        content,
-                        style: GoogleFonts.inter(
-                          fontSize: 15,
-                          color: Colors.white.withOpacity(0.9),
-                          height: 1.4,
-                        ),
-                        maxLines: 4,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 24),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              AppColors.primary,
-                              AppColors.primaryContainer,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.favorite,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'RANK IT',
-                              style: GoogleFonts.plusJakartaSans(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -1304,225 +1207,399 @@ class SingleRankingPostPage extends StatelessWidget {
   }
 }
 
-// ─── RankedSliderPage (unverändert) ───────────────────────────────────────────
-class RankedSliderPage extends StatefulWidget {
-  final String category;
-  final String description;
-  final bool isLast;
-  final VoidCallback onComplete;
-  final ValueChanged<double> onChanged;
-
-  const RankedSliderPage({
-    super.key,
-    required this.category,
-    required this.description,
-    required this.isLast,
-    required this.onComplete,
-    required this.onChanged,
+// ─── Swipe Card ───────────────────────────────────────────────────────────────
+class _SwipeCard extends StatelessWidget {
+  const _SwipeCard({
+    required this.title,
+    required this.content,
+    required this.imageUrl,
+    required this.flag,
+    required this.createdAt,
+    required this.horizontalThreshold, // -100..100
   });
 
-  @override
-  State<RankedSliderPage> createState() => _RankedSliderPageState();
-}
-
-class _RankedSliderPageState extends State<RankedSliderPage> {
-  late double _currentValue;
-
-  @override
-  void initState() {
-    super.initState();
-    final provider = Provider.of<RankingProvider>(context, listen: false);
-    int savedScore = provider.scores[widget.category] ?? 75;
-    _currentValue = savedScore / 10.0;
-  }
-
-  String getEmoji(double value) {
-    if (value >= 9) return '👑';
-    if (value >= 8) return '🔥';
-    if (value >= 6) return '⚡️';
-    if (value >= 4) return '✨';
-    if (value >= 2) return '☁️';
-    return '❄️';
-  }
+  final String title;
+  final String content;
+  final String imageUrl;
+  final String? flag;
+  final DateTime createdAt;
+  final double horizontalThreshold;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            top: -80,
-            right: -80,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -80,
-            left: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.tertiary.withOpacity(0.05),
-              ),
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(),
-              Text(
-                "${widget.category} Score",
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.description,
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  color: AppColors.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 48),
-              Text(
-                _currentValue.toStringAsFixed(1),
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 80,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primary,
-                ),
-              ),
-              Text(
-                getEmoji(_currentValue),
-                style: const TextStyle(fontSize: 48),
-              ),
-              const SizedBox(height: 48),
-              SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 60,
-                  activeTrackColor: AppColors.surfaceContainer,
-                  inactiveTrackColor: AppColors.surfaceContainer,
-                  thumbColor: AppColors.primary,
-                  overlayColor: AppColors.primary.withOpacity(0.2),
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 30,
-                    elevation: 10,
-                  ),
-                  activeTickMarkColor: Colors.transparent,
-                  inactiveTickMarkColor: Colors.transparent,
-                ),
-                child: Slider(
-                  value: _currentValue,
-                  min: 0.1,
-                  max: 10,
-                  onChanged: (value) {
-                    setState(() => _currentValue = value);
-                    widget.onChanged(value);
+    final dateString = DateFormat('dd.MM.yyyy').format(createdAt);
+    final progress = (horizontalThreshold.abs() / 100).clamp(0.0, 1.0);
+    final isLike = horizontalThreshold > 0;
 
-                    if ((value * 10).round() % 10 == 0) {
-                      HapticFeedback.heavyImpact();
-                    }
-                  },
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: const Color(0xFF240306),
+              child: const Icon(Icons.image_not_supported, color: Colors.white),
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.5),
+                  Colors.transparent,
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.85),
+                ],
+                stops: const [0.0, 0.2, 0.55, 1.0],
+              ),
+            ),
+          ),
+          if (flag != null && flag!.isNotEmpty)
+            Positioned(
+              top: 16,
+              left: 16,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  flag!.toUpperCase(),
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "LOW",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Colors.black26,
-                      ),
+            ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title.toUpperCase(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.white,
+                      height: 1.0,
                     ),
-                    Text(
-                      "PEAK",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Colors.black26,
-                      ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    content,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.9),
+                      height: 1.4,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    dateString,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              const Spacer(),
-              if (widget.isLast)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 48),
+            ),
+          ),
+          // LIKE / NOPE Overlay je nach Zugrichtung
+          if (progress > 0.05)
+            Positioned(
+              top: 28,
+              left: isLike ? 24 : null,
+              right: isLike ? null : 24,
+              child: Opacity(
+                opacity: progress,
+                child: Transform.rotate(
+                  angle: isLike ? -0.3 : 0.3,
                   child: Container(
-                    width: double.infinity,
-                    height: 70,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primary, AppColors.primaryContainer],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                      border: Border.all(
+                        color: isLike
+                            ? AppColors.primary
+                            : AppColors.secondary,
+                        width: 4,
                       ),
-                      borderRadius: BorderRadius.circular(35),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: ElevatedButton(
-                      onPressed: widget.onComplete,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(35),
-                        ),
-                      ),
-                      child: Text(
-                        "SUBMIT RANKING",
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
+                    child: Text(
+                      isLike ? 'LIKE' : 'NOPE',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        color: isLike
+                            ? AppColors.primary
+                            : AppColors.secondary,
                       ),
                     ),
                   ),
                 ),
-              const SizedBox(height: 20),
-            ],
-          ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-// ─── RankingProvider (unverändert) ────────────────────────────────────────────
+// ─── Swipe Action Button (Nope / Like) ────────────────────────────────────────
+class _SwipeActionButton extends StatelessWidget {
+  const _SwipeActionButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainer,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: color, size: 30),
+      ),
+    );
+  }
+}
+
+// ─── Swipe Result Screen ──────────────────────────────────────────────────────
+class _SwipeResultScreen extends StatelessWidget {
+  const _SwipeResultScreen({required this.result});
+
+  final Map<String, dynamic> result;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = result['total_points'] ?? 0;
+    final breakdown =
+        (result['breakdown'] as Map?)?.cast<String, dynamic>() ?? {};
+    final message = result['message']?.toString() ?? '';
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              Center(
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryContainer],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      const Icon(Icons.bolt_rounded, color: Colors.white, size: 48),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '+$total',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 64,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.primary,
+                  height: 1.0,
+                ),
+              ),
+              Text(
+                'PUNKTE VERGEBEN',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 32),
+              ...breakdown.entries
+                  .where((e) => (e.value as num? ?? 0) != 0)
+                  .map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            e.key.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            '+${e.value}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: _GradientButton(
+                  label: 'FERTIG',
+                  isLoading: false,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Swipe Error Screen ───────────────────────────────────────────────────────
+class _SwipeErrorScreen extends StatelessWidget {
+  const _SwipeErrorScreen({required this.alreadyVoted, this.detail});
+
+  final bool alreadyVoted;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconData = alreadyVoted
+        ? Icons.event_available_rounded
+        : Icons.cloud_off_rounded;
+    final iconColor = alreadyVoted ? AppColors.tertiary : AppColors.secondary;
+    final iconBg = alreadyVoted
+        ? AppColors.tertiaryContainer
+        : AppColors.secondaryFixed;
+    final headline = alreadyVoted ? 'BEREITS\nGEWERTET' : 'FEHLER';
+    final subtitle = alreadyVoted
+        ? 'Du hast heute schon abgestimmt.\nMorgen bist du wieder dran!'
+        : (detail ?? 'Etwas ist schiefgelaufen. Versuch es später nochmal.');
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              Center(
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                  child: Icon(iconData, color: iconColor, size: 44),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                headline,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: iconColor,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: AppColors.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: _GradientButton(
+                  label: 'ZURÜCK',
+                  isLoading: false,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── RankingProvider ──────────────────────────────────────────────────────────
 class RankingProvider extends ChangeNotifier {
-  Map<String, int> _scores = {
-    'Productivity': 75,
-    'Creativity': 75,
-    'Engagement': 75,
-  };
 
   bool _isLoading = false;
   bool _isLoadingHome = false;
@@ -1531,18 +1608,31 @@ class RankingProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _leaderboardData = [];
   bool _hasFetchedLeaderboard = false;
   bool _isLoadingLeaderboard = false;
+  int _streak = 0;
 
   bool get isLoading => _isLoading;
   bool get isLoadingHome => _isLoadingHome;
   bool get hasFetched => _hasFetched;
-  Map<String, int> get scores => _scores;
   Map<String, dynamic> get userdata => _userdata;
   List<Map<String, dynamic>> get leaderboardData => _leaderboardData;
   bool get hasFetchedLeaderboard => _hasFetchedLeaderboard;
   bool get isLoadingLeaderboard => _isLoadingLeaderboard;
+  int get streak => _streak;
 
-  void updateScore(String category, int value) {
-    _scores[category] = value;
+  Future<bool> getDidRanking() async {
+    final prefs = await SharedPreferences.getInstance();
+    return Streak.didActivityToday(prefs);
+  }
+
+  Future<void> fetchStreak() async {
+    final s = await Streak.getStreakWithExpiry();
+    _streak = s;
+    notifyListeners();
+  }
+
+  Future<void> refreshStreak() async {
+    final s = await Streak.getStreakWithExpiry();
+    _streak = s;
     notifyListeners();
   }
 
@@ -1556,7 +1646,7 @@ class RankingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _fetch_user_credentials() async {
+  Future<void> _fetchUserCredentials() async {
     if (_hasFetched) return;
     _isLoadingHome = true;
     notifyListeners();

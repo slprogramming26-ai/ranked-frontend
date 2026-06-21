@@ -510,6 +510,18 @@ class $DmChatHistoryTable extends DmChatHistory
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _clientMsgIdMeta = const VerificationMeta(
+    'clientMsgId',
+  );
+  @override
+  late final GeneratedColumn<String> clientMsgId = GeneratedColumn<String>(
+    'client_msg_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -517,6 +529,7 @@ class $DmChatHistoryTable extends DmChatHistory
     recipientId,
     message,
     createdAt,
+    clientMsgId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -568,6 +581,15 @@ class $DmChatHistoryTable extends DmChatHistory
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('client_msg_id')) {
+      context.handle(
+        _clientMsgIdMeta,
+        clientMsgId.isAcceptableOrUnknown(
+          data['client_msg_id']!,
+          _clientMsgIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -597,6 +619,10 @@ class $DmChatHistoryTable extends DmChatHistory
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      clientMsgId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_msg_id'],
+      ),
     );
   }
 
@@ -613,12 +639,14 @@ class DmChatHistoryData extends DataClass
   final int recipientId;
   final String message;
   final DateTime createdAt;
+  final String? clientMsgId;
   const DmChatHistoryData({
     required this.id,
     required this.senderId,
     required this.recipientId,
     required this.message,
     required this.createdAt,
+    this.clientMsgId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -628,6 +656,9 @@ class DmChatHistoryData extends DataClass
     map['recipient_id'] = Variable<int>(recipientId);
     map['message'] = Variable<String>(message);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || clientMsgId != null) {
+      map['client_msg_id'] = Variable<String>(clientMsgId);
+    }
     return map;
   }
 
@@ -638,6 +669,9 @@ class DmChatHistoryData extends DataClass
       recipientId: Value(recipientId),
       message: Value(message),
       createdAt: Value(createdAt),
+      clientMsgId: clientMsgId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientMsgId),
     );
   }
 
@@ -652,6 +686,7 @@ class DmChatHistoryData extends DataClass
       recipientId: serializer.fromJson<int>(json['recipientId']),
       message: serializer.fromJson<String>(json['message']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      clientMsgId: serializer.fromJson<String?>(json['clientMsgId']),
     );
   }
   @override
@@ -663,6 +698,7 @@ class DmChatHistoryData extends DataClass
       'recipientId': serializer.toJson<int>(recipientId),
       'message': serializer.toJson<String>(message),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'clientMsgId': serializer.toJson<String?>(clientMsgId),
     };
   }
 
@@ -672,12 +708,14 @@ class DmChatHistoryData extends DataClass
     int? recipientId,
     String? message,
     DateTime? createdAt,
+    Value<String?> clientMsgId = const Value.absent(),
   }) => DmChatHistoryData(
     id: id ?? this.id,
     senderId: senderId ?? this.senderId,
     recipientId: recipientId ?? this.recipientId,
     message: message ?? this.message,
     createdAt: createdAt ?? this.createdAt,
+    clientMsgId: clientMsgId.present ? clientMsgId.value : this.clientMsgId,
   );
   DmChatHistoryData copyWithCompanion(DmChatHistoryCompanion data) {
     return DmChatHistoryData(
@@ -688,6 +726,9 @@ class DmChatHistoryData extends DataClass
           : this.recipientId,
       message: data.message.present ? data.message.value : this.message,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      clientMsgId: data.clientMsgId.present
+          ? data.clientMsgId.value
+          : this.clientMsgId,
     );
   }
 
@@ -698,14 +739,15 @@ class DmChatHistoryData extends DataClass
           ..write('senderId: $senderId, ')
           ..write('recipientId: $recipientId, ')
           ..write('message: $message, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('clientMsgId: $clientMsgId')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, senderId, recipientId, message, createdAt);
+      Object.hash(id, senderId, recipientId, message, createdAt, clientMsgId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -714,7 +756,8 @@ class DmChatHistoryData extends DataClass
           other.senderId == this.senderId &&
           other.recipientId == this.recipientId &&
           other.message == this.message &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.clientMsgId == this.clientMsgId);
 }
 
 class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
@@ -723,12 +766,14 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
   final Value<int> recipientId;
   final Value<String> message;
   final Value<DateTime> createdAt;
+  final Value<String?> clientMsgId;
   const DmChatHistoryCompanion({
     this.id = const Value.absent(),
     this.senderId = const Value.absent(),
     this.recipientId = const Value.absent(),
     this.message = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.clientMsgId = const Value.absent(),
   });
   DmChatHistoryCompanion.insert({
     this.id = const Value.absent(),
@@ -736,6 +781,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     required int recipientId,
     required String message,
     required DateTime createdAt,
+    this.clientMsgId = const Value.absent(),
   }) : senderId = Value(senderId),
        recipientId = Value(recipientId),
        message = Value(message),
@@ -746,6 +792,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     Expression<int>? recipientId,
     Expression<String>? message,
     Expression<DateTime>? createdAt,
+    Expression<String>? clientMsgId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -753,6 +800,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
       if (recipientId != null) 'recipient_id': recipientId,
       if (message != null) 'message': message,
       if (createdAt != null) 'created_at': createdAt,
+      if (clientMsgId != null) 'client_msg_id': clientMsgId,
     });
   }
 
@@ -762,6 +810,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     Value<int>? recipientId,
     Value<String>? message,
     Value<DateTime>? createdAt,
+    Value<String?>? clientMsgId,
   }) {
     return DmChatHistoryCompanion(
       id: id ?? this.id,
@@ -769,6 +818,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
       recipientId: recipientId ?? this.recipientId,
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
+      clientMsgId: clientMsgId ?? this.clientMsgId,
     );
   }
 
@@ -790,6 +840,9 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (clientMsgId.present) {
+      map['client_msg_id'] = Variable<String>(clientMsgId.value);
+    }
     return map;
   }
 
@@ -800,7 +853,8 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
           ..write('senderId: $senderId, ')
           ..write('recipientId: $recipientId, ')
           ..write('message: $message, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('clientMsgId: $clientMsgId')
           ..write(')'))
         .toString();
   }
@@ -869,6 +923,18 @@ class $GroupChatHistoryTable extends GroupChatHistory
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _clientMsgIdMeta = const VerificationMeta(
+    'clientMsgId',
+  );
+  @override
+  late final GeneratedColumn<String> clientMsgId = GeneratedColumn<String>(
+    'client_msg_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -876,6 +942,7 @@ class $GroupChatHistoryTable extends GroupChatHistory
     groupChatId,
     message,
     createdAt,
+    clientMsgId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -927,6 +994,15 @@ class $GroupChatHistoryTable extends GroupChatHistory
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('client_msg_id')) {
+      context.handle(
+        _clientMsgIdMeta,
+        clientMsgId.isAcceptableOrUnknown(
+          data['client_msg_id']!,
+          _clientMsgIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -956,6 +1032,10 @@ class $GroupChatHistoryTable extends GroupChatHistory
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      clientMsgId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_msg_id'],
+      ),
     );
   }
 
@@ -972,12 +1052,14 @@ class GroupChatHistoryData extends DataClass
   final int groupChatId;
   final String message;
   final DateTime createdAt;
+  final String? clientMsgId;
   const GroupChatHistoryData({
     required this.id,
     required this.senderId,
     required this.groupChatId,
     required this.message,
     required this.createdAt,
+    this.clientMsgId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -987,6 +1069,9 @@ class GroupChatHistoryData extends DataClass
     map['group_chat_id'] = Variable<int>(groupChatId);
     map['message'] = Variable<String>(message);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || clientMsgId != null) {
+      map['client_msg_id'] = Variable<String>(clientMsgId);
+    }
     return map;
   }
 
@@ -997,6 +1082,9 @@ class GroupChatHistoryData extends DataClass
       groupChatId: Value(groupChatId),
       message: Value(message),
       createdAt: Value(createdAt),
+      clientMsgId: clientMsgId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientMsgId),
     );
   }
 
@@ -1011,6 +1099,7 @@ class GroupChatHistoryData extends DataClass
       groupChatId: serializer.fromJson<int>(json['groupChatId']),
       message: serializer.fromJson<String>(json['message']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      clientMsgId: serializer.fromJson<String?>(json['clientMsgId']),
     );
   }
   @override
@@ -1022,6 +1111,7 @@ class GroupChatHistoryData extends DataClass
       'groupChatId': serializer.toJson<int>(groupChatId),
       'message': serializer.toJson<String>(message),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'clientMsgId': serializer.toJson<String?>(clientMsgId),
     };
   }
 
@@ -1031,12 +1121,14 @@ class GroupChatHistoryData extends DataClass
     int? groupChatId,
     String? message,
     DateTime? createdAt,
+    Value<String?> clientMsgId = const Value.absent(),
   }) => GroupChatHistoryData(
     id: id ?? this.id,
     senderId: senderId ?? this.senderId,
     groupChatId: groupChatId ?? this.groupChatId,
     message: message ?? this.message,
     createdAt: createdAt ?? this.createdAt,
+    clientMsgId: clientMsgId.present ? clientMsgId.value : this.clientMsgId,
   );
   GroupChatHistoryData copyWithCompanion(GroupChatHistoryCompanion data) {
     return GroupChatHistoryData(
@@ -1047,6 +1139,9 @@ class GroupChatHistoryData extends DataClass
           : this.groupChatId,
       message: data.message.present ? data.message.value : this.message,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      clientMsgId: data.clientMsgId.present
+          ? data.clientMsgId.value
+          : this.clientMsgId,
     );
   }
 
@@ -1057,14 +1152,15 @@ class GroupChatHistoryData extends DataClass
           ..write('senderId: $senderId, ')
           ..write('groupChatId: $groupChatId, ')
           ..write('message: $message, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('clientMsgId: $clientMsgId')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, senderId, groupChatId, message, createdAt);
+      Object.hash(id, senderId, groupChatId, message, createdAt, clientMsgId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1073,7 +1169,8 @@ class GroupChatHistoryData extends DataClass
           other.senderId == this.senderId &&
           other.groupChatId == this.groupChatId &&
           other.message == this.message &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.clientMsgId == this.clientMsgId);
 }
 
 class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
@@ -1082,12 +1179,14 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
   final Value<int> groupChatId;
   final Value<String> message;
   final Value<DateTime> createdAt;
+  final Value<String?> clientMsgId;
   const GroupChatHistoryCompanion({
     this.id = const Value.absent(),
     this.senderId = const Value.absent(),
     this.groupChatId = const Value.absent(),
     this.message = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.clientMsgId = const Value.absent(),
   });
   GroupChatHistoryCompanion.insert({
     this.id = const Value.absent(),
@@ -1095,6 +1194,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     required int groupChatId,
     required String message,
     required DateTime createdAt,
+    this.clientMsgId = const Value.absent(),
   }) : senderId = Value(senderId),
        groupChatId = Value(groupChatId),
        message = Value(message),
@@ -1105,6 +1205,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     Expression<int>? groupChatId,
     Expression<String>? message,
     Expression<DateTime>? createdAt,
+    Expression<String>? clientMsgId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1112,6 +1213,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
       if (groupChatId != null) 'group_chat_id': groupChatId,
       if (message != null) 'message': message,
       if (createdAt != null) 'created_at': createdAt,
+      if (clientMsgId != null) 'client_msg_id': clientMsgId,
     });
   }
 
@@ -1121,6 +1223,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     Value<int>? groupChatId,
     Value<String>? message,
     Value<DateTime>? createdAt,
+    Value<String?>? clientMsgId,
   }) {
     return GroupChatHistoryCompanion(
       id: id ?? this.id,
@@ -1128,6 +1231,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
       groupChatId: groupChatId ?? this.groupChatId,
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
+      clientMsgId: clientMsgId ?? this.clientMsgId,
     );
   }
 
@@ -1149,6 +1253,9 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (clientMsgId.present) {
+      map['client_msg_id'] = Variable<String>(clientMsgId.value);
+    }
     return map;
   }
 
@@ -1159,7 +1266,8 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
           ..write('senderId: $senderId, ')
           ..write('groupChatId: $groupChatId, ')
           ..write('message: $message, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('clientMsgId: $clientMsgId')
           ..write(')'))
         .toString();
   }
@@ -1525,6 +1633,230 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
   }
 }
 
+class $SyncMarkersTable extends SyncMarkers
+    with TableInfo<$SyncMarkersTable, SyncMarker> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SyncMarkersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastSyncedAtMeta = const VerificationMeta(
+    'lastSyncedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSyncedAt = GeneratedColumn<DateTime>(
+    'last_synced_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, lastSyncedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sync_markers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SyncMarker> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('last_synced_at')) {
+      context.handle(
+        _lastSyncedAtMeta,
+        lastSyncedAt.isAcceptableOrUnknown(
+          data['last_synced_at']!,
+          _lastSyncedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  SyncMarker map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SyncMarker(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      lastSyncedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_synced_at'],
+      ),
+    );
+  }
+
+  @override
+  $SyncMarkersTable createAlias(String alias) {
+    return $SyncMarkersTable(attachedDatabase, alias);
+  }
+}
+
+class SyncMarker extends DataClass implements Insertable<SyncMarker> {
+  final String key;
+  final DateTime? lastSyncedAt;
+  const SyncMarker({required this.key, this.lastSyncedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    if (!nullToAbsent || lastSyncedAt != null) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt);
+    }
+    return map;
+  }
+
+  SyncMarkersCompanion toCompanion(bool nullToAbsent) {
+    return SyncMarkersCompanion(
+      key: Value(key),
+      lastSyncedAt: lastSyncedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncedAt),
+    );
+  }
+
+  factory SyncMarker.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SyncMarker(
+      key: serializer.fromJson<String>(json['key']),
+      lastSyncedAt: serializer.fromJson<DateTime?>(json['lastSyncedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'lastSyncedAt': serializer.toJson<DateTime?>(lastSyncedAt),
+    };
+  }
+
+  SyncMarker copyWith({
+    String? key,
+    Value<DateTime?> lastSyncedAt = const Value.absent(),
+  }) => SyncMarker(
+    key: key ?? this.key,
+    lastSyncedAt: lastSyncedAt.present ? lastSyncedAt.value : this.lastSyncedAt,
+  );
+  SyncMarker copyWithCompanion(SyncMarkersCompanion data) {
+    return SyncMarker(
+      key: data.key.present ? data.key.value : this.key,
+      lastSyncedAt: data.lastSyncedAt.present
+          ? data.lastSyncedAt.value
+          : this.lastSyncedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncMarker(')
+          ..write('key: $key, ')
+          ..write('lastSyncedAt: $lastSyncedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, lastSyncedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SyncMarker &&
+          other.key == this.key &&
+          other.lastSyncedAt == this.lastSyncedAt);
+}
+
+class SyncMarkersCompanion extends UpdateCompanion<SyncMarker> {
+  final Value<String> key;
+  final Value<DateTime?> lastSyncedAt;
+  final Value<int> rowid;
+  const SyncMarkersCompanion({
+    this.key = const Value.absent(),
+    this.lastSyncedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SyncMarkersCompanion.insert({
+    required String key,
+    this.lastSyncedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : key = Value(key);
+  static Insertable<SyncMarker> custom({
+    Expression<String>? key,
+    Expression<DateTime>? lastSyncedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (lastSyncedAt != null) 'last_synced_at': lastSyncedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SyncMarkersCompanion copyWith({
+    Value<String>? key,
+    Value<DateTime?>? lastSyncedAt,
+    Value<int>? rowid,
+  }) {
+    return SyncMarkersCompanion(
+      key: key ?? this.key,
+      lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (lastSyncedAt.present) {
+      map['last_synced_at'] = Variable<DateTime>(lastSyncedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SyncMarkersCompanion(')
+          ..write('key: $key, ')
+          ..write('lastSyncedAt: $lastSyncedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1535,6 +1867,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $OpenChatsTable openChats = $OpenChatsTable(this);
+  late final $SyncMarkersTable syncMarkers = $SyncMarkersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1544,7 +1877,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     dmChatHistory,
     groupChatHistory,
     openChats,
+    syncMarkers,
   ];
+  @override
+  DriftDatabaseOptions get options =>
+      const DriftDatabaseOptions(storeDateTimeAsText: true);
 }
 
 typedef $$UserSearchHistoryTableCreateCompanionBuilder =
@@ -1799,6 +2136,7 @@ typedef $$DmChatHistoryTableCreateCompanionBuilder =
       required int recipientId,
       required String message,
       required DateTime createdAt,
+      Value<String?> clientMsgId,
     });
 typedef $$DmChatHistoryTableUpdateCompanionBuilder =
     DmChatHistoryCompanion Function({
@@ -1807,6 +2145,7 @@ typedef $$DmChatHistoryTableUpdateCompanionBuilder =
       Value<int> recipientId,
       Value<String> message,
       Value<DateTime> createdAt,
+      Value<String?> clientMsgId,
     });
 
 class $$DmChatHistoryTableFilterComposer
@@ -1840,6 +2179,11 @@ class $$DmChatHistoryTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientMsgId => $composableBuilder(
+    column: $table.clientMsgId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1877,6 +2221,11 @@ class $$DmChatHistoryTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get clientMsgId => $composableBuilder(
+    column: $table.clientMsgId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DmChatHistoryTableAnnotationComposer
@@ -1904,6 +2253,11 @@ class $$DmChatHistoryTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get clientMsgId => $composableBuilder(
+    column: $table.clientMsgId,
+    builder: (column) => column,
+  );
 }
 
 class $$DmChatHistoryTableTableManager
@@ -1946,12 +2300,14 @@ class $$DmChatHistoryTableTableManager
                 Value<int> recipientId = const Value.absent(),
                 Value<String> message = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> clientMsgId = const Value.absent(),
               }) => DmChatHistoryCompanion(
                 id: id,
                 senderId: senderId,
                 recipientId: recipientId,
                 message: message,
                 createdAt: createdAt,
+                clientMsgId: clientMsgId,
               ),
           createCompanionCallback:
               ({
@@ -1960,12 +2316,14 @@ class $$DmChatHistoryTableTableManager
                 required int recipientId,
                 required String message,
                 required DateTime createdAt,
+                Value<String?> clientMsgId = const Value.absent(),
               }) => DmChatHistoryCompanion.insert(
                 id: id,
                 senderId: senderId,
                 recipientId: recipientId,
                 message: message,
                 createdAt: createdAt,
+                clientMsgId: clientMsgId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -1999,6 +2357,7 @@ typedef $$GroupChatHistoryTableCreateCompanionBuilder =
       required int groupChatId,
       required String message,
       required DateTime createdAt,
+      Value<String?> clientMsgId,
     });
 typedef $$GroupChatHistoryTableUpdateCompanionBuilder =
     GroupChatHistoryCompanion Function({
@@ -2007,6 +2366,7 @@ typedef $$GroupChatHistoryTableUpdateCompanionBuilder =
       Value<int> groupChatId,
       Value<String> message,
       Value<DateTime> createdAt,
+      Value<String?> clientMsgId,
     });
 
 class $$GroupChatHistoryTableFilterComposer
@@ -2040,6 +2400,11 @@ class $$GroupChatHistoryTableFilterComposer
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get clientMsgId => $composableBuilder(
+    column: $table.clientMsgId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -2077,6 +2442,11 @@ class $$GroupChatHistoryTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get clientMsgId => $composableBuilder(
+    column: $table.clientMsgId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GroupChatHistoryTableAnnotationComposer
@@ -2104,6 +2474,11 @@ class $$GroupChatHistoryTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get clientMsgId => $composableBuilder(
+    column: $table.clientMsgId,
+    builder: (column) => column,
+  );
 }
 
 class $$GroupChatHistoryTableTableManager
@@ -2148,12 +2523,14 @@ class $$GroupChatHistoryTableTableManager
                 Value<int> groupChatId = const Value.absent(),
                 Value<String> message = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<String?> clientMsgId = const Value.absent(),
               }) => GroupChatHistoryCompanion(
                 id: id,
                 senderId: senderId,
                 groupChatId: groupChatId,
                 message: message,
                 createdAt: createdAt,
+                clientMsgId: clientMsgId,
               ),
           createCompanionCallback:
               ({
@@ -2162,12 +2539,14 @@ class $$GroupChatHistoryTableTableManager
                 required int groupChatId,
                 required String message,
                 required DateTime createdAt,
+                Value<String?> clientMsgId = const Value.absent(),
               }) => GroupChatHistoryCompanion.insert(
                 id: id,
                 senderId: senderId,
                 groupChatId: groupChatId,
                 message: message,
                 createdAt: createdAt,
+                clientMsgId: clientMsgId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2388,6 +2767,151 @@ typedef $$OpenChatsTableProcessedTableManager =
       OpenChat,
       PrefetchHooks Function()
     >;
+typedef $$SyncMarkersTableCreateCompanionBuilder =
+    SyncMarkersCompanion Function({
+      required String key,
+      Value<DateTime?> lastSyncedAt,
+      Value<int> rowid,
+    });
+typedef $$SyncMarkersTableUpdateCompanionBuilder =
+    SyncMarkersCompanion Function({
+      Value<String> key,
+      Value<DateTime?> lastSyncedAt,
+      Value<int> rowid,
+    });
+
+class $$SyncMarkersTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncMarkersTable> {
+  $$SyncMarkersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SyncMarkersTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncMarkersTable> {
+  $$SyncMarkersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SyncMarkersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncMarkersTable> {
+  $$SyncMarkersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncedAt => $composableBuilder(
+    column: $table.lastSyncedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$SyncMarkersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SyncMarkersTable,
+          SyncMarker,
+          $$SyncMarkersTableFilterComposer,
+          $$SyncMarkersTableOrderingComposer,
+          $$SyncMarkersTableAnnotationComposer,
+          $$SyncMarkersTableCreateCompanionBuilder,
+          $$SyncMarkersTableUpdateCompanionBuilder,
+          (
+            SyncMarker,
+            BaseReferences<_$AppDatabase, $SyncMarkersTable, SyncMarker>,
+          ),
+          SyncMarker,
+          PrefetchHooks Function()
+        > {
+  $$SyncMarkersTableTableManager(_$AppDatabase db, $SyncMarkersTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SyncMarkersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncMarkersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncMarkersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncMarkersCompanion(
+                key: key,
+                lastSyncedAt: lastSyncedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String key,
+                Value<DateTime?> lastSyncedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SyncMarkersCompanion.insert(
+                key: key,
+                lastSyncedAt: lastSyncedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SyncMarkersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SyncMarkersTable,
+      SyncMarker,
+      $$SyncMarkersTableFilterComposer,
+      $$SyncMarkersTableOrderingComposer,
+      $$SyncMarkersTableAnnotationComposer,
+      $$SyncMarkersTableCreateCompanionBuilder,
+      $$SyncMarkersTableUpdateCompanionBuilder,
+      (
+        SyncMarker,
+        BaseReferences<_$AppDatabase, $SyncMarkersTable, SyncMarker>,
+      ),
+      SyncMarker,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2400,4 +2924,6 @@ class $AppDatabaseManager {
       $$GroupChatHistoryTableTableManager(_db, _db.groupChatHistory);
   $$OpenChatsTableTableManager get openChats =>
       $$OpenChatsTableTableManager(_db, _db.openChats);
+  $$SyncMarkersTableTableManager get syncMarkers =>
+      $$SyncMarkersTableTableManager(_db, _db.syncMarkers);
 }
