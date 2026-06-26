@@ -10,6 +10,7 @@ import '../profile.dart';
 import 'chat_screen.dart';
 import '../app_colors.dart';
 import '../user_api_service.dart';
+import '../key_service.dart';
 
 class MessengerHomescreen extends StatefulWidget {
   const MessengerHomescreen({super.key});
@@ -43,6 +44,13 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
       if (!mounted) return;
       _subscription = _service!.incoming?.listen(_handleEvent);
       setState(() {});
+    });
+    // E2EE: Keypair sicherstellen + hochladen, parallel zu connect
+    KeyService.ensureKeypair(userId.toString()).then((result) async {
+      final (pubKey, _) = result;
+      await KeyService.uploadPublicKey(pubKey);
+    }).catchError((_) {
+      debugPrint('[E2EE] Keypair/Upload fehlgeschlagen');
     });
   }
 

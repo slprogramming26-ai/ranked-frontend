@@ -52,6 +52,7 @@ class PostApiService {
       final data = jsonDecode(response.body);
       return data['image_url'] as String;
     }
+    print('Upload fehlgeschlagen: ${response.statusCode} – ${response.body}'); // <-- zeigt detail
     return null;
   }
 

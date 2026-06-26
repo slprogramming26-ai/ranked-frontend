@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:ranked/key_service.dart';
+import 'package:sodium/sodium.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../token_storage.dart';
 import '../api_client.dart';
@@ -62,6 +64,8 @@ class MessengerApiService {
 
   MessengerApiService(this._db, this._myUserId);
 
+  final Map<int, String> _partnerPubKeyCache = {};
+
   WebSocketChannel? _channel;
   Stream<ChatEvent>? _incoming;
   StreamSubscription<ChatEvent>? _subscription;
@@ -87,6 +91,7 @@ class MessengerApiService {
 
     _subscription = _incoming!.listen(_persistIncoming);
   }
+
 
   Stream<ChatEvent>? get incoming =>
       _incoming; //referiert zu der funktion oben: nicht mehr als ein einziger aufruf
@@ -121,14 +126,39 @@ class MessengerApiService {
     }
   }
 
+  Future<String> _decryptDm(String raw, int senderId) async {
+    if (!raw.startsWith('v1:')) return raw;
+    try {
+      final senderPubKeyB64 = await _getPartnerPublicKey(senderId);
+      if (senderPubKeyB64 == null) return '[Nachricht nicht lesbar – kein Key]';
+      final mySecretKey = await KeyService.getSecretKey(_myUserId.toString());
+      if (mySecretKey == null) return '[Nachricht nicht lesbar – eigener Key fehlt]';
+      final sodium = await SodiumInit.init();
+      final combined = base64.decode(raw.substring(3));
+      final nonceLen = sodium.crypto.box.nonceBytes;
+      final nonce = combined.sublist(0, nonceLen);
+      final cipher = combined.sublist(nonceLen);
+      final plainBytes = sodium.crypto.box.openEasy(
+        cipherText: cipher,
+        nonce: nonce,
+        publicKey: base64.decode(senderPubKeyB64),
+        secretKey: mySecretKey,
+      );
+      return utf8.decode(plainBytes);
+    } catch (_) {
+      return '[Nachricht nicht lesbar]';
+    }
+  }
+
   Future<void> _persistIncoming(ChatEvent event) async {
     switch (event) {
       case IncomingDm dm:
         await _ensureDmOpenChat(dm.senderId);
+        final plaintext = await _decryptDm(dm.message, dm.senderId);
         await _db.saveDm(
           senderId: dm.senderId,
           recipientId: _myUserId,
-          message: dm.message,
+          message: plaintext,
           createdAt: dm.createdAt,
           clientMsgId: dm.clientMsgId,
         );
@@ -206,18 +236,42 @@ class MessengerApiService {
   static const _uuid = Uuid();
 
   void sendDirectMessage(int recipientId, String message) async {
-    // Ein Key pro Nachricht: geht an den Server UND ins lokale Echo.
-    // Kommt die Nachricht spaeter per REST-Sync zurueck, traegt sie denselben
-    // Key -> insertOrIgnore verwirft die Dublette.
     final clientMsgId = _uuid.v4();
+
+    // Partner-Key holen (Cache → Server)
+    final partnerPubKeyB64 = await _getPartnerPublicKey(recipientId);
+    if (partnerPubKeyB64 == null) {
+      debugPrint('[E2EE] Kein Key für Partner $recipientId — Versand blockiert');
+      return;
+    }
+
+    // Eigenen Secret Key laden und verschlüsseln
+    final mySecretKey = await KeyService.getSecretKey(_myUserId.toString());
+    String wireMessage = message; // Fallback Klartext falls eigener Key fehlt
+    if (mySecretKey != null) {
+      final sodium = await SodiumInit.init();
+      final nonce = sodium.randombytes.buf(sodium.crypto.box.nonceBytes);
+      final cipher = sodium.crypto.box.easy(
+        message: Uint8List.fromList(utf8.encode(message)),
+        nonce: nonce,
+        publicKey: base64.decode(partnerPubKeyB64),
+        secretKey: mySecretKey,
+      );
+      final combined = Uint8List(nonce.length + cipher.length)
+        ..setAll(0, nonce)
+        ..setAll(nonce.length, cipher);
+      wireMessage = 'v1:${base64.encode(combined)}';
+    }
+
     _channel?.sink.add(
       jsonEncode({
         'kind': 'dm',
         'to': recipientId,
-        'message': message,
+        'message': wireMessage,
         'client_msg_id': clientMsgId,
       }),
     );
+    // Klartext lokal speichern — nicht den Geheimtext
     await _db.saveDm(
       senderId: _myUserId,
       recipientId: recipientId,
@@ -225,6 +279,15 @@ class MessengerApiService {
       createdAt: DateTime.now().toUtc(),
       clientMsgId: clientMsgId,
     );
+  }
+
+  Future<String?> _getPartnerPublicKey(int peerId) async {
+    if (_partnerPubKeyCache.containsKey(peerId)) {
+      return _partnerPubKeyCache[peerId];
+    }
+    final key = await KeyService.fetchPartnerPublicKey(peerId);
+    if (key != null) _partnerPubKeyCache[peerId] = key;
+    return key;
   }
 
   void sendGroupMessage(int groupChatId, String message) async {
@@ -306,7 +369,8 @@ class MessengerApiService {
     final response = await ApiClient.get(uri);
     if (response.statusCode != 200) return;
     final raw = jsonDecode(response.body) as List;
-    if (raw.isEmpty) return; // nichts Neues -> einfach fertig, kein Fehler
+    if (raw.isEmpty) return;
+
     final messages = raw.cast<Map<String, dynamic>>();
 
     // Ein globaler Endpoint -> ein globaler Marker. Wir merken uns nur das
@@ -319,11 +383,13 @@ class MessengerApiService {
       final senderId = m['sender_id'] as int;
       final recipientId = m['recipient_id'] as int;
       final createdAt = DateTime.parse(m['created_at'] as String).toUtc();
+      final otherPartyId = senderId == _myUserId ? recipientId : senderId;
+      final plaintext = await _decryptDm(m['message'] as String, otherPartyId);
 
       await _db.saveDm(
         senderId: senderId,
         recipientId: recipientId,
-        message: m['message'] as String,
+        message: plaintext,
         createdAt: createdAt,
         clientMsgId: m['client_msg_id'] as String?,
       );

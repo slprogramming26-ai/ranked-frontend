@@ -40,7 +40,17 @@ class _CreatePostState extends State<CreatePost> {
     final bytes = await File(path).readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null) return null;
-    final fixed = img.encodeJpg(decoded);
+
+
+    final resized = (decoded.width > 1080 || decoded.height > 1080)
+        ? img.copyResize(
+      decoded,
+      width: decoded.width >= decoded.height ? 1080 : null,
+      height: decoded.height > decoded.width ? 1080 : null,
+    )
+        : decoded;
+
+    final fixed = img.encodeJpg(resized, quality: 85);
     return await File(path).writeAsBytes(fixed);
   }
 
