@@ -68,6 +68,10 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
         debugPrint('ACK to=$to delivered=$deliveredLive');
       case ChatErrorEvent(:final detail):
         debugPrint('Server-Fehler: $detail');
+      case GroupRekeyRequired(:final groupChatId):
+        debugPrint('Rekey for group $groupChatId required');
+      case GroupKeyOutdated(:final groupChatId, :final currentVersion):
+        debugPrint('Key with $currentVersion for group $groupChatId is outdated');
     }
   }
 

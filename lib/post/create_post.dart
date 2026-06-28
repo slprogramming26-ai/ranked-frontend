@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 import '../post_api_service.dart';
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
@@ -36,29 +37,12 @@ class _CreatePostState extends State<CreatePost> {
 
   final _picker = ImagePicker();
 
-  Future<File?> _fixOrientation(String path) async {
-    final bytes = await File(path).readAsBytes();
-    final decoded = img.decodeImage(bytes);
-    if (decoded == null) return null;
-
-
-    final resized = (decoded.width > 1080 || decoded.height > 1080)
-        ? img.copyResize(
-      decoded,
-      width: decoded.width >= decoded.height ? 1080 : null,
-      height: decoded.height > decoded.width ? 1080 : null,
-    )
-        : decoded;
-
-    final fixed = img.encodeJpg(resized, quality: 85);
-    return await File(path).writeAsBytes(fixed);
-  }
-
   pickImageFromGallery() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      _image = await _fixOrientation(pickedFile.path) ?? File(pickedFile.path);
+      // Sofort das Original anzeigen – komprimiert wird erst beim Upload.
+      _image = File(pickedFile.path);
       setState(() {});
     }
   }
@@ -67,7 +51,7 @@ class _CreatePostState extends State<CreatePost> {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {
-      _image = await _fixOrientation(pickedFile.path) ?? File(pickedFile.path);
+      _image = File(pickedFile.path);
       setState(() {});
     }
   }
@@ -148,7 +132,13 @@ class _CreatePostState extends State<CreatePost> {
                 String? imageUrl;
                 _showLoadingDialog(context);
                 if (_image != null) {
-                  imageUrl = await PostApiService.uploadPostImage(_image!);
+                  // Komprimierung im Hintergrund-Isolate – UI/Dialog bleibt flüssig.
+                  final path = _image!.path;
+                  final compressedPath = await Isolate.run(() => _compressImage(path));
+                  final fileToUpload =
+                      compressedPath != null ? File(compressedPath) : _image!;
+
+                  imageUrl = await PostApiService.uploadPostImage(fileToUpload);
 
                   if (!context.mounted) return;
 
@@ -659,6 +649,29 @@ class _CreatePostState extends State<CreatePost> {
       ),
     );
   }
+}
+
+/// Läuft in einem separaten Isolate (kein Zugriff auf `this`/State).
+/// Bekommt nur den Pfad, dekodiert/skaliert/kodiert das Bild und schreibt
+/// es als neue Datei. Gibt den Pfad der komprimierten Datei zurück – oder
+/// null, wenn das Bild nicht dekodiert werden konnte.
+Future<String?> _compressImage(String path) async {
+  final bytes = await File(path).readAsBytes();
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) return null;
+
+  final resized = (decoded.width > 1080 || decoded.height > 1080)
+      ? img.copyResize(
+          decoded,
+          width: decoded.width >= decoded.height ? 1080 : null,
+          height: decoded.height > decoded.width ? 1080 : null,
+        )
+      : decoded;
+
+  final fixed = img.encodeJpg(resized, quality: 85);
+  final newPath = '$path.compressed.jpg';
+  await File(newPath).writeAsBytes(fixed);
+  return newPath;
 }
 
 class _DashedBorderPainter extends CustomPainter {
