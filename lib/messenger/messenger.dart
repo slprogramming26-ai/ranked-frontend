@@ -19,7 +19,8 @@ class MessengerHomescreen extends StatefulWidget {
   State<MessengerHomescreen> createState() => _MessengerHomescreenState();
 }
 
-class _MessengerHomescreenState extends State<MessengerHomescreen> {
+class _MessengerHomescreenState extends State<MessengerHomescreen>
+    with WidgetsBindingObserver {
   MessengerApiService? _service;
   StreamSubscription<ChatEvent>? _subscription;
   int? _myUserId;
@@ -27,9 +28,29 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
   @override
   void initState() {
     super.initState();
+    // Als Lifecycle-Beobachter anmelden: ab jetzt ruft Flutter bei jedem
+    // App-Zustandswechsel didChangeAppLifecycleState() unten auf.
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       initializeService(context);
     });
+  }
+
+  // Flutter ruft das bei jedem Wechsel des App-Zustands auf. Uns interessiert
+  // nur die Rueckkehr in den Vordergrund (resumed) — dann war die App evtl. im
+  // Hintergrund/Standby und der WebSocket wurde vom OS still gekappt.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _reconnectOnResume();
+    }
+  }
+
+  Future<void> _reconnectOnResume() async {
+    // Das _events-Band im Service ist stabil und ueberlebt den reconnect().
+    // Deshalb muessen wir hier NICHT neu abonnieren — einmal in
+    // initializeService() reicht fuer immer.
+    await _service?.reconnect();
   }
 
   Future<void> initializeService(BuildContext context) async {
@@ -40,10 +61,11 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
     final userId = provider.userdata["id"] as int;
     _myUserId = userId;
     _service = MessengerApiService(db, userId);
+    // Stabiles _events-Band -> EINMAL abonnieren genuegt fuer die ganze
+    // Lebenszeit, unabhaengig von spaeteren (Re)connects.
+    _subscription = _service!.incoming.listen(_handleEvent);
     _service!.connect().then((_) {
-      if (!mounted) return;
-      _subscription = _service!.incoming?.listen(_handleEvent);
-      setState(() {});
+      if (mounted) setState(() {});
     });
     // E2EE: Keypair sicherstellen + hochladen, parallel zu connect
     KeyService.ensureKeypair(userId.toString()).then((result) async {
@@ -77,8 +99,11 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
 
   @override
   void dispose() {
+    // Antenne wieder abmelden, sonst haelt Flutter eine Referenz auf dieses
+    // State-Objekt -> Memory-Leak.
+    WidgetsBinding.instance.removeObserver(this);
     _subscription?.cancel();
-    _service?.disconnect();
+    _service?.dispose(); // schliesst Verbindung UND das _events-Band
     super.dispose();
   }
 
@@ -355,7 +380,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
               physics: const BouncingScrollPhysics(),
               itemCount: contacts.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final c = contacts[index];
                 return _ChatTile(
@@ -442,7 +467,7 @@ class _ChatTile extends StatelessWidget {
                     ? Image.network(
                         contact.avatarUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _fallback(raw, isGroup),
+                        errorBuilder: (_, _, _) => _fallback(raw, isGroup),
                       )
                     : _fallback(raw, isGroup),
               ),
@@ -863,7 +888,7 @@ class _NewChatSearchPageState extends State<_NewChatSearchPage> {
       padding: const EdgeInsets.only(bottom: 24),
       physics: const BouncingScrollPhysics(),
       itemCount: results.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
       itemBuilder: (_, i) {
         final user = results[i];
         return _UserResultTile(
@@ -978,7 +1003,7 @@ class _UserResultTile extends StatelessWidget {
                     ? Image.network(
                         avatarUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _fallback(),
+                        errorBuilder: (_, _, _) => _fallback(),
                       )
                     : _fallback(),
               ),
