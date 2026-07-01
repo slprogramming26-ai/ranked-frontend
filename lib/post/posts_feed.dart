@@ -3,9 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/search.dart';
 import 'post_provider.dart';
-import '../post_api_service.dart';
+import 'post_api_service.dart';
 import 'dart:ui';
 import '../app_colors.dart';
+import 'package:ranked/story/story_create_screen.dart';
+import 'package:ranked/story/story_viewer.dart';
+import 'package:ranked/story/story.dart';
 
 class PostsFeed extends StatefulWidget {
   const PostsFeed({super.key});
@@ -50,9 +53,19 @@ class _PostsFeedState extends State<PostsFeed> {
 
   Future<void> _fetchData() async {
     final provider = Provider.of<PostProvider>(context, listen: false);
+    final storyProvider = Provider.of<StoryProvider>(context, listen: false);
     if (provider.posts.isEmpty) provider.setLoading(true);
-    final posts = await PostApiService.getPosts("10", "0");
+
+    // Posts und Stories parallel laden (spart eine Round-Trip-Zeit).
+    final results = await Future.wait([
+      PostApiService.getPosts("10", "0"),
+      StoryApiService.getStories(),
+    ]);
+    final posts = results[0];
+    final stories = results[1];
+
     provider.setPosts(posts);
+    storyProvider.setStories(stories);
   }
 
   String getTimeAgo(String createdAt) {
@@ -97,14 +110,16 @@ class _PostsFeedState extends State<PostsFeed> {
               return Column(
                 children: [
                   _buildStickyHeader(context),
-                  _buildStoryRow(context),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                      child: _buildStoryRow(context)),
                 ],
               );
             }
 
             if (index == postProvider.posts.length) {
               return _isFetchingMore
-                  ? const Padding(
+                  ? Padding(
                       padding: EdgeInsets.all(20),
                       child: Center(
                         child: CircularProgressIndicator(color: AppColors.primary),
@@ -126,6 +141,8 @@ class _PostsFeedState extends State<PostsFeed> {
                   postData['post']['owner']['profile_picture_url'].toString(),
               timeDifference: getTimeAgo(postData['post']['created_at']),
               flag: postData['post']['flag'],
+              isMine: postData['is_mine'] ?? false,
+              isLiked: postData['is_liked'] ?? false,
             );
           },
         ),
@@ -152,7 +169,7 @@ class _PostsFeedState extends State<PostsFeed> {
                     width: 2,
                   ),
                 ),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   backgroundColor: AppColors.surfaceContainerHighest,
                 ),
               ),
@@ -178,17 +195,46 @@ class _PostsFeedState extends State<PostsFeed> {
   }
 
   Widget _buildStoryRow(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      child: Row(
-        children: [
-          _buildAddPulse(),
-          const ShowStoryAvatar(name: "Marcus"),
-          const ShowStoryAvatar(name: "Elena"),
-          const ShowStoryAvatar(name: "Sarah"),
-          const ShowStoryAvatar(name: "David"),
-        ],
+    return Consumer<StoryProvider>(
+      builder: (context, storyProvider, _) {
+        // Stories nach Owner gruppieren (eine Ring pro User, Instagram-Style).
+        // Reihenfolge des Backends (neueste zuerst) bleibt erhalten.
+        final grouped = <int, List<Map<String, dynamic>>>{};
+        for (final story in storyProvider.stories) {
+          final ownerId = story['owner_id'] as int;
+          grouped.putIfAbsent(ownerId, () => []).add(story);
+        }
+        final owners = grouped.values.toList();
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: Row(
+            children: [
+              _buildAddPulse(),
+              if (storyProvider.isLoading && owners.isEmpty)
+                // Platzhalter-Ringe während des ersten Ladens.
+                ...List.generate(4, (_) => const _StoryAvatarSkeleton())
+              else
+                ...List.generate(owners.length, (i) {
+                  final stories = owners[i];
+                  return ShowStoryAvatar(
+                    stories: stories,
+                    onTap: () => _openStoryViewer(owners, i),
+                  );
+                }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openStoryViewer(List<List<Map<String, dynamic>>> owners, int startIndex) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => StoryViewer(owners: owners, initialOwner: startIndex),
       ),
     );
   }
@@ -196,15 +242,38 @@ class _PostsFeedState extends State<PostsFeed> {
   Widget _buildAddPulse() {
     return Column(
       children: [
-        Container(
-          width: 64,
-          height: 64,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(20),
+        InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const StoryCreateScreen()),
+            );
+          },
+          child: Container(
+            width: 64,
+            height: 64,
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.25),
+                width: 1.5,
+              ),
+            ),
+            child: Center(
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 18),
+              ),
+            ),
           ),
-          child: const Center(child: Icon(Icons.add, color: AppColors.primary)),
         ),
         const SizedBox(height: 8),
         Text(
@@ -233,6 +302,8 @@ class TextPost extends StatefulWidget {
     this.profilePictureUrl,
     this.flag,
     required this.timeDifference,
+    this.isMine = false,
+    this.isLiked = false,
   });
 
   final String title;
@@ -245,26 +316,69 @@ class TextPost extends StatefulWidget {
   final String? profilePictureUrl;
   final String timeDifference;
   final String? flag;
+  final bool isMine;
+  final bool isLiked;
 
   @override
   State<TextPost> createState() => _TextPostState();
 }
 
-class _TextPostState extends State<TextPost> {
+class _TextPostState extends State<TextPost>
+    with SingleTickerProviderStateMixin {
   // Der Controller muss hier bleiben, damit deine Logik funktioniert
   late TextEditingController commentController;
+
+  // Steuert die "Burst"-Animation beim Doppeltipp auf den Post.
+  late AnimationController _burstController;
 
   @override
   void initState() {
     super.initState();
     commentController = TextEditingController();
+    _burstController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
   }
 
 
   @override
   void dispose() {
     commentController.dispose();
+    _burstController.dispose();
     super.dispose();
+  }
+
+  // Liken mit optimistischem Update: Erst lokal anzeigen, dann ans Backend.
+  // Schlägt der Request fehl, machen wir das Update rückgängig.
+  Future<void> _like() async {
+    final provider = Provider.of<PostProvider>(context, listen: false);
+    provider.setLike(widget.post_id, true);
+    final success = await PostApiService.createVote(widget.post_id, 1);
+    if (!success) provider.setLike(widget.post_id, false);
+  }
+
+  Future<void> _unlike() async {
+    final provider = Provider.of<PostProvider>(context, listen: false);
+    provider.setLike(widget.post_id, false);
+    final success = await PostApiService.createVote(widget.post_id, 0);
+    if (!success) provider.setLike(widget.post_id, true);
+  }
+
+  // Einfacher Tap auf den Button: je nach Status liken oder entliken.
+  void _toggleLike() {
+    if (widget.isLiked) {
+      _unlike();
+    } else {
+      _like();
+    }
+  }
+
+  // Doppeltipp auf den Post: Animation immer abspielen (wie bei Instagram),
+  // aber nur liken, wenn noch nicht geliked.
+  void _handleDoubleTapLike() {
+    _burstController.forward(from: 0);
+    if (!widget.isLiked) _like();
   }
 
 
@@ -286,7 +400,7 @@ class _TextPostState extends State<TextPost> {
       builder: (BuildContext context) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.75,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColors.surface, // Nutzt die neue Background-Farbe
             borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
@@ -319,7 +433,7 @@ class _TextPostState extends State<TextPost> {
                 child: Consumer<PostProvider>(
                   builder: (context, provider, child) {
                     if (provider.isLoadingComments) {
-                      return const Center(
+                      return Center(
                         child: CircularProgressIndicator(color: AppColors.primary),
                       );
                     }
@@ -378,7 +492,7 @@ class _TextPostState extends State<TextPost> {
                     ),
                     const SizedBox(width: 10),
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
                           colors: [AppColors.primary, AppColors.primaryContainer],
@@ -422,23 +536,67 @@ class _TextPostState extends State<TextPost> {
 
   // Das ist der visuelle Teil von eben, nur sauber verpackt:
   Widget _buildPostCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white.withOpacity(0.5)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.02),
-            blurRadius: 30,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    return GestureDetector(
+      // Doppeltipp irgendwo auf der Karte liked den Post.
+      onDoubleTap: _handleDoubleTapLike,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withOpacity(0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.02),
+              blurRadius: 30,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        // Stack, damit die Burst-Animation über dem Inhalt zentriert liegt.
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context),
+                _buildBody(),
+                _buildFooter(context),
+              ],
+            ),
+            _buildLikeBurst(),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [_buildHeader(context), _buildBody(), _buildFooter(context)],
+    );
+  }
+
+  // Der aufblitzende Blitz beim Doppeltipp. IgnorePointer, damit er keine
+  // Taps abfängt; spielt nur, während der Controller läuft.
+  Widget _buildLikeBurst() {
+    return IgnorePointer(
+      child: AnimatedBuilder(
+        animation: _burstController,
+        builder: (context, child) {
+          final double v = _burstController.value;
+          if (v == 0) return const SizedBox.shrink();
+          // Zuerst schnell rein-faden, dann langsam raus.
+          final double opacity = v < 0.3 ? v / 0.3 : (1 - (v - 0.3) / 0.7);
+          final double scale = 0.5 + v * 0.9;
+          return Opacity(
+            opacity: opacity.clamp(0.0, 1.0),
+            child: Transform.scale(scale: scale, child: child),
+          );
+        },
+        child: Icon(
+          Icons.bolt,
+          size: 110,
+          color: Colors.white.withOpacity(0.9),
+          shadows: [
+            Shadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30),
+          ],
+        ),
       ),
     );
   }
@@ -486,9 +644,36 @@ class _TextPostState extends State<TextPost> {
           ),
         ],
       ),
-      title: Text(
-        widget.owner_username,
-        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              widget.owner_username,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
+            ),
+          ),
+          if (widget.isMine) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryContainer],
+                ),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                "Du",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
       subtitle: Text(
         "${widget.timeDifference} • ${widget.flag ?? ''}",
@@ -651,7 +836,7 @@ class _TextPostState extends State<TextPost> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Text(
             widget.content,
-            style: const TextStyle(color: AppColors.onSurfaceVariant),
+            style: TextStyle(color: AppColors.onSurfaceVariant),
           ),
         ),
       ],
@@ -667,62 +852,62 @@ class _TextPostState extends State<TextPost> {
           const SizedBox(width: 15),
           IconButton(
             onPressed: () => showCommentSection(context),
-            icon: const Icon(
+            icon: Icon(
               Icons.chat_bubble_outline,
               color: AppColors.onSurfaceVariant,
             ),
           ),
           const Spacer(),
-          const Icon(Icons.share_outlined, color: AppColors.onSurfaceVariant),
+          Icon(Icons.share_outlined, color: AppColors.onSurfaceVariant),
         ],
       ),
     );
   }
 
   Widget _buildHypeButton(BuildContext context) {
+    final bool liked = widget.isLiked;
     return GestureDetector(
-      onTap: () async {
-        final success = await PostApiService.createVote(widget.post_id, 1);
-        if (success)
-          Provider.of<PostProvider>(
-            context,
-            listen: false,
-          ).addLikeLocally(widget.post_id);
-      },
-      onDoubleTap: () async {
-        final success = await PostApiService.createVote(widget.post_id, 0);
-
-        if (success) {
-          Provider.of<PostProvider>(
-            context,
-
-            listen: false,
-          ).removeLikeLocally(widget.post_id);
-        } else {}
-      },
-      child: Container(
+      // Ein Tap toggelt: geliked -> entliken, sonst liken.
+      onTap: _toggleLike,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.primary, AppColors.primaryContainer],
-          ),
+          // Geliked = voller Gradient, sonst dezenter Outline-Look.
+          gradient: liked
+              ? LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryContainer],
+                )
+              : null,
+          color: liked
+              ? null
+              : AppColors.surfaceContainerHighest.withOpacity(0.4),
           borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.2),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          border: liked
+              ? null
+              : Border.all(color: AppColors.primary.withOpacity(0.3)),
+          boxShadow: liked
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
-            const Icon(Icons.bolt, color: Colors.white, size: 18),
+            Icon(
+              Icons.bolt,
+              color: liked ? Colors.white : AppColors.primary,
+              size: 18,
+            ),
             const SizedBox(width: 4),
             Text(
               widget.likes.toString(),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: liked ? Colors.white : AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -733,9 +918,106 @@ class _TextPostState extends State<TextPost> {
   }
 }
 
+/// Ein Story-Ring im Feed. Zeigt das Profilbild des Owners, einen Gradient-Ring
+/// (signalisiert: hat aktive Stories) und den Usernamen. [stories] sind alle
+/// (noch gültigen) Stories dieses einen Users.
 class ShowStoryAvatar extends StatelessWidget {
-  final String name;
-  const ShowStoryAvatar({super.key, required this.name});
+  final List<Map<String, dynamic>> stories;
+  final VoidCallback onTap;
+
+  const ShowStoryAvatar({
+    super.key,
+    required this.stories,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final owner = stories.first['owner'] as Map<String, dynamic>?;
+    final username = owner?['username']?.toString() ?? 'User';
+    final picUrl = owner?['profile_picture_url']?.toString();
+    final isMine = stories.first['is_mine'] == true;
+    final hasPic = picUrl != null && picUrl.isNotEmpty && picUrl != 'null';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: SizedBox(
+        width: 68,
+        child: Column(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: onTap,
+              child: Container(
+                width: 64,
+                height: 64,
+                padding: const EdgeInsets.all(2.5),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryContainer],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: hasPic
+                        ? Image.network(
+                            picUrl,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            errorBuilder: (_, __, ___) => _fallback(username),
+                          )
+                        : _fallback(username),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              isMine ? 'Du' : username,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _fallback(String username) {
+    final letter = username.isNotEmpty ? username[0].toUpperCase() : '?';
+    return Container(
+      color: AppColors.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: Text(
+        letter,
+        style: GoogleFonts.plusJakartaSans(
+          fontWeight: FontWeight.w800,
+          fontSize: 22,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+/// Platzhalter-Ring während Stories noch laden.
+class _StoryAvatarSkeleton extends StatelessWidget {
+  const _StoryAvatarSkeleton();
 
   @override
   Widget build(BuildContext context) {
@@ -746,32 +1028,18 @@ class ShowStoryAvatar extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            padding: const EdgeInsets.all(2),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryContainer],
-              ),
+              color: AppColors.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.surface, width: 2),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15),
-                child: Container(color: AppColors.surfaceContainerHighest),
-              ),
-            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: AppColors.onSurface,
+          const SizedBox(height: 6),
+          Container(
+            width: 36,
+            height: 8,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
         ],
@@ -803,7 +1071,7 @@ class Comment extends StatelessWidget {
             radius: 18,
             child: Text(
               username[0].toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.primary,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -828,7 +1096,7 @@ class Comment extends StatelessWidget {
                 children: [
                   Text(
                     username,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       color: AppColors.onSurface,
@@ -837,7 +1105,7 @@ class Comment extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     comment,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.onSurface,
                       fontSize: 14,
                     ),

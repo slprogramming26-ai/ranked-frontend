@@ -1,6 +1,7 @@
-import 'dart:io';
-import 'dart:isolate';
-import '../post_api_service.dart';
+import
+'dart:io';
+import 'package:flutter/foundation.dart';
+import 'post_api_service.dart';
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -106,12 +107,18 @@ class _CreatePostState extends State<CreatePost> {
         surfaceTintColor: Colors.transparent,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: AppColors.outlineVariant.withOpacity(0.1)),
+          child: Container(
+            height: 1,
+            color: AppColors.outlineVariant.withOpacity(0.1),
+          ),
         ),
         leading: Padding(
           padding: const EdgeInsets.only(left: 8),
           child: IconButton(
-            icon: Icon(Icons.close, color: AppColors.onSurface.withOpacity(0.7)),
+            icon: Icon(
+              Icons.close,
+              color: AppColors.onSurface.withOpacity(0.7),
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -129,46 +136,69 @@ class _CreatePostState extends State<CreatePost> {
             padding: const EdgeInsets.only(right: 16.0, top: 8, bottom: 8),
             child: ElevatedButton(
               onPressed: () async {
-                String? imageUrl;
-                _showLoadingDialog(context);
-                if (_image != null) {
-                  // Komprimierung im Hintergrund-Isolate – UI/Dialog bleibt flüssig.
-                  final path = _image!.path;
-                  final compressedPath = await Isolate.run(() => _compressImage(path));
-                  final fileToUpload =
-                      compressedPath != null ? File(compressedPath) : _image!;
+                try {
+                  String? imageUrl;
+                  _showLoadingDialog(context);
+                  if (_image != null) {
+                    // Komprimierung im Hintergrund-Isolate – UI/Dialog bleibt flüssig.
+                    // compute() schickt NUR den path-String ins Isolate, keine
+                    // Closure die den Widget-Baum einfängt (sonst „unsendable").
+                    final path = _image!.path;
+                    final compressedPath = await compute(_compressImage, path);
+                    final fileToUpload = compressedPath != null
+                        ? File(compressedPath)
+                        : _image!;
 
-                  imageUrl = await PostApiService.uploadPostImage(fileToUpload);
-
-                  if (!context.mounted) return;
-
-                  if (imageUrl == null) {
-                    Navigator.pop(context);
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Bild-Upload fehlgeschlagen')),
+                    imageUrl = await PostApiService.uploadPostImage(
+                      fileToUpload,
                     );
 
-                    return;
+                    if (!context.mounted) return;
+
+                    if (imageUrl == null) {
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Bild-Upload fehlgeschlagen'),
+                        ),
+                      );
+
+                      return;
+                    }
                   }
-                }
 
-                final success = await PostApiService.createPost(
-                  titleController.text,
-                  contentController.text,
-                  isPublic,
-                  imageUrl,
-                  iconActivated.entries.where((e) => e.value).map((e) => e.key).firstOrNull?.toLowerCase(),
-                );
+                  final success = await PostApiService.createPost(
+                    titleController.text,
+                    contentController.text,
+                    isPublic,
+                    imageUrl,
+                    iconActivated.entries
+                        .where((e) => e.value)
+                        .map((e) => e.key)
+                        .firstOrNull
+                        ?.toLowerCase(),
+                  );
 
-                if (!context.mounted) return;
-                Navigator.pop(context);
-
-                if (success) {
+                  if (!context.mounted) return;
                   Navigator.pop(context);
-                } else {
+
+                  if (success) {
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Post konnte nicht erstellt werden'),
+                      ),
+                    );
+                  }
+                } catch (_) {
+                  // Unerwarteter Fehler: Dialog schließen, damit die UI nicht
+                  // hängen bleibt, und dem User kurz Bescheid geben.
+                  if (!context.mounted) return;
+                  Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Post konnte nicht erstellt werden')),
+                    const SnackBar(content: Text('Etwas ist schiefgelaufen')),
                   );
                 }
               },
@@ -178,7 +208,10 @@ class _CreatePostState extends State<CreatePost> {
                 shape: const StadiumBorder(),
                 elevation: 4,
                 shadowColor: AppColors.primary.withOpacity(0.3),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 0,
+                ),
               ),
               child: Text(
                 'Post',
@@ -219,7 +252,7 @@ class _CreatePostState extends State<CreatePost> {
                                 borderRadius: BorderRadius.circular(24),
                                 boxShadow: _kPremiumShadow,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.add_a_photo_outlined,
                                 color: AppColors.primary,
                                 size: 44,
@@ -236,12 +269,16 @@ class _CreatePostState extends State<CreatePost> {
                             ),
                             const SizedBox(height: 8),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 48),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 48,
+                              ),
                               child: Text(
                                 'Share a photo or video to start climbing the rankings.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: AppColors.onSurfaceVariant.withOpacity(0.8),
+                                  color: AppColors.onSurfaceVariant.withOpacity(
+                                    0.8,
+                                  ),
                                   fontSize: 13,
                                   height: 1.5,
                                 ),
@@ -253,12 +290,18 @@ class _CreatePostState extends State<CreatePost> {
                               children: [
                                 GestureDetector(
                                   onTap: pickImageFromGallery,
-                                  child: _buildMediaButton(Icons.image_outlined, 'Library'),
+                                  child: _buildMediaButton(
+                                    Icons.image_outlined,
+                                    'Library',
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 GestureDetector(
                                   onTap: pickImageFromCamera,
-                                  child: _buildMediaButton(Icons.videocam_outlined, 'Camera'),
+                                  child: _buildMediaButton(
+                                    Icons.videocam_outlined,
+                                    'Camera',
+                                  ),
                                 ),
                               ],
                             ),
@@ -285,7 +328,9 @@ class _CreatePostState extends State<CreatePost> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.outlineVariant.withOpacity(0.1)),
+                border: Border.all(
+                  color: AppColors.outlineVariant.withOpacity(0.1),
+                ),
                 boxShadow: _kPremiumShadow,
               ),
               child: Column(
@@ -310,7 +355,11 @@ class _CreatePostState extends State<CreatePost> {
                                 ),
                               ],
                             ),
-                            child: const Icon(Icons.person, color: AppColors.onSurfaceVariant, size: 24),
+                            child: Icon(
+                              Icons.person,
+                              color: AppColors.onSurfaceVariant,
+                              size: 24,
+                            ),
                           ),
                           Positioned(
                             bottom: -2,
@@ -321,7 +370,10 @@ class _CreatePostState extends State<CreatePost> {
                               decoration: BoxDecoration(
                                 color: AppColors.primary,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -345,7 +397,9 @@ class _CreatePostState extends State<CreatePost> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.onSurfaceVariant.withOpacity(0.6),
+                              color: AppColors.onSurfaceVariant.withOpacity(
+                                0.6,
+                              ),
                               letterSpacing: 1.0,
                             ),
                           ),
@@ -375,7 +429,7 @@ class _CreatePostState extends State<CreatePost> {
                     controller: contentController,
                     maxLines: 5,
                     onChanged: (_) => setState(() {}),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       color: AppColors.onSurface,
                       height: 1.55,
@@ -391,7 +445,10 @@ class _CreatePostState extends State<CreatePost> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Divider(color: AppColors.outlineVariant.withOpacity(0.15), height: 1),
+                  Divider(
+                    color: AppColors.outlineVariant.withOpacity(0.15),
+                    height: 1,
+                  ),
                   const SizedBox(height: 14),
                   Row(
                     children: [
@@ -402,14 +459,17 @@ class _CreatePostState extends State<CreatePost> {
                       _buildCaptionAction(Icons.mood_outlined),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceContainerLow,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           '${contentController.text.length}/2200',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             color: AppColors.outlineVariant,
@@ -434,7 +494,7 @@ class _CreatePostState extends State<CreatePost> {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.bolt, color: AppColors.primary, size: 20),
+                  child: Icon(Icons.bolt, color: AppColors.primary, size: 20),
                 ),
                 const SizedBox(width: 10),
                 Text(
@@ -459,9 +519,21 @@ class _CreatePostState extends State<CreatePost> {
                 ),
               ),
             ),
-            _buildCategoryItem(Icons.rocket_launch_outlined, 'Productivity', 'Climb the efficiency ladder'),
-            _buildCategoryItem(Icons.palette_outlined, 'Creativity', 'Express the inner vision'),
-            _buildCategoryItem(Icons.forum_outlined, 'Engagement', 'Drive the conversation'),
+            _buildCategoryItem(
+              Icons.rocket_launch_outlined,
+              'Productivity',
+              'Climb the efficiency ladder',
+            ),
+            _buildCategoryItem(
+              Icons.palette_outlined,
+              'Creativity',
+              'Express the inner vision',
+            ),
+            _buildCategoryItem(
+              Icons.forum_outlined,
+              'Engagement',
+              'Drive the conversation',
+            ),
 
             const SizedBox(height: 24),
 
@@ -471,7 +543,9 @@ class _CreatePostState extends State<CreatePost> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: AppColors.outlineVariant.withOpacity(0.1)),
+                border: Border.all(
+                  color: AppColors.outlineVariant.withOpacity(0.1),
+                ),
                 boxShadow: _kPremiumShadow,
               ),
               child: Row(
@@ -483,7 +557,7 @@ class _CreatePostState extends State<CreatePost> {
                       color: AppColors.surfaceContainerHigh,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.public,
                       color: AppColors.onSurfaceVariant,
                       size: 20,
@@ -529,7 +603,11 @@ class _CreatePostState extends State<CreatePost> {
   }
 
   Widget _buildCaptionAction(IconData icon) {
-    return Icon(icon, color: AppColors.onSurfaceVariant.withOpacity(0.7), size: 20);
+    return Icon(
+      icon,
+      color: AppColors.onSurfaceVariant.withOpacity(0.7),
+      size: 20,
+    );
   }
 
   Widget _buildMediaButton(IconData icon, String label) {
@@ -625,7 +703,10 @@ class _CreatePostState extends State<CreatePost> {
                 duration: const Duration(milliseconds: 300),
                 transitionBuilder: (Widget child, Animation<double> animation) {
                   return RotationTransition(
-                    turns: Tween<double>(begin: -0.25, end: 0.0).animate(animation),
+                    turns: Tween<double>(
+                      begin: -0.25,
+                      end: 0.0,
+                    ).animate(animation),
                     child: FadeTransition(opacity: animation, child: child),
                   );
                 },
@@ -695,15 +776,25 @@ class _DashedBorderPainter extends CustomPainter {
     const dashWidth = 10.0;
     const dashSpace = 7.0;
     final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(
-        Rect.fromLTWH(strokeWidth / 2, strokeWidth / 2, size.width - strokeWidth, size.height - strokeWidth),
-        Radius.circular(borderRadius),
-      ));
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(
+            strokeWidth / 2,
+            strokeWidth / 2,
+            size.width - strokeWidth,
+            size.height - strokeWidth,
+          ),
+          Radius.circular(borderRadius),
+        ),
+      );
 
     for (final metric in path.computeMetrics()) {
       double distance = 0;
       while (distance < metric.length) {
-        canvas.drawPath(metric.extractPath(distance, distance + dashWidth), paint);
+        canvas.drawPath(
+          metric.extractPath(distance, distance + dashWidth),
+          paint,
+        );
         distance += dashWidth + dashSpace;
       }
     }
@@ -790,7 +881,10 @@ class _RankedLoadingDialogState extends State<_RankedLoadingDialog> {
               child: Text(
                 _messages[_index],
                 key: ValueKey(_index),
-                style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -850,7 +944,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
         transform: Matrix4.translationValues(0, _anim.value, 0),
         width: 8,
         height: 8,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.primary,
           shape: BoxShape.circle,
         ),

@@ -15,9 +15,11 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'post/post_provider.dart';
+import 'story/story.dart';
 import 'sign_in.dart';
 import 'app_colors.dart';
 import 'search.dart';
+import 'theme_provider.dart';
 import "local_data/database.dart";
 
 void main() {
@@ -28,7 +30,9 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => RankingProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
+        ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         Provider.value(value: db),
       ],
       child: const MyApp(),
@@ -42,10 +46,17 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    // Haengt an der Dark-Mode-Wahl: setzt vor jedem Build das globale Flag in
+    // AppColors und baut bei Umschaltung den kompletten Baum neu auf.
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) {
+        AppColors.isDark = themeProvider.isDark;
+        return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
         useMaterial3: true,
+        brightness: themeProvider.isDark ? Brightness.dark : Brightness.light,
+        scaffoldBackgroundColor: AppColors.surface,
         textTheme: GoogleFonts.nunitoTextTheme(),
         fontFamily: GoogleFonts.nunito().fontFamily,
         // This is the theme of your application.
@@ -63,9 +74,14 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: themeProvider.isDark ? Brightness.dark : Brightness.light,
+        ),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
+        );
+      },
     );
   }
 }
@@ -207,7 +223,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: Container(
                         height: 220,
                         width: double.infinity,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -243,7 +259,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       const SizedBox(height: 20),
                       // 2. GREETING
-                      const Text(
+                      Text(
                         "Welcome back",
                         style: TextStyle(
                           fontSize: 32,
@@ -252,7 +268,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           letterSpacing: -1,
                         ),
                       ),
-                      const Text(
+                      Text(
                         "The pulse is waiting for you.",
                         style: TextStyle(
                           fontSize: 16,
@@ -285,7 +301,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: () {},
-                          child: const Text(
+                          child: Text(
                             "Forgot password?",
                             style: TextStyle(
                               color: AppColors.primary,
@@ -310,7 +326,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         width: double.infinity,
                         height: 60,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
+                          gradient: LinearGradient(
                             colors: [
                               AppColors.primary,
                               AppColors.primaryContainer,
@@ -368,7 +384,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               color: AppColors.onSurface.withOpacity(0.1),
                             ),
                           ),
-                          const Padding(
+                          Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               "OR CONTINUE WITH",
@@ -404,7 +420,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text(
+                            Text(
                               "New to Ranked?",
                               style: TextStyle(
                                 color: AppColors.onSurfaceVariant,
@@ -417,7 +433,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   builder: (context) => const SignIn(),
                                 ),
                               ),
-                              child: const Text(
+                              child: Text(
                                 "Sign Up",
                                 style: TextStyle(
                                   color: AppColors.primary,
@@ -446,7 +462,7 @@ class _MyHomePageState extends State<MyHomePage> {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         text.toUpperCase(),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
@@ -496,7 +512,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Center(
         child: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             color: AppColors.onSurface,
           ),
@@ -517,10 +533,10 @@ class _MyHomePageState extends State<MyHomePage> {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.88),
+                  color: AppColors.navGlass.withOpacity(0.88),
                   borderRadius: BorderRadius.circular(40),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.6),
+                    color: AppColors.navBorder.withOpacity(0.6),
                     width: 1.5,
                   ),
                   boxShadow: [
@@ -580,7 +596,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 width: 58,
                 height: 58,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     colors: [AppColors.primary, AppColors.primaryContainer],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,

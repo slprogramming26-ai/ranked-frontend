@@ -116,7 +116,7 @@ class _SearchPageState extends State<SearchPage> {
                 viewElevation: 2,
                 viewHintText: 'Search users',
                 viewLeading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+                  icon: Icon(Icons.arrow_back, color: AppColors.primary),
                   onPressed: () => _searchController.closeView(null),
                 ),
                 builder: (context, controller) =>
@@ -273,7 +273,7 @@ class _SearchBarStub extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.search, color: AppColors.primary, size: 22),
+            Icon(Icons.search, color: AppColors.primary, size: 22),
             const SizedBox(width: 12),
             Text(
               'Search users',
@@ -322,7 +322,7 @@ class _UserResultTile extends StatelessWidget {
               width: 44,
               height: 44,
               clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.surfaceContainerHighest,
               ),
@@ -360,7 +360,7 @@ class _UserResultTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(
+            Icon(
               Icons.chevron_right,
               color: AppColors.onSurfaceVariant,
               size: 20,
@@ -416,7 +416,7 @@ class _LoadingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(vertical: 24),
       child: Center(
         child: SizedBox(
@@ -634,7 +634,7 @@ class _HistoryTile extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_outward_rounded,
                   color: AppColors.primary,
                   size: 16,
@@ -677,7 +677,7 @@ class _HistoryEmpty extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.travel_explore_rounded,
               color: AppColors.primary,
               size: 32,

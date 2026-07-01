@@ -99,6 +99,14 @@ class ApiClient {
   /// damit ein spaeterer Zwangs-Logout in derselben App-Session greift.
   static void resetLogoutGuard() => _loggingOut = false;
 
+  /// Freiwilliger Logout (Logout-Button / nach Account-Loeschung):
+  /// Token loeschen und denselben Stream feuern wie der Zwangs-Logout.
+  /// main.dart reagiert darauf mit lokalem DB-Wipe + Ruecksprung zum Login.
+  static Future<void> logout() async {
+    await TokenStorage.clearAll();
+    _forceLogoutController.add(null);
+  }
+
   // Öffentliche Methoden – spiegeln http.* wider, hängen Auth automatisch an.
   // Jede baut eine Closure (token) => echter Request und gibt sie an _send.
 

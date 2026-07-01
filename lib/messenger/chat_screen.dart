@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'conversation.dart';
 import '../app_colors.dart';
+import '../user_api_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final Conversation conversation;
@@ -38,10 +39,45 @@ class _ChatScreenState extends State<ChatScreen> {
     _textController.clear();
   }
 
+  // Fragt erst nach (Blocken ist folgenreich), ruft dann den Endpoint im
+  // UserApiService auf (/users/block/{id}) und zeigt das Ergebnis als SnackBar.
+  Future<void> _confirmBlock(int peerId, String name) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => _BlockDialog(name: name),
+    );
+    if (confirmed != true) return;
+
+    final ok = await UserApiService.blockUser(peerId);
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor:
+            ok ? AppColors.onSurface : AppColors.primary,
+        content: Text(
+          ok
+              ? '$name wurde blockiert.'
+              : 'Blockieren fehlgeschlagen. Versuch es erneut.',
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final title = widget.conversation.title;
+    final conversation = widget.conversation;
+    final title = conversation.title;
     final canSend = _textController.text.trim().isNotEmpty;
+    // Blocken gibt es nur im DM – in der Gruppe gibt es keinen einzelnen Peer.
+    final dmPeerId =
+        conversation is DmConversation ? conversation.peerId : null;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -51,9 +87,44 @@ class _ChatScreenState extends State<ChatScreen> {
         scrolledUnderElevation: 0,
         titleSpacing: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          if (dmPeerId != null)
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert_rounded,
+                  color: AppColors.primary),
+              color: AppColors.surfaceContainerLow,
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              onSelected: (value) {
+                if (value == 'block') _confirmBlock(dmPeerId, title);
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem<String>(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block_rounded,
+                          size: 20, color: AppColors.primary),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Blockieren',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+        ],
         title: Row(
           children: [
             _Avatar(name: title),
@@ -441,6 +512,107 @@ class _Composer extends StatelessWidget {
 }
 
 // -----------------------------------------------------------------------------
+//  Block-Bestätigung
+// -----------------------------------------------------------------------------
+
+class _BlockDialog extends StatelessWidget {
+  final String name;
+  const _BlockDialog({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.block_rounded,
+                  color: AppColors.primary, size: 28),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '$name blockieren?',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ihr könnt einander keine Nachrichten mehr schreiben. '
+              'Du kannst die Blockierung später wieder aufheben.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                height: 1.4,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 22),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Abbrechen',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Blockieren',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
 //  Leerer Chat
 // -----------------------------------------------------------------------------
 
@@ -460,7 +632,7 @@ class _EmptyConversation extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.waving_hand_rounded,
               color: AppColors.primary,
               size: 32,

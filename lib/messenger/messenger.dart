@@ -145,7 +145,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
+      builder: (_) => Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
     );
@@ -171,7 +171,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
+      builder: (_) => Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
     );
@@ -370,7 +370,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen>
           stream: db.watchAllContacts(),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return const Center(
+              return Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               );
             }
@@ -519,7 +519,7 @@ class _ChatTile extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.primary,
                   size: 18,
@@ -536,7 +536,7 @@ class _ChatTile extends StatelessWidget {
     color: AppColors.surfaceContainerHighest,
     alignment: Alignment.center,
     child: isGroup
-        ? const Icon(Icons.groups_rounded, color: AppColors.primary, size: 22)
+        ? Icon(Icons.groups_rounded, color: AppColors.primary, size: 22)
         : Text(
             name.isNotEmpty ? name[0].toUpperCase() : '?',
             style: GoogleFonts.plusJakartaSans(
@@ -643,7 +643,7 @@ class _EmptyChats extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
+            child: Icon(
               Icons.forum_rounded,
               color: AppColors.primary,
               size: 34,
@@ -785,7 +785,7 @@ class _NewChatSearchPageState extends State<_NewChatSearchPage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primary),
+          icon: Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -814,7 +814,7 @@ class _NewChatSearchPageState extends State<_NewChatSearchPage> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.search,
                       color: AppColors.primary,
                       size: 22,
@@ -939,7 +939,7 @@ class _LoadingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(vertical: 40),
       child: Center(
         child: SizedBox(
@@ -1044,7 +1044,7 @@ class _UserResultTile extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.chat_bubble_outline_rounded,
                   color: AppColors.primary,
                   size: 16,

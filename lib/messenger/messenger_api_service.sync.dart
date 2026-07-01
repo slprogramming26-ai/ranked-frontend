@@ -84,7 +84,13 @@ extension MessengerSync on MessengerApiService {
   }
 
   // Legt einen OpenChat-Eintrag fuer eine Gruppe an, falls noch keiner existiert.
-  Future<void> _ensureGroupOpenChat(int groupChatId) async {
+  // name/avatarUrl kommen aus dem Discovery-Endpoint /group_chat/my; fehlen sie
+  // (z.B. beim Live-Pfad ueber den WebSocket), greift der Fallback "Gruppe $id".
+  Future<void> _ensureGroupOpenChat(
+    int groupChatId, {
+    String? name,
+    String? avatarUrl,
+  }) async {
     final existing =
         await (_db.select(_db.openChats)..where(
               (t) => t.id.equals(groupChatId) & t.isGroupChat.equals(true),
@@ -98,7 +104,8 @@ extension MessengerSync on MessengerApiService {
           OpenChatsCompanion.insert(
             id: groupChatId,
             isGroupChat: true,
-            username: Value('Gruppe $groupChatId'),
+            username: Value(name ?? 'Gruppe $groupChatId'),
+            avatarUrl: Value(avatarUrl),
           ),
         );
   }
@@ -108,6 +115,16 @@ extension MessengerSync on MessengerApiService {
   Future<void> _syncAll() async {
     final dmSyncMarker = await _db.getSyncMarker("dm");
     await _syncDmHistory(dmSyncMarker);
+
+    // Discovery: ZUERST die Gruppen-Mitgliedschaften vom Server holen und je
+    // Gruppe einen OpenChat sicherstellen. Ohne diesen Schritt waere die
+    // Schleife unten nach einem frischen Login (clearDatabase beim Logout)
+    // leer -> Gruppen wuerden nie nachgesynct. DMs entdecken ihre Partner
+    // dagegen direkt aus dem globalen /messages/-Endpoint.
+    final myGroups = await MessengerApiService.fetchMyGroups();
+    for (final g in myGroups) {
+      await _ensureGroupOpenChat(g.id, name: g.name, avatarUrl: g.avatarUrl);
+    }
 
     final groups = await (_db.select(
       _db.openChats,

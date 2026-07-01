@@ -128,7 +128,7 @@ class UserApiService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({"followee_id": followeeId, "dir": dir}),
     );
-    return response.statusCode == 201;
+    return response.statusCode >= 200 && response.statusCode < 300;
   }
 
   static Future<bool> blockUser(int blockedId) async {
@@ -141,5 +141,11 @@ class UserApiService {
     final response =
         await ApiClient.delete(Uri.parse('$baseUrl/users/block/$blockedId'));
     return response.statusCode == 200;
+  }
+  
+  static Future<bool> deleteUser() async {
+    final response =
+        await ApiClient.delete(Uri.parse('$baseUrl/users/delete'));
+    return response.statusCode == 204;
   }
 }

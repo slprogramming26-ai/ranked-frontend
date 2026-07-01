@@ -553,7 +553,7 @@ class _IntroScreenState extends State<IntroScreen> {
                 width: double.infinity,
                 height: 65,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     colors: [AppColors.primary, AppColors.primaryContainer],
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -757,7 +757,7 @@ class _IntroScreenState extends State<IntroScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: isActive
-              ? const LinearGradient(
+              ? LinearGradient(
                   colors: [AppColors.primary, AppColors.primaryContainer],
                 )
               : null,
@@ -862,7 +862,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
                       colors: [
@@ -887,7 +887,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                     ),
                     child: ClipOval(
                       child: _isUploading
-                          ? const Center(
+                          ? Center(
                               child: CircularProgressIndicator(
                                 color: AppColors.primary,
                                 strokeWidth: 2,
@@ -895,7 +895,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                             )
                           : _image != null
                           ? Image.file(_image!, fit: BoxFit.cover)
-                          : const Icon(
+                          : Icon(
                               Icons.person,
                               size: 44,
                               color: AppColors.primary,
@@ -939,7 +939,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             "Let others feel your energy. This is your curated scrapbook entry.",
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -989,7 +989,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                 decoration: InputDecoration(
                   hintText:
                       "Share your story, your goals, or what makes you unique...",
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     color: AppColors.outlineVariant,
                     fontSize: 13,
                     height: 1.6,
@@ -999,21 +999,21 @@ class _AboutMeStepState extends State<AboutMeStep> {
                   contentPadding: const EdgeInsets.all(16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                       color: AppColors.surfaceContainerHighest,
                       width: 1.5,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                       color: AppColors.surfaceContainerHighest,
                       width: 1.5,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
+                    borderSide: BorderSide(
                       color: AppColors.primary,
                       width: 1.5,
                     ),

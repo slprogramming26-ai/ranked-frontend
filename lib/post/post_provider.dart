@@ -44,29 +44,21 @@ class PostProvider extends ChangeNotifier {
   }
 
 
-  void addLikeLocally(int postId) {
-    // Wir suchen den Post in unserer Liste anhand der ID
+  // Setzt den Like-Status eines Posts und passt den Vote-Counter passend an.
+  // Wird sowohl für optimistische Updates als auch für Rollbacks benutzt.
+  void setLike(int postId, bool liked) {
     int index = _posts.indexWhere((element) => element['post']['id'] == postId);
+    if (index == -1) return;
 
-    if (index != -1) {
-      // Wir erhöhen die Zahl direkt im Speicher
-      _posts[index]['votes'] = _posts[index]['votes'] + 1;
+    final bool currentlyLiked = _posts[index]['is_liked'] == true;
+    // Schon im gewünschten Zustand? Dann nichts tun (verhindert doppeltes Zählen).
+    if (currentlyLiked == liked) return;
 
-      // WICHTIG: Sag den Widgets, dass sich die Zahl geändert hat!
-      notifyListeners();
-    }
-  }
+    _posts[index]['is_liked'] = liked;
+    _posts[index]['votes'] = (_posts[index]['votes'] as int) + (liked ? 1 : -1);
 
-  void removeLikeLocally(int postId) {
-    int index = _posts.indexWhere((element) => element['post']['id'] == postId);
-
-    if (index != -1) {
-
-      _posts[index]['votes'] = _posts[index]['votes'] - 1;
-
-      // WICHTIG: Sag den Widgets, dass sich die Zahl geändert hat!
-      notifyListeners();
-    }
+    // WICHTIG: Sag den Widgets, dass sich etwas geändert hat!
+    notifyListeners();
   }
 
 }

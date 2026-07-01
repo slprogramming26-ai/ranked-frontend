@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'api_client.dart';
+import '../api_client.dart';
 
 class PostApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP

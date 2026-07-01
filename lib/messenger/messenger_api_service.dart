@@ -120,4 +120,22 @@ class MessengerApiService {
         .map((e) => e['user_id'] as int)
         .toList();
   }
+
+  // GET /group_chat/my — alle Gruppen, denen ICH angehoere (id + Name + Avatar).
+  // Das ist das Gruppen-Gegenstueck zum globalen DM-Endpoint /messages/:
+  // ohne diesen Aufruf weiss der Client nach einem frischen Login (leere DB)
+  // nicht, welche Gruppen er nachsyncen soll.
+  static Future<List<({int id, String? name, String? avatarUrl})>>
+  fetchMyGroups() async {
+    final response = await ApiClient.get(Uri.parse("$_baseUrl/group_chat/my"));
+    if (response.statusCode != 200) return const [];
+    final raw = jsonDecode(response.body) as List;
+    return raw.cast<Map<String, dynamic>>().map((e) {
+      return (
+        id: e['group_chat_id'] as int,
+        name: e['group_name'] as String?,
+        avatarUrl: e['profile_picture'] as String?,
+      );
+    }).toList();
+  }
 }

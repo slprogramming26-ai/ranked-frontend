@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
+import 'settings_screen.dart';
 
 
 class ProfileProvider extends ChangeNotifier {
@@ -135,7 +136,7 @@ class _ProfileState extends State<Profile> {
     return _buildScaffold(_foreignData);
   }
 
-  Widget _loadingScaffold() => const Scaffold(
+  Widget _loadingScaffold() => Scaffold(
     backgroundColor: AppColors.surface,
     body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
   );
@@ -297,7 +298,7 @@ class _ProfileState extends State<Profile> {
                               color: AppColors.onSurfaceVariant,
                             ),
                           ),
-                          const Icon(Icons.sort, color: AppColors.primary, size: 20),
+                          Icon(Icons.sort, color: AppColors.primary, size: 20),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -316,7 +317,14 @@ class _ProfileState extends State<Profile> {
             ),
           ),
 
-          _TopBar(username: username, avatarUrl: avatarUrl, isOwn: _isOwn),
+          _TopBar(
+            username: username,
+            avatarUrl: avatarUrl,
+            isOwn: _isOwn,
+            onSettings: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+            ),
+          ),
         ],
       ),
     );
@@ -403,7 +411,13 @@ class _TopBar extends StatelessWidget {
   final String username;
   final String? avatarUrl;
   final bool isOwn;
-  const _TopBar({required this.username, this.avatarUrl, required this.isOwn});
+  final VoidCallback? onSettings;
+  const _TopBar({
+    required this.username,
+    this.avatarUrl,
+    required this.isOwn,
+    this.onSettings,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -433,7 +447,7 @@ class _TopBar extends StatelessWidget {
           else
             GestureDetector(
               onTap: () => Navigator.of(context).pop(),
-              child: const Icon(Icons.arrow_back, color: AppColors.primary, size: 24),
+              child: Icon(Icons.arrow_back, color: AppColors.primary, size: 24),
             ),
 
           // @username
@@ -449,8 +463,8 @@ class _TopBar extends StatelessWidget {
           // Rechts: Settings (eigen) oder Platzhalter (fremd)
           if (isOwn)
             GestureDetector(
-              onTap: () {},
-              child: const Icon(Icons.settings_outlined,
+              onTap: onSettings,
+              child: Icon(Icons.settings_outlined,
                   color: AppColors.primary, size: 24),
             )
           else
@@ -465,7 +479,7 @@ class _TopBar extends StatelessWidget {
     child: Center(
       child: Text(
         username.isNotEmpty ? username[0].toUpperCase() : '?',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w800,
           color: AppColors.primary,
@@ -566,7 +580,7 @@ class _FollowButton extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(

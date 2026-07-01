@@ -38,7 +38,7 @@ class _RankingHomeState extends State<RankingHome> {
     final provider = Provider.of<RankingProvider>(context);
 
     if (provider.isLoadingHome || provider.userdata.isEmpty) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.surface,
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primary),
@@ -93,7 +93,7 @@ class _RankingHomeState extends State<RankingHome> {
                         width: 88,
                         height: 88,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
+                          gradient: LinearGradient(
                             colors: [
                               AppColors.primary,
                               AppColors.primaryContainer,
@@ -210,7 +210,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: AppColors.primary),
+          icon: Icon(Icons.menu, color: AppColors.primary),
           onPressed: () {},
         ),
         title: Text(
@@ -229,7 +229,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.local_fire_department_rounded,
                   color: AppColors.primary,
                   size: 22,
@@ -254,7 +254,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
         onRefresh: () => provider._refreshLeaderboard(),
 
         child: provider.isLoadingLeaderboard
-            ? const Center(
+            ? Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               )
             : Stack(
@@ -289,7 +289,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                               if (leaderboard.isNotEmpty) ...[
                                 Row(
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.military_tech_rounded,
                                       color: AppColors.tertiary,
                                       size: 22,
@@ -446,7 +446,7 @@ class _ToggleBtn extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             gradient: active
-                ? const LinearGradient(
+                ? LinearGradient(
                     colors: [AppColors.primary, AppColors.primaryContainer],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -578,7 +578,7 @@ class _PodiumCard extends StatelessWidget {
               padding: isFirst ? const EdgeInsets.all(3) : EdgeInsets.zero,
               decoration: isFirst
                   ? BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [
                           AppColors.tertiary,
                           AppColors.tertiaryContainer,
@@ -669,7 +669,7 @@ class _PodiumCard extends StatelessWidget {
               : EdgeInsets.zero,
           decoration: isFirst
               ? BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     colors: [AppColors.primary, AppColors.primaryContainer],
                   ),
                   borderRadius: BorderRadius.circular(50),
@@ -748,7 +748,7 @@ class _RankListTile extends StatelessWidget {
                 ? NetworkImage(picUrl)
                 : null,
             child: picUrl == null
-                ? const Icon(
+                ? Icon(
                     Icons.person,
                     color: AppColors.onSurfaceVariant,
                     size: 22,
@@ -782,7 +782,7 @@ class _RankListTile extends StatelessWidget {
           ),
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.bolt_rounded,
                 size: 16,
                 color: AppColors.primary,
@@ -873,7 +873,7 @@ class _EmptyLeaderboard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(
         children: [
-          const Icon(
+          Icon(
             Icons.leaderboard_outlined,
             size: 56,
             color: AppColors.outlineVariant,
@@ -957,7 +957,7 @@ class _GradientButton extends StatelessWidget {
     return Container(
       height: 60,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [AppColors.primary, AppColors.primaryContainer],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1088,7 +1088,7 @@ class _RankingPagesState extends State<RankingPages> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppColors.surface,
         body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
@@ -1101,7 +1101,7 @@ class _RankingPagesState extends State<RankingPages> {
           backgroundColor: AppColors.surface,
           elevation: 0,
           scrolledUnderElevation: 0,
-          leading: const BackButton(color: AppColors.primary),
+          leading: BackButton(color: AppColors.primary),
         ),
         body: Center(
           child: Padding(
@@ -1109,7 +1109,7 @@ class _RankingPagesState extends State<RankingPages> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.inbox_rounded,
+                Icon(Icons.inbox_rounded,
                     size: 56, color: AppColors.outlineVariant),
                 const SizedBox(height: 16),
                 Text(
@@ -1138,7 +1138,7 @@ class _RankingPagesState extends State<RankingPages> {
               padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
               child: Row(
                 children: [
-                  const BackButton(color: AppColors.primary),
+                  BackButton(color: AppColors.primary),
                   Text(
                     'RANK IT',
                     style: GoogleFonts.plusJakartaSans(
@@ -1153,7 +1153,7 @@ class _RankingPagesState extends State<RankingPages> {
             ),
             Expanded(
               child: _submitting
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(color: AppColors.primary),
                     )
                   : CardSwiper(
@@ -1430,7 +1430,7 @@ class _SwipeResultScreen extends StatelessWidget {
                 child: Container(
                   width: 88,
                   height: 88,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppColors.primary, AppColors.primaryContainer],
                       begin: Alignment.topLeft,
