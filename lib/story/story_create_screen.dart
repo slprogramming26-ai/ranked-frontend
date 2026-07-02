@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 import '../app_colors.dart';
+import '../local_data/database.dart';
 import 'story.dart';
 import 'story_editor_configs.dart';
 
@@ -18,7 +19,11 @@ import 'story_editor_configs.dart';
 /// hochladen. Bei Erfolg landet die Story über [StoryProvider.addStory]
 /// sofort in der Story-Row des Feeds.
 class StoryCreateScreen extends StatefulWidget {
-  const StoryCreateScreen({super.key});
+  /// Foto, das nach einem Kamera-Prozesstod via retrieveLostData()
+  /// zurueckgeholt wurde: steigt direkt in den Format->Editor-Flow ein.
+  final String? recoveredImagePath;
+
+  const StoryCreateScreen({super.key, this.recoveredImagePath});
 
   @override
   State<StoryCreateScreen> createState() => _StoryCreateScreenState();
@@ -32,14 +37,46 @@ class _StoryCreateScreenState extends State<StoryCreateScreen> {
   File? _image; // fertig bearbeitete Story (nach dem Editor)
   bool _processing = false; // Format-Schritt läuft (Loader-Overlay)
   bool _uploading = false;
+  late final AppDatabase _db;
+
+  @override
+  void initState() {
+    super.initState();
+    _db = Provider.of<AppDatabase>(context, listen: false);
+    final recovered = widget.recoveredImagePath;
+    if (recovered != null) {
+      // Erst nach dem ersten Frame, weil _openEditor navigiert und dafuer
+      // der Screen fertig aufgebaut sein muss.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _processPicked(File(recovered)),
+      );
+    }
+  }
 
   Future<void> _pick(ImageSource source) async {
+    // Story-Marker VOR der Kamera: killt Android uns dort, weiss der
+    // App-Start dadurch, dass das gerettete Foto eine Story werden sollte.
+    if (source == ImageSource.camera) {
+      await _db.savePostDraft(
+        title: '',
+        content: '',
+        isPublic: true,
+        draftType: 'story',
+      );
+    }
     final picked = await _picker.pickImage(source: source);
+    if (source == ImageSource.camera) {
+      // Normal zurueckgekehrt (kein Kill) -> Marker sofort wieder weg.
+      await _db.deletePostDraft();
+    }
     if (picked == null || !mounted) return;
+    await _processPicked(File(picked.path));
+  }
 
+  Future<void> _processPicked(File picked) async {
     // 1. Ins 9:16-Format bringen (schwere Pixel-Arbeit im Isolate).
     setState(() => _processing = true);
-    final formatted = await _toStoryFormat(File(picked.path));
+    final formatted = await _toStoryFormat(picked);
     if (!mounted) return;
     setState(() => _processing = false);
 
@@ -391,7 +428,10 @@ class _StoryCreateScreenState extends State<StoryCreateScreen> {
 
   Widget _buildProcessingOverlay() {
     return Positioned.fill(
-      child: ColoredBox(
+      // Material statt ColoredBox: das Overlay liegt im Stack NEBEN dem
+      // Scaffold, ohne Material-Vorfahr rendert Text im gelb unterstrichenen
+      // Fallback-Stil.
+      child: Material(
         color: Colors.black.withValues(alpha: 0.75),
         child: Center(
           child: Column(
@@ -442,24 +482,35 @@ Uint8List _formatToStoryBytes(Uint8List sourceBytes) {
   const targetRatio = _storyWidth / _storyHeight; // 0.5625
   final srcRatio = decoded.width / decoded.height;
 
-  // --- Hintergrund: "cover" auf 1080x1920, dann blur ---
+  // --- Hintergrund: "cover" in 1/8-Groesse, blur, hochskalieren ---
+  // Der Blur ist der teuerste Schritt (pure-Dart-CPU): in voller Groesse
+  // dauert er Sekunden. Klein blurren + hochskalieren sieht identisch aus
+  // (das Upscaling verschmiert selbst nochmal), kostet aber ~1/50.
+  const smallW = _storyWidth ~/ 8; // 135
+  const smallH = _storyHeight ~/ 8; // 240
   int bgW, bgH;
   if (srcRatio > targetRatio) {
-    bgH = _storyHeight;
-    bgW = (_storyHeight * srcRatio).round();
+    bgH = smallH;
+    bgW = (smallH * srcRatio).round();
   } else {
-    bgW = _storyWidth;
-    bgH = (_storyWidth / srcRatio).round();
+    bgW = smallW;
+    bgH = (smallW / srcRatio).round();
   }
-  var canvas = img.copyResize(decoded, width: bgW, height: bgH);
-  canvas = img.copyCrop(
-    canvas,
-    x: (bgW - _storyWidth) ~/ 2,
-    y: (bgH - _storyHeight) ~/ 2,
+  var small = img.copyResize(decoded, width: bgW, height: bgH);
+  small = img.copyCrop(
+    small,
+    x: (bgW - smallW) ~/ 2,
+    y: (bgH - smallH) ~/ 2,
+    width: smallW,
+    height: smallH,
+  );
+  small = img.gaussianBlur(small, radius: 3);
+  var canvas = img.copyResize(
+    small,
     width: _storyWidth,
     height: _storyHeight,
+    interpolation: img.Interpolation.linear,
   );
-  canvas = img.gaussianBlur(canvas, radius: 18);
 
   // --- Vordergrund: "contain" (ganzes Bild), zentriert draufsetzen ---
   int fgW, fgH;

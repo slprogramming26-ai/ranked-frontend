@@ -8,6 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
 import 'package:image/image.dart' as img;
+import 'package:provider/provider.dart';
+import 'package:ranked/local_data/database.dart';
 
 class CreatePost extends StatefulWidget {
   const CreatePost({super.key});
@@ -19,26 +21,50 @@ class CreatePost extends StatefulWidget {
 class _CreatePostState extends State<CreatePost> {
   late TextEditingController titleController;
   late TextEditingController contentController;
+  late final AppDatabase _db;
   bool isPublic = true;
   File? _image;
 
   @override
   void initState() {
     super.initState();
+    _db = Provider.of<AppDatabase>(context, listen: false);
     titleController = TextEditingController();
     contentController = TextEditingController();
+    fetchPostDraft();
   }
 
   @override
   void dispose() {
     titleController.dispose();
     contentController.dispose();
+    _db.deletePostDraft();
     super.dispose();
+  }
+
+  Future<void> fetchPostDraft() async {
+    final postDraft = await _db.getPostDraft();
+    if (postDraft == null || !mounted) return;
+
+    isPublic = postDraft.isPublic;
+    titleController.text = postDraft.title;
+    contentController.text = postDraft.content;
+    final tag = postDraft.tag;
+    if (tag != null && iconActivated.containsKey(tag)) {
+      iconActivated[tag] = true;
+    }
+    // Bild nur wiederherstellen, wenn die Datei noch existiert (Android darf
+    // den Cache zwischen zwei Starts aufraeumen).
+    final path = postDraft.imagePath;
+    if (path != null && File(path).existsSync()) {
+      _image = File(path);
+    }
+    setState(() {});
   }
 
   final _picker = ImagePicker();
 
-  pickImageFromGallery() async {
+  void pickImageFromGallery() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
@@ -48,7 +74,25 @@ class _CreatePostState extends State<CreatePost> {
     }
   }
 
-  pickImageFromCamera() async {
+  void pickImageFromCamera() async {
+    final selectedTag = iconActivated.entries
+        .where((e) => e.value)
+        .map((e) => e.key)
+        .firstOrNull;
+    final hasAnythingToSave =
+        titleController.text.isNotEmpty ||
+        contentController.text.isNotEmpty ||
+        selectedTag != null ||
+        _image != null;
+    if (hasAnythingToSave) {
+      await _db.savePostDraft(
+        title: titleController.text,
+        content: contentController.text,
+        tag: selectedTag,
+        isPublic: isPublic,
+        imagePath: _image?.path,
+      );
+    }
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
 
     if (pickedFile != null) {

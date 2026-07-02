@@ -16,11 +16,13 @@ import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'post/post_provider.dart';
 import 'story/story.dart';
+import 'story/story_create_screen.dart';
 import 'sign_in.dart';
 import 'app_colors.dart';
 import 'search.dart';
 import 'theme_provider.dart';
 import "local_data/database.dart";
+import 'package:image_picker/image_picker.dart';
 
 void main() {
   final db = AppDatabase();
@@ -52,34 +54,38 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, _) {
         AppColors.isDark = themeProvider.isDark;
         return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: themeProvider.isDark ? Brightness.dark : Brightness.light,
-        scaffoldBackgroundColor: AppColors.surface,
-        textTheme: GoogleFonts.nunitoTextTheme(),
-        fontFamily: GoogleFonts.nunito().fontFamily,
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary,
-          brightness: themeProvider.isDark ? Brightness.dark : Brightness.light,
-        ),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+          title: 'Flutter Demo',
+          theme: ThemeData(
+            useMaterial3: true,
+            brightness: themeProvider.isDark
+                ? Brightness.dark
+                : Brightness.light,
+            scaffoldBackgroundColor: AppColors.surface,
+            textTheme: GoogleFonts.nunitoTextTheme(),
+            fontFamily: GoogleFonts.nunito().fontFamily,
+            // This is the theme of your application.
+            //
+            // TRY THIS: Try running your application with "flutter run". You'll see
+            // the application has a purple toolbar. Then, without quitting the app,
+            // try changing the seedColor in the colorScheme below to Colors.green
+            // and then invoke "hot reload" (save your changes or press the "hot
+            // reload" button in a Flutter-supported IDE, or press "r" if you used
+            // the command line to start the app).
+            //
+            // Notice that the counter didn't reset back to zero; the application
+            // state is not lost during the reload. To reset the state, use hot
+            // restart instead.
+            //
+            // This works for code too, not just values: Most code changes can be
+            // tested with just a hot reload.
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: AppColors.primary,
+              brightness: themeProvider.isDark
+                  ? Brightness.dark
+                  : Brightness.light,
+            ),
+          ),
+          home: const MyHomePage(title: 'Flutter Demo Home Page'),
         );
       },
     );
@@ -149,7 +155,88 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
     final ok = await ApiClient.tryRefreshOnStart();
+    if (!mounted) return;
     setState(() => loggedIn = ok);
+    if (ok) _recoverLostPostDraft();
+  }
+
+  Future<void> _recoverLostPostDraft() async {
+    final db = context.read<AppDatabase>();
+
+    // Android-only: "Hat der letzte Prozess ein Kamerabild angefordert,
+    // das nie ankam?" Wirft nie - alle Ausgaenge kommen als Daten zurueck.
+    // Auf iOS ist die Antwort immer isEmpty.
+    final lost = await ImagePicker().retrieveLostData();
+    final lostFile = lost.file;
+    final draft = await db.getPostDraft();
+
+    if (lostFile != null) {
+      // Ein verlorenes Foto heisst: der Kill passierte GERADE EBEN mitten im
+      // Kamera-Flow -> ohne Nachfrage direkt zurueck in den Screen, der die
+      // Kamera angefordert hatte (draftType), als waere nichts gewesen.
+      if (draft != null && draft.draftType == 'story') {
+        // Marker verbraucht; das Foto reist per Konstruktor mit.
+        await db.deletePostDraft();
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                StoryCreateScreen(recoveredImagePath: lostFile.path),
+          ),
+        );
+        return;
+      }
+      await db.attachImageToPostDraft(lostFile.path);
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CreatePost()),
+      );
+      return;
+    }
+
+    if (draft == null) return;
+
+    // Story-Marker ohne gerettetes Foto: Kill vor dem Abdruecken -> bei
+    // Stories gibt es nichts wiederherzustellen, nur aufraeumen.
+    if (draft.draftType == 'story') {
+      await db.deletePostDraft();
+      return;
+    }
+
+    // Post-Entwurf ohne Foto: Kill lag vor dem Abdruecken oder laenger
+    // zurueck -> hier erst fragen statt ungefragt zu navigieren.
+    if (!mounted) return;
+
+    final restore = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Entwurf wiederherstellen?'),
+        content: const Text('Du hast einen unfertigen Post.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Verwerfen'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Wiederherstellen'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+
+    if (restore == true) {
+      // CreatePost laedt den Entwurf selbst (fetchPostDraft in initState).
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CreatePost()),
+      );
+    } else {
+      await db.deletePostDraft();
+    }
   }
 
   @override

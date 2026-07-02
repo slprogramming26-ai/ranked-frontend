@@ -55,6 +55,30 @@ class OpenChats extends Table {
 
 }
 
+// Entwurf des Create-Post-Screens. Wird VOR dem Kamera-Start geschrieben,
+// damit Titel/Text/Tag den Prozesstod ueberleben (Samsung killt die App bei
+// RAM-Druck, waehrend die Kamera offen ist). Es gibt hoechstens EINEN Entwurf:
+// id ist immer 0, ein neuer Save ueberschreibt den alten.
+class PostDrafts extends Table {
+
+  IntColumn get id => integer()();
+  // Wer hat die Kamera angefordert? retrieveLostData() ist global, das
+  // gerettete Foto muss aber in den richtigen Flow zurueck:
+  // 'post' -> create_post (Titel/Text/Tag werden mitgerettet),
+  // 'story' -> story_create_screen (reiner Marker, sonst alles leer).
+  TextColumn get draftType => text().withDefault(const Constant('post'))();
+  TextColumn get title => text()();
+  TextColumn get content => text()();
+  TextColumn get tag => text().nullable()();
+  BoolColumn get isPublic => boolean()();
+  TextColumn get imagePath => text().nullable()();
+  DateTimeColumn get savedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+}
+
 // Zentraler Sync-Marker-Speicher (Key-Value).
 // key = "dm" fuer alle Direktnachrichten (ein globaler Endpoint -> ein Marker),
 //       "group:<id>" pro Gruppe (ein Endpoint pro Gruppe -> ein Marker je Gruppe).

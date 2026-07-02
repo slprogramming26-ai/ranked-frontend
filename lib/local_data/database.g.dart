@@ -1857,6 +1857,501 @@ class SyncMarkersCompanion extends UpdateCompanion<SyncMarker> {
   }
 }
 
+class $PostDraftsTable extends PostDrafts
+    with TableInfo<$PostDraftsTable, PostDraft> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PostDraftsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _draftTypeMeta = const VerificationMeta(
+    'draftType',
+  );
+  @override
+  late final GeneratedColumn<String> draftType = GeneratedColumn<String>(
+    'draft_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('post'),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tagMeta = const VerificationMeta('tag');
+  @override
+  late final GeneratedColumn<String> tag = GeneratedColumn<String>(
+    'tag',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isPublicMeta = const VerificationMeta(
+    'isPublic',
+  );
+  @override
+  late final GeneratedColumn<bool> isPublic = GeneratedColumn<bool>(
+    'is_public',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_public" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _imagePathMeta = const VerificationMeta(
+    'imagePath',
+  );
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+    'image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _savedAtMeta = const VerificationMeta(
+    'savedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> savedAt = GeneratedColumn<DateTime>(
+    'saved_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    draftType,
+    title,
+    content,
+    tag,
+    isPublic,
+    imagePath,
+    savedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'post_drafts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PostDraft> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('draft_type')) {
+      context.handle(
+        _draftTypeMeta,
+        draftType.isAcceptableOrUnknown(data['draft_type']!, _draftTypeMeta),
+      );
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('tag')) {
+      context.handle(
+        _tagMeta,
+        tag.isAcceptableOrUnknown(data['tag']!, _tagMeta),
+      );
+    }
+    if (data.containsKey('is_public')) {
+      context.handle(
+        _isPublicMeta,
+        isPublic.isAcceptableOrUnknown(data['is_public']!, _isPublicMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_isPublicMeta);
+    }
+    if (data.containsKey('image_path')) {
+      context.handle(
+        _imagePathMeta,
+        imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
+    }
+    if (data.containsKey('saved_at')) {
+      context.handle(
+        _savedAtMeta,
+        savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_savedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PostDraft map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PostDraft(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      draftType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}draft_type'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      tag: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tag'],
+      ),
+      isPublic: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_public'],
+      )!,
+      imagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_path'],
+      ),
+      savedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}saved_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PostDraftsTable createAlias(String alias) {
+    return $PostDraftsTable(attachedDatabase, alias);
+  }
+}
+
+class PostDraft extends DataClass implements Insertable<PostDraft> {
+  final int id;
+  final String draftType;
+  final String title;
+  final String content;
+  final String? tag;
+  final bool isPublic;
+  final String? imagePath;
+  final DateTime savedAt;
+  const PostDraft({
+    required this.id,
+    required this.draftType,
+    required this.title,
+    required this.content,
+    this.tag,
+    required this.isPublic,
+    this.imagePath,
+    required this.savedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['draft_type'] = Variable<String>(draftType);
+    map['title'] = Variable<String>(title);
+    map['content'] = Variable<String>(content);
+    if (!nullToAbsent || tag != null) {
+      map['tag'] = Variable<String>(tag);
+    }
+    map['is_public'] = Variable<bool>(isPublic);
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
+    }
+    map['saved_at'] = Variable<DateTime>(savedAt);
+    return map;
+  }
+
+  PostDraftsCompanion toCompanion(bool nullToAbsent) {
+    return PostDraftsCompanion(
+      id: Value(id),
+      draftType: Value(draftType),
+      title: Value(title),
+      content: Value(content),
+      tag: tag == null && nullToAbsent ? const Value.absent() : Value(tag),
+      isPublic: Value(isPublic),
+      imagePath: imagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePath),
+      savedAt: Value(savedAt),
+    );
+  }
+
+  factory PostDraft.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PostDraft(
+      id: serializer.fromJson<int>(json['id']),
+      draftType: serializer.fromJson<String>(json['draftType']),
+      title: serializer.fromJson<String>(json['title']),
+      content: serializer.fromJson<String>(json['content']),
+      tag: serializer.fromJson<String?>(json['tag']),
+      isPublic: serializer.fromJson<bool>(json['isPublic']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
+      savedAt: serializer.fromJson<DateTime>(json['savedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'draftType': serializer.toJson<String>(draftType),
+      'title': serializer.toJson<String>(title),
+      'content': serializer.toJson<String>(content),
+      'tag': serializer.toJson<String?>(tag),
+      'isPublic': serializer.toJson<bool>(isPublic),
+      'imagePath': serializer.toJson<String?>(imagePath),
+      'savedAt': serializer.toJson<DateTime>(savedAt),
+    };
+  }
+
+  PostDraft copyWith({
+    int? id,
+    String? draftType,
+    String? title,
+    String? content,
+    Value<String?> tag = const Value.absent(),
+    bool? isPublic,
+    Value<String?> imagePath = const Value.absent(),
+    DateTime? savedAt,
+  }) => PostDraft(
+    id: id ?? this.id,
+    draftType: draftType ?? this.draftType,
+    title: title ?? this.title,
+    content: content ?? this.content,
+    tag: tag.present ? tag.value : this.tag,
+    isPublic: isPublic ?? this.isPublic,
+    imagePath: imagePath.present ? imagePath.value : this.imagePath,
+    savedAt: savedAt ?? this.savedAt,
+  );
+  PostDraft copyWithCompanion(PostDraftsCompanion data) {
+    return PostDraft(
+      id: data.id.present ? data.id.value : this.id,
+      draftType: data.draftType.present ? data.draftType.value : this.draftType,
+      title: data.title.present ? data.title.value : this.title,
+      content: data.content.present ? data.content.value : this.content,
+      tag: data.tag.present ? data.tag.value : this.tag,
+      isPublic: data.isPublic.present ? data.isPublic.value : this.isPublic,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      savedAt: data.savedAt.present ? data.savedAt.value : this.savedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostDraft(')
+          ..write('id: $id, ')
+          ..write('draftType: $draftType, ')
+          ..write('title: $title, ')
+          ..write('content: $content, ')
+          ..write('tag: $tag, ')
+          ..write('isPublic: $isPublic, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('savedAt: $savedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    draftType,
+    title,
+    content,
+    tag,
+    isPublic,
+    imagePath,
+    savedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PostDraft &&
+          other.id == this.id &&
+          other.draftType == this.draftType &&
+          other.title == this.title &&
+          other.content == this.content &&
+          other.tag == this.tag &&
+          other.isPublic == this.isPublic &&
+          other.imagePath == this.imagePath &&
+          other.savedAt == this.savedAt);
+}
+
+class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
+  final Value<int> id;
+  final Value<String> draftType;
+  final Value<String> title;
+  final Value<String> content;
+  final Value<String?> tag;
+  final Value<bool> isPublic;
+  final Value<String?> imagePath;
+  final Value<DateTime> savedAt;
+  const PostDraftsCompanion({
+    this.id = const Value.absent(),
+    this.draftType = const Value.absent(),
+    this.title = const Value.absent(),
+    this.content = const Value.absent(),
+    this.tag = const Value.absent(),
+    this.isPublic = const Value.absent(),
+    this.imagePath = const Value.absent(),
+    this.savedAt = const Value.absent(),
+  });
+  PostDraftsCompanion.insert({
+    this.id = const Value.absent(),
+    this.draftType = const Value.absent(),
+    required String title,
+    required String content,
+    this.tag = const Value.absent(),
+    required bool isPublic,
+    this.imagePath = const Value.absent(),
+    required DateTime savedAt,
+  }) : title = Value(title),
+       content = Value(content),
+       isPublic = Value(isPublic),
+       savedAt = Value(savedAt);
+  static Insertable<PostDraft> custom({
+    Expression<int>? id,
+    Expression<String>? draftType,
+    Expression<String>? title,
+    Expression<String>? content,
+    Expression<String>? tag,
+    Expression<bool>? isPublic,
+    Expression<String>? imagePath,
+    Expression<DateTime>? savedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (draftType != null) 'draft_type': draftType,
+      if (title != null) 'title': title,
+      if (content != null) 'content': content,
+      if (tag != null) 'tag': tag,
+      if (isPublic != null) 'is_public': isPublic,
+      if (imagePath != null) 'image_path': imagePath,
+      if (savedAt != null) 'saved_at': savedAt,
+    });
+  }
+
+  PostDraftsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? draftType,
+    Value<String>? title,
+    Value<String>? content,
+    Value<String?>? tag,
+    Value<bool>? isPublic,
+    Value<String?>? imagePath,
+    Value<DateTime>? savedAt,
+  }) {
+    return PostDraftsCompanion(
+      id: id ?? this.id,
+      draftType: draftType ?? this.draftType,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      tag: tag ?? this.tag,
+      isPublic: isPublic ?? this.isPublic,
+      imagePath: imagePath ?? this.imagePath,
+      savedAt: savedAt ?? this.savedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (draftType.present) {
+      map['draft_type'] = Variable<String>(draftType.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (tag.present) {
+      map['tag'] = Variable<String>(tag.value);
+    }
+    if (isPublic.present) {
+      map['is_public'] = Variable<bool>(isPublic.value);
+    }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
+    if (savedAt.present) {
+      map['saved_at'] = Variable<DateTime>(savedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PostDraftsCompanion(')
+          ..write('id: $id, ')
+          ..write('draftType: $draftType, ')
+          ..write('title: $title, ')
+          ..write('content: $content, ')
+          ..write('tag: $tag, ')
+          ..write('isPublic: $isPublic, ')
+          ..write('imagePath: $imagePath, ')
+          ..write('savedAt: $savedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1868,6 +2363,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $OpenChatsTable openChats = $OpenChatsTable(this);
   late final $SyncMarkersTable syncMarkers = $SyncMarkersTable(this);
+  late final $PostDraftsTable postDrafts = $PostDraftsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1878,6 +2374,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     groupChatHistory,
     openChats,
     syncMarkers,
+    postDrafts,
   ];
   @override
   DriftDatabaseOptions get options =>
@@ -2912,6 +3409,254 @@ typedef $$SyncMarkersTableProcessedTableManager =
       SyncMarker,
       PrefetchHooks Function()
     >;
+typedef $$PostDraftsTableCreateCompanionBuilder =
+    PostDraftsCompanion Function({
+      Value<int> id,
+      Value<String> draftType,
+      required String title,
+      required String content,
+      Value<String?> tag,
+      required bool isPublic,
+      Value<String?> imagePath,
+      required DateTime savedAt,
+    });
+typedef $$PostDraftsTableUpdateCompanionBuilder =
+    PostDraftsCompanion Function({
+      Value<int> id,
+      Value<String> draftType,
+      Value<String> title,
+      Value<String> content,
+      Value<String?> tag,
+      Value<bool> isPublic,
+      Value<String?> imagePath,
+      Value<DateTime> savedAt,
+    });
+
+class $$PostDraftsTableFilterComposer
+    extends Composer<_$AppDatabase, $PostDraftsTable> {
+  $$PostDraftsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get draftType => $composableBuilder(
+    column: $table.draftType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tag => $composableBuilder(
+    column: $table.tag,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPublic => $composableBuilder(
+    column: $table.isPublic,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PostDraftsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PostDraftsTable> {
+  $$PostDraftsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get draftType => $composableBuilder(
+    column: $table.draftType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tag => $composableBuilder(
+    column: $table.tag,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPublic => $composableBuilder(
+    column: $table.isPublic,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PostDraftsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PostDraftsTable> {
+  $$PostDraftsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get draftType =>
+      $composableBuilder(column: $table.draftType, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get tag =>
+      $composableBuilder(column: $table.tag, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPublic =>
+      $composableBuilder(column: $table.isPublic, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get savedAt =>
+      $composableBuilder(column: $table.savedAt, builder: (column) => column);
+}
+
+class $$PostDraftsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PostDraftsTable,
+          PostDraft,
+          $$PostDraftsTableFilterComposer,
+          $$PostDraftsTableOrderingComposer,
+          $$PostDraftsTableAnnotationComposer,
+          $$PostDraftsTableCreateCompanionBuilder,
+          $$PostDraftsTableUpdateCompanionBuilder,
+          (
+            PostDraft,
+            BaseReferences<_$AppDatabase, $PostDraftsTable, PostDraft>,
+          ),
+          PostDraft,
+          PrefetchHooks Function()
+        > {
+  $$PostDraftsTableTableManager(_$AppDatabase db, $PostDraftsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PostDraftsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PostDraftsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PostDraftsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> draftType = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String?> tag = const Value.absent(),
+                Value<bool> isPublic = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
+                Value<DateTime> savedAt = const Value.absent(),
+              }) => PostDraftsCompanion(
+                id: id,
+                draftType: draftType,
+                title: title,
+                content: content,
+                tag: tag,
+                isPublic: isPublic,
+                imagePath: imagePath,
+                savedAt: savedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> draftType = const Value.absent(),
+                required String title,
+                required String content,
+                Value<String?> tag = const Value.absent(),
+                required bool isPublic,
+                Value<String?> imagePath = const Value.absent(),
+                required DateTime savedAt,
+              }) => PostDraftsCompanion.insert(
+                id: id,
+                draftType: draftType,
+                title: title,
+                content: content,
+                tag: tag,
+                isPublic: isPublic,
+                imagePath: imagePath,
+                savedAt: savedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PostDraftsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PostDraftsTable,
+      PostDraft,
+      $$PostDraftsTableFilterComposer,
+      $$PostDraftsTableOrderingComposer,
+      $$PostDraftsTableAnnotationComposer,
+      $$PostDraftsTableCreateCompanionBuilder,
+      $$PostDraftsTableUpdateCompanionBuilder,
+      (PostDraft, BaseReferences<_$AppDatabase, $PostDraftsTable, PostDraft>),
+      PostDraft,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2926,4 +3671,6 @@ class $AppDatabaseManager {
       $$OpenChatsTableTableManager(_db, _db.openChats);
   $$SyncMarkersTableTableManager get syncMarkers =>
       $$SyncMarkersTableTableManager(_db, _db.syncMarkers);
+  $$PostDraftsTableTableManager get postDrafts =>
+      $$PostDraftsTableTableManager(_db, _db.postDrafts);
 }

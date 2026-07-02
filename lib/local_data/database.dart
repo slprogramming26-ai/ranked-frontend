@@ -5,13 +5,13 @@ import 'tables.dart';
 part 'database.g.dart';
 
 @DriftDatabase(
-  tables: [UserSearchHistory, DmChatHistory, GroupChatHistory, OpenChats, SyncMarkers],
+  tables: [UserSearchHistory, DmChatHistory, GroupChatHistory, OpenChats, SyncMarkers, PostDrafts],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'ranked'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -47,6 +47,15 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(dmChatHistory);
         await m.createTable(groupChatHistory);
         await m.createTable(syncMarkers);
+      }
+      if (from < 8) {
+        // Post-Entwurf, damit Titel/Text den Kamera-Prozesstod ueberleben.
+        await m.createTable(postDrafts);
+      }
+      if (from < 9) {
+        // draft_type ('post'/'story'): routet das gerettete Kamera-Foto
+        // nach einem Prozesstod in den richtigen Flow.
+        await m.addColumn(postDrafts, postDrafts.draftType);
       }
     },
   );
@@ -192,6 +201,64 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<OpenChat>> getAllContacts() => select(openChats).get();
+
+  // ------------------------------------------------------------------
+  //  Post-Entwurf (genau eine Zeile, id = 0)
+  // ------------------------------------------------------------------
+
+  // insertOnConflictUpdate + feste id 0: existiert schon ein Entwurf, wird
+  // er ueberschrieben statt eine zweite Zeile anzulegen.
+  Future<void> savePostDraft({
+    required String title,
+    required String content,
+    String? tag,
+    required bool isPublic,
+    String? imagePath,
+    String draftType = 'post',
+  }) async {
+    await into(postDrafts).insertOnConflictUpdate(
+      PostDraftsCompanion(
+        id: const Value(0),
+        draftType: Value(draftType),
+        title: Value(title),
+        content: Value(content),
+        tag: Value(tag),
+        isPublic: Value(isPublic),
+        imagePath: Value(imagePath),
+        savedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  // PATCH: haengt nur das Bild an den bestehenden Entwurf, Titel/Text/Tag
+  // bleiben unberuehrt (alle anderen Companion-Felder sind Value.absent()).
+  // Gibt es noch keinen Entwurf (Kamera ohne getippten Text geoeffnet),
+  // wird stattdessen ein leerer mit dem Bild angelegt.
+  Future<void> attachImageToPostDraft(String imagePath) async {
+    final updated = await (update(postDrafts)..where((t) => t.id.equals(0)))
+        .write(
+          PostDraftsCompanion(
+            imagePath: Value(imagePath),
+            savedAt: Value(DateTime.now()),
+          ),
+        );
+    if (updated == 0) {
+      await savePostDraft(
+        title: '',
+        content: '',
+        isPublic: true,
+        imagePath: imagePath,
+      );
+    }
+  }
+
+  // null = kein Entwurf vorhanden.
+  Future<PostDraft?> getPostDraft() =>
+      (select(postDrafts)..where((t) => t.id.equals(0))).getSingleOrNull();
+
+  Future<void> deletePostDraft() async {
+    await delete(postDrafts).go();
+  }
 
   Future<void> clearDatabase() async {
     await transaction(() async {
