@@ -6,11 +6,11 @@ import 'package:drift/drift.dart' hide Column;
 import 'package:ranked/messenger/conversation.dart';
 import 'package:ranked/local_data/database.dart';
 import 'messenger_api_service.dart';
+import 'messenger_controller.dart';
 import '../profile.dart';
 import 'chat_screen.dart';
 import '../app_colors.dart';
 import '../user_api_service.dart';
-import '../key_service.dart';
 
 class MessengerHomescreen extends StatefulWidget {
   const MessengerHomescreen({super.key});
@@ -19,92 +19,31 @@ class MessengerHomescreen extends StatefulWidget {
   State<MessengerHomescreen> createState() => _MessengerHomescreenState();
 }
 
-class _MessengerHomescreenState extends State<MessengerHomescreen>
-    with WidgetsBindingObserver {
-  MessengerApiService? _service;
-  StreamSubscription<ChatEvent>? _subscription;
-  int? _myUserId;
+class _MessengerHomescreenState extends State<MessengerHomescreen> {
+  // Service-Besitz, Lifecycle-Observer und Event-Abo liegen jetzt im
+  // app-weiten MessengerController (messenger_controller.dart). Dieser
+  // Screen LIEST nur noch — er erstellt und disposed nichts mehr; sonst
+  // wuerde Zurueck-Navigieren die app-weite Verbindung killen.
 
   @override
   void initState() {
     super.initState();
-    // Als Lifecycle-Beobachter anmelden: ab jetzt ruft Flutter bei jedem
-    // App-Zustandswechsel didChangeAppLifecycleState() unten auf.
-    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       initializeService(context);
     });
   }
 
-  // Flutter ruft das bei jedem Wechsel des App-Zustands auf. Uns interessiert
-  // nur die Rueckkehr in den Vordergrund (resumed) — dann war die App evtl. im
-  // Hintergrund/Standby und der WebSocket wurde vom OS still gekappt.
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _reconnectOnResume();
-    }
-  }
-
-  Future<void> _reconnectOnResume() async {
-    // Das _events-Band im Service ist stabil und ueberlebt den reconnect().
-    // Deshalb muessen wir hier NICHT neu abonnieren — einmal in
-    // initializeService() reicht fuer immer.
-    await _service?.reconnect();
-  }
-
+  // Lazy-Fallback, solange Schritt 2 (init beim Login) noch fehlt: stellt
+  // sicher, dass der Controller laeuft. Dank Idempotenz-Guard im Controller
+  // ist der Aufruf ein No-Op, wenn der Service schon existiert.
   Future<void> initializeService(BuildContext context) async {
     final provider = context.read<ProfileProvider>();
     final db = context.read<AppDatabase>();
+    final controller = context.read<MessengerController>();
     await provider.fetchUser();
     if (!mounted) return;
     final userId = provider.userdata["id"] as int;
-    _myUserId = userId;
-    _service = MessengerApiService(db, userId);
-    // Stabiles _events-Band -> EINMAL abonnieren genuegt fuer die ganze
-    // Lebenszeit, unabhaengig von spaeteren (Re)connects.
-    _subscription = _service!.incoming.listen(_handleEvent);
-    _service!.connect().then((_) {
-      if (mounted) setState(() {});
-    });
-    // E2EE: Keypair sicherstellen + hochladen, parallel zu connect
-    KeyService.ensureKeypair(userId.toString()).then((result) async {
-      final (pubKey, _) = result;
-      await KeyService.uploadPublicKey(pubKey);
-    }).catchError((_) {
-      debugPrint('[E2EE] Keypair/Upload fehlgeschlagen');
-    });
-  }
-
-  void _handleEvent(ChatEvent event) {
-    switch (event) {
-      case IncomingDm(:final senderId, :final message):
-        debugPrint('DM von $senderId: $message');
-      case InComingGroupChat(
-        :final groupChatId,
-        :final senderId,
-        :final message,
-      ):
-        debugPrint('Group $groupChatId, $senderId: $message');
-      case MessageAck(:final to, :final deliveredLive):
-        debugPrint('ACK to=$to delivered=$deliveredLive');
-      case ChatErrorEvent(:final detail):
-        debugPrint('Server-Fehler: $detail');
-      case GroupRekeyRequired(:final groupChatId):
-        debugPrint('Rekey for group $groupChatId required');
-      case GroupKeyOutdated(:final groupChatId, :final currentVersion):
-        debugPrint('Key with $currentVersion for group $groupChatId is outdated');
-    }
-  }
-
-  @override
-  void dispose() {
-    // Antenne wieder abmelden, sonst haelt Flutter eine Referenz auf dieses
-    // State-Objekt -> Memory-Leak.
-    WidgetsBinding.instance.removeObserver(this);
-    _subscription?.cancel();
-    _service?.dispose(); // schliesst Verbindung UND das _events-Band
-    super.dispose();
+    await controller.init(db, userId);
   }
 
   Future<void> _startPrivateChat(
@@ -364,6 +303,18 @@ class _MessengerHomescreenState extends State<MessengerHomescreen>
             letterSpacing: -0.4,
           ),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: IconButton(
+                icon: Icon(Icons.edit_rounded, color: AppColors.primary),
+                onPressed: _showActionSheet,
+                tooltip: 'Neue Konversation',
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: StreamBuilder<List<OpenChat>>(
@@ -387,6 +338,12 @@ class _MessengerHomescreenState extends State<MessengerHomescreen>
                   key: ValueKey('${c.isGroupChat}-${c.id}'),
                   contact: c,
                   onTap: () {
+                    final controller = context.read<MessengerController>();
+                    final service = controller.service;
+                    final myUserId = controller.userId;
+                    // Noch nicht initialisiert (init laeuft gerade) -> Tap
+                    // ignorieren statt mit ! zu crashen.
+                    if (service == null || myUserId == null) return;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -394,15 +351,15 @@ class _MessengerHomescreenState extends State<MessengerHomescreen>
                           conversation: c.isGroupChat
                               ? GroupConversation(
                                   groupChatId: c.id,
-                                  myUserId: _myUserId!,
+                                  myUserId: myUserId,
                                   db: db,
-                                  service: _service!,
+                                  service: service,
                                 )
                               : DmConversation(
                                   peerId: c.id,
-                                  myUserId: _myUserId!,
+                                  myUserId: myUserId,
                                   db: db,
-                                  service: _service!,
+                                  service: service,
                                 ),
                         ),
                       ),
@@ -413,13 +370,6 @@ class _MessengerHomescreenState extends State<MessengerHomescreen>
             );
           },
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showActionSheet,
-        backgroundColor: AppColors.primary,
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
     );
   }

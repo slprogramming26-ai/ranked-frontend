@@ -3,6 +3,22 @@ import 'package:google_fonts/google_fonts.dart';
 import 'conversation.dart';
 import '../app_colors.dart';
 import '../user_api_service.dart';
+import '../post/post_api_service.dart';
+
+/// Erkennt einen geteilten Post-Link der Form `ranked://post/<id>`.
+///
+/// Der Messenger speichert und verschickt den Link als ganz normalen Text –
+/// erst beim Rendern der Bubble prüfen wir, ob es ein Post-Link ist, und
+/// zeigen dann statt des nackten Textes eine Mini-Vorschau. Liefert die
+/// Post-ID zurück oder `null`, wenn der Text kein (sauberer) Post-Link ist.
+///
+/// Bewusst streng verankert (`^…$`, nur Ziffern): So kann niemand über die
+/// Tastatur etwas anderes einschmuggeln (z. B. `ranked://post/5 evil.com`).
+int? _tryParsePostId(String text) {
+  final match = RegExp(r'^ranked://post/(\d+)$').firstMatch(text.trim());
+  if (match == null) return null;
+  return int.tryParse(match.group(1)!);
+}
 
 class ChatScreen extends StatefulWidget {
   final Conversation conversation;
@@ -18,12 +34,16 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final _textController = TextEditingController();
+  // Einmal in initState geholt und festgehalten: watch() im build wuerde bei
+  // jedem Rebuild eine NEUE Drift-Query starten (alte Subscription weg, volle
+  // SQL-Abfrage neu). So bleibt eine Subscription fuer die Lebensdauer des
+  // Screens bestehen und feuert nur bei echten DB-Aenderungen.
+  late final Stream<List<ChatMessage>> _messages;
 
   @override
   void initState() {
     super.initState();
-    // Nur fürs Aktivieren/Deaktivieren des Send-Buttons – keine Logik.
-    _textController.addListener(() => setState(() {}));
+    _messages = widget.conversation.watch();
   }
 
   @override
@@ -74,7 +94,6 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     final conversation = widget.conversation;
     final title = conversation.title;
-    final canSend = _textController.text.trim().isNotEmpty;
     // Blocken gibt es nur im DM – in der Gruppe gibt es keinen einzelnen Peer.
     final dmPeerId =
         conversation is DmConversation ? conversation.peerId : null;
@@ -174,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: StreamBuilder<List<ChatMessage>>(
-              stream: widget.conversation.watch(),
+              stream: _messages,
               builder: (context, snapshot) {
                 final messages = snapshot.data ?? [];
                 if (messages.isEmpty) return const _EmptyConversation();
@@ -183,12 +202,18 @@ class _ChatScreenState extends State<ChatScreen> {
                 // (rein aus createdAt abgeleitet, keine Datenänderung).
                 final items = _buildItems(messages);
 
+                // reverse: true dreht die Laufrichtung: Index 0 klebt UNTEN,
+                // und die Ansicht startet dort — man landet beim Öffnen also
+                // automatisch bei der neuesten Nachricht, und neue Nachrichten
+                // bleiben "angeheftet". Damit unten auch wirklich das neueste
+                // Item liegt, wird der Index gespiegelt (items ist chronologisch).
                 return ListView.builder(
+                  reverse: true,
                   padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
                   physics: const BouncingScrollPhysics(),
                   itemCount: items.length,
                   itemBuilder: (_, i) {
-                    final item = items[i];
+                    final item = items[items.length - 1 - i];
                     if (item is _DateSeparator) {
                       return _DateChip(label: item.label);
                     }
@@ -208,7 +233,6 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           _Composer(
             controller: _textController,
-            canSend: canSend,
             onSend: _send,
           ),
         ],
@@ -298,6 +322,23 @@ class _MessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
+
+    // Ist der Text ein geteilter Post-Link? Dann statt der Text-Bubble die
+    // Mini-Vorschau rendern (lädt den Post per getPostById nach).
+    final postId = _tryParsePostId(text);
+    if (postId != null) {
+      return Padding(
+        padding: EdgeInsets.only(top: groupedWithPrevious ? 2 : 8),
+        child: Align(
+          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: width * 0.76),
+            child: _PostPreviewCard(postId: postId, time: time, isMe: isMe),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: EdgeInsets.only(top: groupedWithPrevious ? 2 : 8),
       child: Align(
@@ -342,6 +383,203 @@ class _MessageBubble extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+//  Mini-Post-Vorschau (geteilter Post im Chat)
+// -----------------------------------------------------------------------------
+
+/// Lädt einen geteilten Post einmalig per [PostApiService.getPostById] nach und
+/// zeigt eine kompakte Vorschau (Thumbnail, Titel, Autor). Bewusst ein
+/// StatefulWidget: so wird das Future in [initState] festgehalten und nicht bei
+/// jedem Rebuild (Scrollen, neue Nachricht) neu geladen.
+class _PostPreviewCard extends StatefulWidget {
+  final int postId;
+  final String time;
+  final bool isMe;
+
+  const _PostPreviewCard({
+    required this.postId,
+    required this.time,
+    required this.isMe,
+  });
+
+  @override
+  State<_PostPreviewCard> createState() => _PostPreviewCardState();
+}
+
+class _PostPreviewCardState extends State<_PostPreviewCard> {
+  late final Future<Map<String, dynamic>?> _postFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _postFuture = PostApiService.getPostById(widget.postId);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerHigh.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(20),
+          topRight: const Radius.circular(20),
+          bottomLeft: Radius.circular(widget.isMe ? 20 : 6),
+          bottomRight: Radius.circular(widget.isMe ? 6 : 20),
+        ),
+      ),
+      child: FutureBuilder<Map<String, dynamic>?>(
+        future: _postFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return _wrap(const SizedBox(
+              height: 60,
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ));
+          }
+
+          final data = snapshot.data;
+          // Post gelöscht, kein Zugriff oder Netzfehler → neutrale Card,
+          // niemals die rohe URL oder ein Crash.
+          if (data == null || data['post'] == null) {
+            return _wrap(_buildUnavailable());
+          }
+
+          return _wrap(_buildPreview(data['post'] as Map<String, dynamic>));
+        },
+      ),
+    );
+  }
+
+  /// Umschlag: Inhalt + Zeitstempel darunter, einheitliches Padding.
+  Widget _wrap(Widget child) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          child,
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Text(
+              widget.time,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUnavailable() {
+    return Row(
+      children: [
+        Icon(Icons.hide_source_rounded,
+            size: 20, color: AppColors.onSurfaceVariant),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            'Post nicht verfügbar',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPreview(Map<String, dynamic> post) {
+    final title = (post['title'] ?? '').toString();
+    final owner = post['owner'] as Map<String, dynamic>?;
+    final username = owner?['username']?.toString() ?? 'Unbekannt';
+    final imageUrl = post['image_url']?.toString();
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () {
+        // TODO: Post-Detail öffnen (nächster Schritt).
+      },
+      child: SizedBox(
+        width: 240,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (imageUrl != null && imageUrl.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stack) => Container(
+                      color: AppColors.surfaceContainerLow,
+                      child: Icon(Icons.image_not_supported_outlined,
+                          color: AppColors.onSurfaceVariant),
+                    ),
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 8, 4, 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.article_outlined,
+                          size: 13, color: AppColors.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        '@$username',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (title.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        height: 1.25,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -422,12 +660,10 @@ class _Avatar extends StatelessWidget {
 
 class _Composer extends StatelessWidget {
   final TextEditingController controller;
-  final bool canSend;
   final VoidCallback onSend;
 
   const _Composer({
     required this.controller,
-    required this.canSend,
     required this.onSend,
   });
 
@@ -476,33 +712,41 @@ class _Composer extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            GestureDetector(
-              onTap: canSend ? onSend : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: canSend
-                      ? AppColors.primary
-                      : AppColors.primary.withValues(alpha: 0.35),
-                  boxShadow: canSend
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
-                ),
-                child: const Icon(
-                  Icons.arrow_upward_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
+            // Der Controller ist selbst ein ValueListenable — so rebuildet bei
+            // jedem Tastendruck NUR dieser Button, nicht der ganze Screen.
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: controller,
+              builder: (context, value, _) {
+                final canSend = value.text.trim().isNotEmpty;
+                return GestureDetector(
+                  onTap: canSend ? onSend : null,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: canSend
+                          ? AppColors.primary
+                          : AppColors.primary.withValues(alpha: 0.35),
+                      boxShadow: canSend
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_upward_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ),

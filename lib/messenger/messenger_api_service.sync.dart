@@ -24,7 +24,11 @@ extension MessengerSync on MessengerApiService {
           createdAt: dm.createdAt,
           clientMsgId: dm.clientMsgId,
         );
-        await _syncDmHistory(dm.createdAt);
+        // Kein REST-Nachsync pro Live-Nachricht — die Nachricht ist ja gerade
+        // schon angekommen. Nur den Marker fortschreiben, damit der naechste
+        // _syncAll (beim Reconnect) nicht alles Live-Empfangene nochmal holt.
+        // Luecken (verpasste Nachrichten) deckt der (Re)connect-Sync ab.
+        await _db.updateSyncMarker('dm', dm.createdAt.toUtc());
       case InComingGroupChat g:
         await _ensureGroupOpenChat(g.groupChatId);
         final plaintext = await _decryptGroup(
@@ -39,7 +43,8 @@ extension MessengerSync on MessengerApiService {
           createdAt: g.createdAt,
           clientMsgId: g.clientMsgId,
         );
-        await _syncGroupHistory(g.groupChatId, g.createdAt);
+        // Wie bei DMs: nur Marker fortschreiben statt HTTP-GET pro Nachricht.
+        await _db.updateSyncMarker('group:${g.groupChatId}', g.createdAt.toUtc());
       case MessageAck _:
       case GroupRekeyRequired _:
       case GroupKeyOutdated _:

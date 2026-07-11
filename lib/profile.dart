@@ -270,7 +270,7 @@ class _ProfileState extends State<Profile> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: _isOwn
-                      ? _PrimaryButton(label: 'Rank Pulse', onTap: () {})
+                      ? null
                       : _FollowButton(
                           isFollowing: _isFollowing,
                           isLoading: _followLoading,

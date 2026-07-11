@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../app_colors.dart';
+import '../user_api_service.dart';
 import 'story.dart';
 
 /// Vollbild-Story-Viewer im Instagram-Stil.
@@ -313,6 +314,12 @@ class _StoryViewerState extends State<StoryViewer>
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.white),
             onPressed: _confirmDelete,
+          )
+        else
+          // Fremde Story: melden statt löschen.
+          IconButton(
+            icon: const Icon(Icons.flag_outlined, color: Colors.white),
+            onPressed: _showReportSheet,
           ),
         IconButton(
           icon: const Icon(Icons.close, color: Colors.white),
@@ -369,5 +376,85 @@ class _StoryViewerState extends State<StoryViewer>
         _progress.forward();
       }
     });
+  }
+
+  // Grund-Sheet: zeigt die festen Melde-Gründe. Tap auf einen Grund
+  // schließt das Sheet und schickt den Report ab.
+  void _showReportSheet() {
+    _progress.stop();
+    const reasons = [
+      'Spam',
+      'Belästigung oder Mobbing',
+      'Unangemessener Inhalt',
+      'Falschinformation',
+      'Sonstiges',
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1A1413),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Story melden',
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            ...reasons.map(
+              (reason) => ListTile(
+                title: Text(
+                  reason,
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                trailing: const Icon(Icons.chevron_right, color: Colors.white54),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _sendReport(reason);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ).whenComplete(() {
+      // Falls per Wisch geschlossen: Fortschritt wieder anwerfen.
+      if (mounted && !_progress.isAnimating && _progress.value < 1.0) {
+        _progress.forward();
+      }
+    });
+  }
+
+  // Schickt den Report ans Backend und gibt Feedback per Snackbar.
+  Future<void> _sendReport(String reason) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final storyId = _currentStory['id'] as int;
+    final status = await UserApiService.report(storyId, 'story', reason);
+
+    final String message;
+    if (status == 201) {
+      message = 'Danke! Wir schauen uns das an.';
+    } else if (status == 409) {
+      message = 'Du hast diese Story bereits gemeldet.';
+    } else {
+      message = 'Melden fehlgeschlagen. Versuch es später erneut.';
+    }
+
+    if (!mounted) return;
+    messenger.showSnackBar(SnackBar(content: Text(message)));
   }
 }

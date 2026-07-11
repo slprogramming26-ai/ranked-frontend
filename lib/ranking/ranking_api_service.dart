@@ -47,13 +47,20 @@ class RankingApiService {
     };
   }
 
-  static Future<List<Map<String, dynamic>>> getLeaderboard() async {
+  /// Neues Format: Das Backend liefert jetzt ein Objekt
+  /// { "entries": [...], "me": {...} } statt einer nackten Liste.
+  static Future<Map<String, dynamic>> getLeaderboard() async {
     final response =
         await ApiClient.get(Uri.parse('$baseUrl/ranking/leaderboard'));
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List<dynamic>;
-      return data.cast<Map<String, dynamic>>();
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+      // TODO(test): nur zum Testen – später entfernen.
+      print('[leaderboard] raw response: $data');
+
+      return data;
     }
-    return [];
+    print('[leaderboard] failed: ${response.statusCode}');
+    return {'entries': <Map<String, dynamic>>[], 'me': null};
   }
 }

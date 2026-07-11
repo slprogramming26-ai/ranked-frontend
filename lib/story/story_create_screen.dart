@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,7 +32,8 @@ class StoryCreateScreen extends StatefulWidget {
 
 enum _Stage { pick, preview }
 
-class _StoryCreateScreenState extends State<StoryCreateScreen> {
+class _StoryCreateScreenState extends State<StoryCreateScreen>
+    with TickerProviderStateMixin {
   final _picker = ImagePicker();
   _Stage _stage = _Stage.pick;
   File? _image; // fertig bearbeitete Story (nach dem Editor)
@@ -39,10 +41,24 @@ class _StoryCreateScreenState extends State<StoryCreateScreen> {
   bool _uploading = false;
   late final AppDatabase _db;
 
+  // Zwei endlose Deko-Animationen fuer Stage 1 (Punkte-Orbit + Blob-Schweben).
+  // Eigene Controller statt AnimatedXxx-Widgets, weil wir volle Kontrolle
+  // ueber das Loop-Verhalten brauchen (repeat() statt einmalig A->B).
+  late final AnimationController _rotationController;
+  late final AnimationController _blobController;
+
   @override
   void initState() {
     super.initState();
     _db = Provider.of<AppDatabase>(context, listen: false);
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
+    )..repeat();
+    _blobController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 18),
+    )..repeat();
     final recovered = widget.recoveredImagePath;
     if (recovered != null) {
       // Erst nach dem ersten Frame, weil _openEditor navigiert und dafuer
@@ -51,6 +67,13 @@ class _StoryCreateScreenState extends State<StoryCreateScreen> {
         (_) => _processPicked(File(recovered)),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    _blobController.dispose();
+    super.dispose();
   }
 
   Future<void> _pick(ImageSource source) async {
@@ -156,146 +179,279 @@ class _StoryCreateScreenState extends State<StoryCreateScreen> {
   Widget _buildPickStage() {
     return Scaffold(
       backgroundColor: AppColors.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Kopfzeile
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.close, color: AppColors.onSurface),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                  Text(
-                    'Neue Story',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 20,
-                      letterSpacing: -0.5,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
+      body: Stack(
+        children: [
+          // Dekorative Glow-Blobs im Hintergrund (RadialGradient statt echtem
+          // Blur-Filter -> optisch fast gleich, aber ohne Blur-Kosten).
+          // Position bleibt fix (Positioned), nur der Transform.translate
+          // innen bewegt sie -> reines Neu-Zeichnen, kein Re-Layout.
+          Positioned(
+            top: -50,
+            right: -60,
+            child: _floatingBlob(
+              _glowBlob(AppColors.primary, 220),
+              phase: 0,
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Hero-Icon mit Gradient-Ring (Story-Optik)
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primaryContainer,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+          ),
+          Positioned(
+            bottom: -70,
+            left: -70,
+            // Gegenphase (+ pi) -> bewegt sich entgegengesetzt zum ersten
+            // Blob, wirkt organischer als synchrones Schweben.
+            child: _floatingBlob(
+              _glowBlob(AppColors.primaryContainer, 260),
+              phase: math.pi,
+            ),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                // Kopfzeile
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.close, color: AppColors.onSurface),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      Text(
+                        'Neue Story',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 20,
+                          letterSpacing: -0.5,
+                          color: AppColors.primary,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.35),
-                            blurRadius: 30,
-                            offset: const Offset(0, 12),
-                            spreadRadius: -6,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: TweenAnimationBuilder<double>(
+                      // Sanftes Einblenden/Hochgleiten beim Öffnen des Screens
+                      // (rein kosmetisch, läuft einmalig).
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, t, child) => Opacity(
+                        opacity: t,
+                        child: Transform.translate(
+                          offset: Offset(0, (1 - t) * 20),
+                          child: child,
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Hero-Icon mit Gradient-Ring + verstreuten
+                          // Akzent-Punkten (Story-Ring-Optik, etwas verspielt).
+                          SizedBox(
+                            width: 150,
+                            height: 150,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Orbit-Gruppe: die 3 Punkte bleiben relativ
+                                // zueinander fix, nur die ganze Gruppe rotiert
+                                // um den Mittelpunkt -> wirkt wie ein Orbit
+                                // ums Icon. Icon selbst bleibt unrotiert
+                                // (steht als eigenes Geschwister daneben).
+                                AnimatedBuilder(
+                                  animation: _rotationController,
+                                  builder: (context, child) => Transform.rotate(
+                                    angle: _rotationController.value * 2 * math.pi,
+                                    child: child,
+                                  ),
+                                  child: SizedBox(
+                                    width: 150,
+                                    height: 150,
+                                    child: Stack(
+                                      children: [
+                                        Positioned(
+                                          top: 2,
+                                          right: 14,
+                                          child: _sparkleDot(
+                                            AppColors.primaryContainer,
+                                            14,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          bottom: 14,
+                                          left: 2,
+                                          child: _sparkleDot(Colors.white, 9),
+                                        ),
+                                        Positioned(
+                                          top: 24,
+                                          left: 6,
+                                          child: _sparkleDot(AppColors.primary, 11),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        AppColors.primary,
+                                        AppColors.primaryContainer,
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withValues(alpha: 0.35),
+                                        blurRadius: 30,
+                                        offset: const Offset(0, 12),
+                                        spreadRadius: -6,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.auto_awesome,
+                                    color: Colors.white,
+                                    size: 52,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Teile deinen Moment',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 24,
+                              letterSpacing: -0.5,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Erstelle in Sekunden eine Story für deine Follower.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.5,
+                              color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  size: 14,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '24H sichtbar',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 52),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _SourceCard(
+                                  icon: Icons.photo_library_rounded,
+                                  label: 'Galerie',
+                                  subtitle: 'Bild wählen',
+                                  filled: true,
+                                  onTap: () => _pick(ImageSource.gallery),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: _SourceCard(
+                                  icon: Icons.photo_camera_rounded,
+                                  label: 'Kamera',
+                                  subtitle: 'Live aufnehmen',
+                                  filled: false,
+                                  onTap: () => _pick(ImageSource.camera),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.auto_awesome,
-                        color: Colors.white,
-                        size: 52,
-                      ),
                     ),
-                    const SizedBox(height: 28),
-                    Text(
-                      'Teile deinen Moment',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 24,
-                        letterSpacing: -0.5,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Deine Story ist 24 Stunden für deine Follower sichtbar.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        height: 1.5,
-                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    _buildSourceButton(
-                      icon: Icons.photo_library_rounded,
-                      label: 'Aus Galerie',
-                      filled: true,
-                      onTap: () => _pick(ImageSource.gallery),
-                    ),
-                    const SizedBox(height: 14),
-                    _buildSourceButton(
-                      icon: Icons.photo_camera_rounded,
-                      label: 'Kamera',
-                      filled: false,
-                      onTap: () => _pick(ImageSource.camera),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSourceButton({
-    required IconData icon,
-    required String label,
-    required bool filled,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      child: Material(
-        color: filled ? AppColors.primary : AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  color: filled ? Colors.white : AppColors.onSurface,
-                  size: 22,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  label,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: filled ? Colors.white : AppColors.onSurface,
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // Legt einen sanften Schwebe-Versatz um den Blob herum: [phase] verschiebt
+  // die Sinuskurve, damit zwei Blobs, die denselben Controller nutzen, sich
+  // trotzdem nicht synchron bewegen (wirkt organischer/zufälliger).
+  Widget _floatingBlob(Widget blob, {required double phase}) {
+    return AnimatedBuilder(
+      animation: _blobController,
+      builder: (context, child) {
+        final t = _blobController.value * 2 * math.pi + phase;
+        return Transform.translate(
+          offset: Offset(math.sin(t) * 24, math.cos(t) * 18),
+          child: child,
+        );
+      },
+      child: blob,
+    );
+  }
+
+  Widget _glowBlob(Color color, double size) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0)],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _sparkleDot(Color color, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color.withValues(alpha: 0.85),
+        boxShadow: [
+          BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8),
+        ],
       ),
     );
   }
@@ -347,7 +503,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen> {
                       : () => setState(() {
                             _stage = _Stage.pick;
                             _image = null;
-                          }),
+                      }),
                 ),
               ),
             ),
@@ -456,6 +612,114 @@ class _StoryCreateScreenState extends State<StoryCreateScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Quelle-Wählen-Card (Galerie/Kamera). Skaliert beim Antippen kurz runter
+/// (Press-Feedback) statt nur auf den InkWell-Ripple zu verlassen — soll
+/// haptischer/"drückbarer" wirken und zum Antippen einladen.
+class _SourceCard extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final bool filled;
+  final VoidCallback onTap;
+
+  const _SourceCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.filled,
+    required this.onTap,
+  });
+
+  @override
+  State<_SourceCard> createState() => _SourceCardState();
+}
+
+class _SourceCardState extends State<_SourceCard> {
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if (_pressed != value) setState(() => _pressed = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = widget.filled ? Colors.white : AppColors.onSurface;
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.94 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Material(
+          color: widget.filled ? AppColors.primary : AppColors.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(24),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            // onTap bleibt hier leer -> GestureDetector oben entscheidet, wir
+            // wollen nur den Ripple des InkWell als Zusatz-Feedback.
+            onTap: widget.onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                border: widget.filled
+                    ? null
+                    : Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.18),
+                        width: 1.5,
+                      ),
+                boxShadow: widget.filled
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.35),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                          spreadRadius: -4,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: widget.filled
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : AppColors.primary.withValues(alpha: 0.12),
+                    ),
+                    child: Icon(widget.icon, color: fg, size: 22),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.label,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: fg,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    widget.subtitle,
+                    style: TextStyle(fontSize: 11, color: fg.withValues(alpha: 0.75)),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

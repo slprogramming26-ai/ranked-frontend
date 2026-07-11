@@ -34,6 +34,7 @@ class UserApiService {
   static Future<Map<String, dynamic>> getCurrentUser() async {
     final response = await ApiClient.get(Uri.parse('$baseUrl/users/'));
     if (response.statusCode == 200) {
+      print(response.body);
       return jsonDecode(response.body);
     }
     return {};
@@ -147,5 +148,17 @@ class UserApiService {
     final response =
         await ApiClient.delete(Uri.parse('$baseUrl/users/delete'));
     return response.statusCode == 204;
+  }
+
+  // Gibt den HTTP-Status zurueck, damit der Aufrufer 201 (ok) von
+  // 409 (schon gemeldet) und echten Fehlern unterscheiden kann.
+  static Future<int> report(int postId, String type, String reason) async  {
+    final response = await ApiClient.post(Uri.parse('$baseUrl/report/$type/$postId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'reason': reason,
+      }),
+    );
+    return response.statusCode;
   }
 }

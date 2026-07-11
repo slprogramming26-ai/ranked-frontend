@@ -47,9 +47,12 @@ void send(String text) {
 
   @override
   Stream<List<ChatMessage>> watch() {
+    // Die DB liefert absteigend (neueste zuerst, wegen des LIMIT-Fensters).
+    // Die UI-Logik (Datums-Trenner, Gruppierung) denkt chronologisch —
+    // deshalb hier einmal umdrehen.
     return db
         .watchDmConversation(myUserId: myUserId, otherUserId: peerId)
-        .map((rows) => rows
+        .map((rows) => rows.reversed
         .map((r) => ChatMessage(
       senderId: r.senderId,
       message: r.message,
@@ -75,8 +78,9 @@ class GroupConversation implements Conversation{
 
   @override
   Stream<List<ChatMessage>> watch() {
+    // Wie im DM: DB liefert absteigend (LIMIT-Fenster), UI will chronologisch.
     return db.watchGroupConversation(groupChatId: groupChatId)
-    .map((rows) => rows.map((r) => ChatMessage(senderId: r.senderId, message: r.message, createdAt: r.createdAt)).toList());
+    .map((rows) => rows.reversed.map((r) => ChatMessage(senderId: r.senderId, message: r.message, createdAt: r.createdAt)).toList());
 
   }
 

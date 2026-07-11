@@ -49,12 +49,10 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(syncMarkers);
       }
       if (from < 8) {
-        // Post-Entwurf, damit Titel/Text den Kamera-Prozesstod ueberleben.
+        // createTable baut die Tabelle nach aktuellem Schema -> draft_type ist
+        // hier schon drin, Schritt 9 wird nicht mehr gebraucht.
         await m.createTable(postDrafts);
-      }
-      if (from < 9) {
-        // draft_type ('post'/'story'): routet das gerettete Kamera-Foto
-        // nach einem Prozesstod in den richtigen Flow.
+      } else if (from < 9) {
         await m.addColumn(postDrafts, postDrafts.draftType);
       }
     },
@@ -140,6 +138,11 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  // Chat-Fenster: Wir laden nie den kompletten Verlauf in den Speicher,
+  // sondern nur die juengsten N Nachrichten. Dafuer MUSS absteigend sortiert
+  // werden (neueste zuerst) — nur so greift das LIMIT das richtige Ende.
+  static const chatWindowSize = 200;
+
   Stream<List<DmChatHistoryData>> watchDmConversation({
     required int myUserId,
     required int otherUserId,
@@ -152,7 +155,8 @@ class AppDatabase extends _$AppDatabase {
                 (t.senderId.equals(otherUserId) &
                     t.recipientId.equals(myUserId)),
           )
-          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..limit(chatWindowSize))
         .watch();
   }
 
@@ -160,8 +164,9 @@ class AppDatabase extends _$AppDatabase {
     required int groupChatId,
   }) {
     return (select(groupChatHistory)
-      ..where((t) => t.groupChatId.equals(groupChatId))
-      ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+          ..where((t) => t.groupChatId.equals(groupChatId))
+          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+          ..limit(chatWindowSize))
         .watch();
   }
   
@@ -266,5 +271,6 @@ class AppDatabase extends _$AppDatabase {
         await delete(table).go();
       }
     });
+
   }
 }

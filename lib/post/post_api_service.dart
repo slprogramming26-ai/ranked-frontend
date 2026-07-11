@@ -18,6 +18,21 @@ class PostApiService {
     return [];
   }
 
+  /// Holt einen einzelnen Post per ID (z. B. wenn im Chat ein geteilter
+  /// Post-Link getippt wird). Liefert dieselbe Struktur wie ein Eintrag aus
+  /// [getPosts] – also `{post, votes, is_mine, is_liked}` – oder `null`, wenn
+  /// der Post nicht existiert (404) bzw. ein Fehler auftritt.
+  static Future<Map<String, dynamic>?> getPostById(int id) async {
+    final response = await ApiClient.get(
+      Uri.parse('$baseUrl/posts/$id'),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   static Future<bool> createPost(String title, String content, bool published,
       String? imageUrl, String? flag) async {
     final response = await ApiClient.post(
@@ -61,6 +76,7 @@ class PostApiService {
         await ApiClient.get(Uri.parse('$baseUrl/comment/$post_id'));
     if (response.statusCode == 200) {
       final List data = jsonDecode(response.body);
+      print('COMMENTS RAW: $data');
       return data.cast<Map<String, dynamic>>();
     }
     return [];
@@ -82,4 +98,7 @@ class PostApiService {
     final response = await ApiClient.delete(Uri.parse('$baseUrl/posts/$id'));
     return response.statusCode == 204;
   }
+
+
+
 }
