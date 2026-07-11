@@ -2,99 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import '../app_colors.dart';
-import 'ranking_provider.dart';
-
-// ─── Time Toggle ─────────────────────────────────────────────────────────────
-class _TimeToggle extends StatelessWidget {
-  final bool isToday;
-  final ValueChanged<bool> onToggle;
-
-  const _TimeToggle({required this.isToday, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainer,
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Row(
-        children: [
-          _ToggleBtn(
-            label: 'Today',
-            active: isToday,
-            onTap: () => onToggle(true),
-          ),
-          _ToggleBtn(
-            label: 'Yesterday',
-            active: !isToday,
-            onTap: () => onToggle(false),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ToggleBtn extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _ToggleBtn({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            gradient: active
-                ? LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryContainer],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            borderRadius: BorderRadius.circular(50),
-            boxShadow: active
-                ? [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: active ? Colors.white : AppColors.onSurfaceVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── Podium ───────────────────────────────────────────────────────────────────
-class _Podium extends StatelessWidget {
+class Podium extends StatelessWidget {
   final List<Map<String, dynamic>> leaderboard;
-  const _Podium({required this.leaderboard});
+  const Podium({super.key, required this.leaderboard});
 
   // Server liefert die fertige Punkte-Summe (int) — kein Mitteln mehr.
   String _points(Map<String, dynamic> e) =>
@@ -320,11 +232,11 @@ class _PodiumCard extends StatelessWidget {
 }
 
 // ─── Rank List Tile ───────────────────────────────────────────────────────────
-class _RankListTile extends StatelessWidget {
+class RankListTile extends StatelessWidget {
   final int rank;
   final Map<String, dynamic> entry;
 
-  const _RankListTile({required this.rank, required this.entry});
+  const RankListTile({super.key, required this.rank, required this.entry});
 
   @override
   Widget build(BuildContext context) {
@@ -416,15 +328,137 @@ class _RankListTile extends StatelessWidget {
   }
 }
 
+// ─── "Du"-Zeile ───────────────────────────────────────────────────────────────
+// Sticky Karte mit dem eigenen Stand aus leaderboard.me — sichtbar auch dann,
+// wenn man selbst nicht in den Top 7 steht. Drei Zustände:
+//   1. my_points == 0  -> noch keine Punkte heute (Rang wäre irreführend)
+//   2. my_rank == 1    -> Tagesführung
+//   3. sonst           -> Rang + Abstand zum nächsthöheren Platz
+class LeaderboardMeCard extends StatelessWidget {
+  final Map<String, dynamic> me;
+
+  const LeaderboardMeCard({super.key, required this.me});
+
+  @override
+  Widget build(BuildContext context) {
+    final rank = (me['my_rank'] as num?)?.toInt() ?? 0;
+    final points = (me['my_points'] as num?)?.toInt() ?? 0;
+    final toNext = (me['points_to_next'] as num?)?.toInt() ?? 0;
+
+    final hasPoints = points > 0;
+    final isFirst = hasPoints && rank == 1;
+
+    final String headline;
+    final String subline;
+    if (!hasPoints) {
+      headline = 'Noch keine Punkte heute';
+      subline = 'Poste, um bewertet zu werden';
+    } else if (isFirst) {
+      headline = 'Du führst heute!';
+      subline = 'Verteidige deinen Platz';
+    } else {
+      headline = 'Platz #$rank';
+      subline =
+          'Noch $toNext ${toNext == 1 ? 'Punkt' : 'Punkte'} bis zum nächsten Platz';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primaryContainer],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.35),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // "DU"-Badge an der Stelle, wo die Liste den Avatar hat
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: isFirst
+                  ? const Icon(
+                      Icons.workspace_premium_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    )
+                  : Text(
+                      'DU',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  headline,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  subline,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              const Icon(Icons.bolt_rounded, size: 18, color: Colors.white),
+              Text(
+                '$points',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Bento Card ───────────────────────────────────────────────────────────────
-class _BentoCard extends StatelessWidget {
+class BentoCard extends StatelessWidget {
   final Color bg;
   final Color fgColor;
   final IconData icon;
   final String value;
   final String label;
 
-  const _BentoCard({
+  const BentoCard({
+    super.key,
     required this.bg,
     required this.fgColor,
     required this.icon,
@@ -478,202 +512,11 @@ class _BentoCard extends StatelessWidget {
   }
 }
 
-// ─── Swipe Result Screen ──────────────────────────────────────────────────────
-class _SwipeResultScreen extends StatelessWidget {
-  const _SwipeResultScreen({required this.result});
-
-  final Map<String, dynamic> result;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = result['total_points'] ?? 0;
-    final breakdown =
-        (result['breakdown'] as Map?)?.cast<String, dynamic>() ?? {};
-    final message = result['message']?.toString() ?? '';
-
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Spacer(),
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryContainer],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                  ),
-                  child:
-                      const Icon(Icons.bolt_rounded, color: Colors.white, size: 48),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                '+$total',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 64,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.primary,
-                  height: 1.0,
-                ),
-              ),
-              Text(
-                'PUNKTE VERGEBEN',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              if (message.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 32),
-              ...breakdown.entries
-                  .where((e) => (e.value as num? ?? 0) != 0)
-                  .map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            e.key.toUpperCase(),
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          Text(
-                            '+${e.value}',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: _GradientButton(
-                  label: 'FERTIG',
-                  isLoading: false,
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Swipe Error Screen ───────────────────────────────────────────────────────
-class _SwipeErrorScreen extends StatelessWidget {
-  const _SwipeErrorScreen({required this.alreadyVoted, this.detail});
-
-  final bool alreadyVoted;
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context) {
-    final iconData = alreadyVoted
-        ? Icons.event_available_rounded
-        : Icons.cloud_off_rounded;
-    final iconColor = alreadyVoted ? AppColors.tertiary : AppColors.secondary;
-    final iconBg = alreadyVoted
-        ? AppColors.tertiaryContainer
-        : AppColors.secondaryFixed;
-    final headline = alreadyVoted ? 'BEREITS\nGEWERTET' : 'FEHLER';
-    final subtitle = alreadyVoted
-        ? 'Du hast heute schon abgestimmt.\nMorgen bist du wieder dran!'
-        : (detail ?? 'Etwas ist schiefgelaufen. Versuch es später nochmal.');
-
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Spacer(),
-              Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-                  child: Icon(iconData, color: iconColor, size: 44),
-                ),
-              ),
-              const SizedBox(height: 28),
-              Text(
-                headline,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: iconColor,
-                  height: 1.0,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  color: AppColors.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
-              const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: _GradientButton(
-                  label: 'ZURÜCK',
-                  isLoading: false,
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 // ─── Empty Leaderboard ────────────────────────────────────────────────────────
-class _EmptyLeaderboard extends StatelessWidget {
+class EmptyLeaderboard extends StatelessWidget {
+  const EmptyLeaderboard({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -701,12 +544,13 @@ class _EmptyLeaderboard extends StatelessWidget {
 }
 
 // ─── Bottom Action Bar ────────────────────────────────────────────────────────
-class _BottomActionBar extends StatelessWidget {
+class BottomActionBar extends StatelessWidget {
   final bool isLoading;
   final bool rankedToday;
   final VoidCallback onPressed;
 
-  const _BottomActionBar({
+  const BottomActionBar({
+    super.key,
     required this.isLoading,
     required this.rankedToday,
     required this.onPressed,
@@ -733,7 +577,7 @@ class _BottomActionBar extends StatelessWidget {
           child: Opacity(
             // rankedToday -> ausgegraut + null onPressed = wirklich deaktiviert.
             opacity: rankedToday ? 0.5 : 1.0,
-            child: _GradientButton(
+            child: GradientButton(
               label: rankedToday
                   ? 'HEUTE SCHON GEWERTET'
                   : 'GET YOUR RANKED PARTNER',
@@ -748,12 +592,13 @@ class _BottomActionBar extends StatelessWidget {
 }
 
 // ─── Gradient Button ──────────────────────────────────────────────────────────
-class _GradientButton extends StatelessWidget {
+class GradientButton extends StatelessWidget {
   final String label;
   final bool isLoading;
   final VoidCallback? onPressed;
 
-  const _GradientButton({
+  const GradientButton({
+    super.key,
     required this.label,
     required this.isLoading,
     required this.onPressed,

@@ -16,7 +16,6 @@ class RankingEnabledView extends StatefulWidget {
 
 class _RankingEnabledViewState extends State<RankingEnabledView> {
   final bool _isLoading = false;
-  bool _isToday = true; // Toggle state (Today / Yesterday) — UI only
   bool didRanking = true;
 
   @override
@@ -24,8 +23,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<RankingProvider>(context, listen: false);
-      provider._fetchLeaderboard();
-      provider.fetchStreak();
+      provider.fetchLeaderboard();
       _refreshDidRanking();
     });
   }
@@ -44,6 +42,11 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
   Widget build(BuildContext context) {
     final provider = Provider.of<RankingProvider>(context);
     final leaderboard = provider.leaderboardData;
+    // Persönliche Stats für die Bento-Cards — beide Quellen liegen schon im
+    // Provider (userdata bzw. leaderboard.me), kein zusätzlicher Request.
+    final streak = (provider.userdata['streak_count'] as num?)?.toInt() ?? 0;
+    final myPoints =
+        (provider.leaderboardMe?['my_points'] as num?)?.toInt() ?? 0;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -52,10 +55,6 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.menu, color: AppColors.primary),
-          onPressed: () {},
-        ),
         title: Text(
           'Ranked',
           style: GoogleFonts.plusJakartaSans(
@@ -79,7 +78,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  '${provider.streak}',
+                  '${provider.userdata["streak_count"] ?? 0}',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
@@ -94,7 +93,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
       // ── Body ──────────────────────────────────────────────────────────────
       body: RefreshIndicator(
         color: AppColors.primary,
-        onRefresh: () => provider._refreshLeaderboard(),
+        onRefresh: () => provider.refreshLeaderboard(),
 
         child: provider.isLoadingLeaderboard
             ? Center(
@@ -110,72 +109,66 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // ── Time Toggle ───────────────────────────────
-                              _TimeToggle(
-                                isToday: _isToday,
-                                onToggle: (val) =>
-                                    setState(() => _isToday = val),
-                              ),
-                              const SizedBox(height: 28),
+                              const SizedBox(height: 24),
 
                               // ── Podium ────────────────────────────────────
                               if (leaderboard.length >= 3)
-                                _Podium(leaderboard: leaderboard)
+                                Podium(leaderboard: leaderboard)
                               else if (leaderboard.isEmpty)
-                                _EmptyLeaderboard()
+                                const EmptyLeaderboard()
                               else
-                                _Podium(leaderboard: leaderboard),
+                                Podium(leaderboard: leaderboard),
 
                               const SizedBox(height: 24),
 
-                              // ── Daily Feats Header ────────────────────────
-                              if (leaderboard.isNotEmpty) ...[
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.military_tech_rounded,
-                                      color: AppColors.tertiary,
-                                      size: 22,
+                              // ── Deine Stats (echte Daten statt Fake-Feats) ─
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.military_tech_rounded,
+                                    color: AppColors.tertiary,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'DEINE STATS',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      fontStyle: FontStyle.italic,
+                                      color: AppColors.onSurface,
                                     ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'DAILY FEATS',
-                                      style: GoogleFonts.plusJakartaSans(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w900,
-                                        fontStyle: FontStyle.italic,
-                                        color: AppColors.onSurface,
-                                      ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              // Bento grid: heute erhaltene Punkte + Streak
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: BentoCard(
+                                      bg: AppColors.tertiaryContainer,
+                                      fgColor: AppColors.tertiary,
+                                      icon: Icons.bolt_rounded,
+                                      value: '$myPoints',
+                                      label: 'PUNKTE HEUTE',
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                // Bento grid
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: _BentoCard(
-                                        bg: AppColors.tertiaryContainer,
-                                        fgColor: AppColors.tertiary,
-                                        icon: Icons.trending_up_rounded,
-                                        value: '+25%',
-                                        label: 'GLOBAL VELOCITY',
-                                      ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: BentoCard(
+                                      bg: AppColors.primaryContainer,
+                                      fgColor: const Color(0xFF4c0600),
+                                      icon: Icons.local_fire_department,
+                                      value: streak == 1
+                                          ? '1 Tag'
+                                          : '$streak Tage',
+                                      label: 'DEIN STREAK',
                                     ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _BentoCard(
-                                        bg: AppColors.primaryContainer,
-                                        fgColor: const Color(0xFF4c0600),
-                                        icon: Icons.local_fire_department,
-                                        value: 'High Heat',
-                                        label: 'COMMUNITY PEAK',
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 24),
-                              ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
 
                               // ── Ranks 4+ list ─────────────────────────────
                               if (leaderboard.length > 3)
@@ -189,7 +182,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                         padding: const EdgeInsets.only(
                                           bottom: 12,
                                         ),
-                                        child: _RankListTile(
+                                        child: RankListTile(
                                           rank: e.key + 4,
                                           entry: e.value,
                                         ),
@@ -205,26 +198,37 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                     ],
                   ),
 
-                  // ── Sticky Bottom Button ──────────────────────────────────
+                  // ── Sticky: "Du"-Zeile + Bottom Button ────────────────────
                   Positioned(
                     left: 0,
                     right: 0,
                     bottom: 100,
-                    child: _BottomActionBar(
-                      isLoading: _isLoading,
-                      rankedToday: didRanking,
-                      onPressed: () async {
-                        // RankingPages holt Target + Posts selbst (my_target)
-                        // und behandelt Leerzustände intern.
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const RankingPages(),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (provider.leaderboardMe != null)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                            child: LeaderboardMeCard(me: provider.leaderboardMe!),
                           ),
-                        );
-                        // Zurück vom Swipen -> evtl. gerade gewertet -> Lock neu prüfen.
-                        await _refreshDidRanking();
-                      },
+                        BottomActionBar(
+                          isLoading: _isLoading,
+                          rankedToday: didRanking,
+                          onPressed: () async {
+                            // RankingPages holt Target + Posts selbst (my_target)
+                            // und behandelt Leerzustände intern.
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RankingPages(),
+                              ),
+                            );
+                            // Zurück vom Swipen -> evtl. gerade gewertet -> Lock neu prüfen.
+                            await _refreshDidRanking();
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],

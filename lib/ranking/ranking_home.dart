@@ -25,7 +25,7 @@ class _RankingHomeState extends State<RankingHome> {
       Provider.of<RankingProvider>(
         context,
         listen: false,
-      )._fetchUserCredentials();
+      ).fetchUserCredentials();
     });
   }
 
@@ -137,13 +137,13 @@ class _RankingHomeState extends State<RankingHome> {
                     ),
                     const Spacer(),
                     // Activate Button
-                    _GradientButton(
+                    GradientButton(
                       label: 'AKTIVIEREN',
                       isLoading: _isLoading,
                       onPressed: () async {
                         setState(() => _isLoading = true);
                         await UserApiService.setRankingEnabled(true);
-                        await provider._fetchUserCredentials();
+                        await provider.fetchUserCredentials();
                         setState(() => _isLoading = false);
                       },
                     ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../streak.dart';
 import 'ranking_api_service.dart';
 import '../user_api_service.dart';
 
@@ -17,7 +16,6 @@ class RankingProvider extends ChangeNotifier {
   Map<String, dynamic>? _leaderboardMe;
   bool _hasFetchedLeaderboard = false;
   bool _isLoadingLeaderboard = false;
-  int _streak = 0;
 
   bool get isLoading => _isLoading;
   bool get isLoadingHome => _isLoadingHome;
@@ -27,39 +25,13 @@ class RankingProvider extends ChangeNotifier {
   Map<String, dynamic>? get leaderboardMe => _leaderboardMe;
   bool get hasFetchedLeaderboard => _hasFetchedLeaderboard;
   bool get isLoadingLeaderboard => _isLoadingLeaderboard;
-  int get streak => _streak;
 
   Future<bool> getDidRanking() async {
     final prefs = await SharedPreferences.getInstance();
     return Streak.didActivityToday(prefs);
   }
 
-  Future<void> fetchStreak() async {
-    final s = await Streak.getStreakWithExpiry();
-    _streak = s;
-    notifyListeners();
-  }
-
-  Future<void> refreshStreak() async {
-    final s = await Streak.getStreakWithExpiry();
-    _streak = s;
-    notifyListeners();
-  }
-
-  void trueLoading() {
-    _isLoading = true;
-    notifyListeners();
-  }
-
-  void falseLoading() {
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  Future<void> _fetchUserCredentials() async {
-    if (_hasFetched) return;
-    _isLoadingHome = true;
-    notifyListeners();
+  Future<void> refetchUserCredentials() async {
 
     try {
       final data = await UserApiService.getCurrentUser();
@@ -73,7 +45,25 @@ class RankingProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _fetchLeaderboard() async {
+
+  void trueLoading() {
+    _isLoading = true;
+    notifyListeners();
+  }
+
+  void falseLoading() {
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> fetchUserCredentials() async {
+    if (_hasFetched) return;
+    _isLoadingHome = true;
+    notifyListeners();
+    await refetchUserCredentials(); // setzt _isLoadingHome=false im finally
+  }
+
+  Future<void> fetchLeaderboard() async {
     if (_hasFetchedLeaderboard) return;
     _isLoadingLeaderboard = true;
     notifyListeners();
@@ -90,7 +80,7 @@ class RankingProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _refreshLeaderboard() async {
+  Future<void> refreshLeaderboard() async {
     try {
       final data = await RankingApiService.getLeaderboard();
       _applyLeaderboard(data);
@@ -109,8 +99,28 @@ class RankingProvider extends ChangeNotifier {
         .cast<Map<String, dynamic>>();
     _leaderboardData = entries;
     _leaderboardMe = data['me'] as Map<String, dynamic>?;
+  }
+}
 
-    // TODO(test): nur zum Testen – zeigt die eigene "Du"-Zeile im Log.
-    print('[leaderboard] entries: ${entries.length}, me: $_leaderboardMe');
+
+class Streak {
+  static const _lastActivityKey = 'saved_date_time_key';
+
+
+  static bool didActivityToday(SharedPreferences prefs) {
+    final timestamp = prefs.getInt(_lastActivityKey);
+    if (timestamp == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final diff = today.difference(DateTime.fromMillisecondsSinceEpoch(timestamp)).inDays;
+    return diff == 0;
+  }
+
+
+  static Future<void> markRankedToday() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    await prefs.setInt(_lastActivityKey, today.millisecondsSinceEpoch);
   }
 }

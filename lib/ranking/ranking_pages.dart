@@ -4,11 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
-import 'package:ranked/streak.dart';
 import '../app_colors.dart';
 import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
-import 'ranking_widgets.dart';
+import 'ranking_widgets.dart' show GradientButton;
 
 // ─── RankingPages: Tinder-Style Swipe ─────────────────────────────────────────
 class RankingPages extends StatefulWidget {
@@ -82,9 +81,9 @@ class _RankingPagesState extends State<RankingPages> {
     }
 
     final provider = Provider.of<RankingProvider>(context, listen: false);
-    provider._refreshLeaderboard();
-    await Streak.recordActivity();
-    provider.refreshStreak();
+    provider.refreshLeaderboard();
+    provider.refetchUserCredentials();
+    Streak.markRankedToday();
 
     Navigator.pushReplacement(
       context,
@@ -406,6 +405,268 @@ class _SwipeActionButton extends StatelessWidget {
           ],
         ),
         child: Icon(icon, color: color, size: 30),
+      ),
+    );
+  }
+}
+
+// ─── Swipe Result Screen ──────────────────────────────────────────────────────
+class _SwipeResultScreen extends StatelessWidget {
+  const _SwipeResultScreen({required this.result});
+
+  final Map<String, dynamic> result;
+
+  @override
+  Widget build(BuildContext context) {
+    final total = result['total_points'] ?? 0;
+    final breakdown =
+        (result['breakdown'] as Map?)?.cast<String, dynamic>() ?? {};
+    final message = result['message']?.toString() ?? '';
+    // Belohnung fuer den BEWERTER (seit XP-Update in der Response enthalten).
+    final xpGained = (result['xp_gained'] as num?)?.toInt() ?? 0;
+    final streak = (result['streak'] as num?)?.toInt() ?? 0;
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              Center(
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryContainer],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child:
+                      const Icon(Icons.bolt_rounded, color: Colors.white, size: 48),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '+$total',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 64,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.primary,
+                  height: 1.0,
+                ),
+              ),
+              Text(
+                'PUNKTE VERGEBEN',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.5,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              if (message.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              // Deine Belohnung als Bewerter: XP + Streak aus der Response.
+              if (xpGained > 0 || streak > 0) ...[
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (xpGained > 0)
+                      _RewardChip(
+                        icon: Icons.auto_awesome_rounded,
+                        label: '+$xpGained XP',
+                        bg: AppColors.tertiaryContainer,
+                        fg: AppColors.tertiary,
+                      ),
+                    if (xpGained > 0 && streak > 0) const SizedBox(width: 12),
+                    if (streak > 0)
+                      _RewardChip(
+                        icon: Icons.local_fire_department_rounded,
+                        label: streak == 1 ? '1 TAG' : '$streak TAGE',
+                        bg: AppColors.primaryContainer,
+                        fg: AppColors.primary,
+                      ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 32),
+              ...breakdown.entries
+                  .where((e) => (e.value as num? ?? 0) != 0)
+                  .map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            e.key.toUpperCase(),
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            '+${e.value}',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: GradientButton(
+                  label: 'FERTIG',
+                  isLoading: false,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Reward Chip (XP / Streak auf dem Result-Screen) ──────────────────────────
+class _RewardChip extends StatelessWidget {
+  const _RewardChip({
+    required this.icon,
+    required this.label,
+    required this.bg,
+    required this.fg,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color bg;
+  final Color fg;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(50),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: fg),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              color: fg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Swipe Error Screen ───────────────────────────────────────────────────────
+class _SwipeErrorScreen extends StatelessWidget {
+  const _SwipeErrorScreen({required this.alreadyVoted, this.detail});
+
+  final bool alreadyVoted;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final iconData = alreadyVoted
+        ? Icons.event_available_rounded
+        : Icons.cloud_off_rounded;
+    final iconColor = alreadyVoted ? AppColors.tertiary : AppColors.secondary;
+    final iconBg = alreadyVoted
+        ? AppColors.tertiaryContainer
+        : AppColors.secondaryFixed;
+    final headline = alreadyVoted ? 'BEREITS\nGEWERTET' : 'FEHLER';
+    final subtitle = alreadyVoted
+        ? 'Du hast heute schon abgestimmt.\nMorgen bist du wieder dran!'
+        : (detail ?? 'Etwas ist schiefgelaufen. Versuch es später nochmal.');
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              Center(
+                child: Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                  child: Icon(iconData, color: iconColor, size: 44),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                headline,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w900,
+                  fontStyle: FontStyle.italic,
+                  color: iconColor,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  color: AppColors.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 40),
+                child: GradientButton(
+                  label: 'ZURÜCK',
+                  isLoading: false,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,17 +1,22 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
+import 'ranking/ranking_api_service.dart';
 import 'settings_screen.dart';
 
 
 class ProfileProvider extends ChangeNotifier {
   Map<String, dynamic> _userdata = {};
+  // Echte Ranking-Events (GET /ranking/activity), neueste zuerst.
+  List<Map<String, dynamic>> _activity = [];
   bool _isLoading = false;
   bool _hasFetched = false; // verhindert doppeltes Laden
 
   Map<String, dynamic> get userdata  => _userdata;
+  List<Map<String, dynamic>> get activity => _activity;
   bool get isLoading  => _isLoading;
   bool get hasFetched => _hasFetched;
 
@@ -20,8 +25,14 @@ class ProfileProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final data  = await UserApiService.getCurrentUser();
-    _userdata   = data;
+    // Beide Requests gleichzeitig abschicken statt nacheinander —
+    // Future.wait ist fertig, sobald BEIDE Antworten da sind.
+    final results = await Future.wait([
+      UserApiService.getCurrentUser(),
+      RankingApiService.getActivity(),
+    ]);
+    _userdata   = results[0] as Map<String, dynamic>;
+    _activity   = (results[1] as List).cast<Map<String, dynamic>>();
     _isLoading  = false;
     _hasFetched = true;
     notifyListeners();
@@ -57,27 +68,6 @@ class _ProfileState extends State<Profile> {
   bool _followLoading = false;
 
   bool get _isOwn => widget.targetUserId == null;
-
-  final List<Map<String, dynamic>> _recentActivity = [
-    {
-      'icon':     Icons.auto_graph,
-      'title':    "Ranked up in 'Visual Architecture'",
-      'subtitle': "Movement into the top 1% globally for the 'Nexus' collection.",
-      'time':     '2h ago',
-    },
-    {
-      'icon':     Icons.add_circle_outline,
-      'title':    "Created new Pulse 'Obsidian Flow'",
-      'subtitle': 'A study on kinetic movement in digital environments.',
-      'time':     '1d ago',
-    },
-    {
-      'icon':     Icons.favorite_border,
-      'title':    'Hype record broken',
-      'subtitle': "'Digital Pulse' reached 4.2k total hype pulses from the community.",
-      'time':     '3d ago',
-    },
-  ];
 
   @override
   void initState() {
@@ -125,7 +115,7 @@ class _ProfileState extends State<Profile> {
           if (provider.isLoading || !provider.hasFetched) {
             return _loadingScaffold();
           }
-          return _buildScaffold(provider.userdata);
+          return _buildScaffold(provider.userdata, provider.activity);
         },
       );
     }
@@ -133,7 +123,9 @@ class _ProfileState extends State<Profile> {
     if (_foreignLoading || _foreignData.isEmpty) {
       return _loadingScaffold();
     }
-    return _buildScaffold(_foreignData);
+    // Fremdes Profil: /ranking/activity liefert nur die EIGENEN Events,
+    // deshalb gibt es hier keine Activity-Sektion.
+    return _buildScaffold(_foreignData, const []);
   }
 
   Widget _loadingScaffold() => Scaffold(
@@ -141,13 +133,24 @@ class _ProfileState extends State<Profile> {
     body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
   );
 
-  Widget _buildScaffold(Map<String, dynamic> data) {
+  Widget _buildScaffold(
+    Map<String, dynamic> data,
+    List<Map<String, dynamic>> activity,
+  ) {
     final String username   = data['username']          ?? '';
     final String biography  = data['biography']         ?? '';
     final String? avatarUrl = data['profile_picture_url'];
     final String? vibe1     = data['vibe_factor_1'];
     final String? vibe2     = data['vibe_factor_2'];
     final int? followerCount = data['follower_count'];
+    // Gamification (GetUserOut): kann null sein (z.B. Daten aus /users/search),
+    // dann verschwinden Ring, XP-Balken & Liga-Zelle einfach.
+    final int xp = (data['xp'] as num?)?.toInt() ?? 0;
+    final Map<String, dynamic>? league =
+        data['league'] as Map<String, dynamic>?;
+    final int tier = (league?['tier'] as num?)?.toInt() ?? 0;
+    final Color tierColor =
+        _tierColors[tier.clamp(0, _tierColors.length - 1)];
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -165,28 +168,49 @@ class _ProfileState extends State<Profile> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     children: [
-                      // Avatar
+                      // Avatar mit Liga-Ring (Farbe = tier)
                       Container(
                         width: 128,
                         height: 128,
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerHigh,
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.primary.withOpacity(0.05),
-                            width: 4,
-                          ),
+                          gradient: league != null
+                              ? LinearGradient(
+                                  colors: [
+                                    tierColor,
+                                    tierColor.withOpacity(0.35),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                )
+                              : null,
+                          color: league == null
+                              ? AppColors.surfaceContainerHigh
+                              : null,
+                          border: league == null
+                              ? Border.all(
+                                  color: AppColors.primary.withOpacity(0.05),
+                                  width: 4,
+                                )
+                              : null,
                         ),
-                        child: ClipOval(
-                          child: avatarUrl != null
-                              ? Image.network(
-                            avatarUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) =>
-                                _avatarFallback(username),
-                          )
-                              : _avatarFallback(username),
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: ClipOval(
+                            child: avatarUrl != null
+                                ? Image.network(
+                              avatarUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _avatarFallback(username),
+                            )
+                                : _avatarFallback(username),
+                          ),
                         ),
                       ),
 
@@ -241,6 +265,12 @@ class _ProfileState extends State<Profile> {
 
                       const SizedBox(height: 28),
 
+                      // ── Liga-Fortschritt (XP-Balken) ──────────────
+                      if (league != null) ...[
+                        _LeagueProgress(league: league, color: tierColor),
+                        const SizedBox(height: 28),
+                      ],
+
                       // Stats row
                       Container(
                         decoration: BoxDecoration(
@@ -253,11 +283,14 @@ class _ProfileState extends State<Profile> {
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Row(
                           children: [
-                            _statCell('#42', 'RANK'),
+                            _statCell(
+                              league?['league']?.toString() ?? '—',
+                              'LIGA',
+                            ),
                             _statDivider(),
-                            _statCell('12.8k', 'POINTS'),
+                            _statCell(_fmtXp(xp), 'XP'),
                             _statDivider(),
-                            _statCell('$followerCount', 'FOLLOWERS'),
+                            _statCell('${followerCount ?? 0}', 'FOLLOWERS'),
                           ],
                         ),
                       ),
@@ -280,37 +313,45 @@ class _ProfileState extends State<Profile> {
 
                 const SizedBox(height: 40),
 
-                // Recent Activity
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'RECENT ACTIVITY',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.5,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+                // Recent Activity — echte Events, nur im eigenen Profil
+                if (_isOwn)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'RECENT ACTIVITY',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                            color: AppColors.onSurfaceVariant,
                           ),
-                          Icon(Icons.sort, color: AppColors.primary, size: 20),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      ..._recentActivity.map((item) => _ActivityItem(
-                        icon:     item['icon']     as IconData,
-                        title:    item['title']    as String,
-                        subtitle: item['subtitle'] as String,
-                        time:     item['time']     as String,
-                      )),
-                    ],
+                        ),
+                        const SizedBox(height: 20),
+                        if (activity.isEmpty)
+                          Text(
+                            'Noch keine Aktivität — sobald dich jemand bewertet, steht es hier.',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: AppColors.onSurfaceVariant,
+                              height: 1.4,
+                            ),
+                          )
+                        else
+                          ...activity.map((a) => _ActivityItem(
+                            icon:     _activityIcon(a),
+                            title:    _activityTitle(a),
+                            subtitle: _activitySubtitle(a),
+                            time:     _relativeTime(
+                              DateTime.tryParse(
+                                  a['created_at']?.toString() ?? ''),
+                            ),
+                          )),
+                      ],
+                    ),
                   ),
-                ),
 
                 const SizedBox(height: 60),
               ],
@@ -328,6 +369,72 @@ class _ProfileState extends State<Profile> {
         ],
       ),
     );
+  }
+
+  // ── Liga-Helper ────────────────────────────────────────────────────────────
+  // Eine Farbe pro tier (Index aus dem league-Objekt, 0 = Bronze).
+  // Reihenfolge muss zu LEAGUES im Backend (xp_config.py) passen.
+  static const List<Color> _tierColors = [
+    Color(0xFFCD7F32), // 0 Bronze
+    Color(0xFF8E9AA6), // 1 Silber
+    Color(0xFFE6A817), // 2 Gold
+    Color(0xFF2EB8B0), // 3 Platin
+    Color(0xFF3FA9F5), // 4 Diamant
+    Color(0xFF9B59D0), // 5 Meister
+    Color(0xFFE0413E), // 6 Legende
+  ];
+
+  // 12800 -> "12.8k", 950 -> "950"
+  String _fmtXp(int xp) {
+    if (xp >= 1000) return '${(xp / 1000).toStringAsFixed(1)}k';
+    return '$xp';
+  }
+
+  // ── Activity-Mapping ───────────────────────────────────────────────────────
+  // Übersetzt ein Backend-Event {type, payload, created_at} in Icon + Texte.
+  // Unbekannte types (später "placement"/"streak"/"badge") fallen auf einen
+  // neutralen Default zurück, statt zu crashen — Forward-Kompatibilität.
+
+  IconData _activityIcon(Map<String, dynamic> a) {
+    switch (a['type']) {
+      case 'rated':
+        return Icons.bolt_rounded;
+      default:
+        return Icons.notifications_none_rounded;
+    }
+  }
+
+  String _activityTitle(Map<String, dynamic> a) {
+    switch (a['type']) {
+      case 'rated':
+        return 'Du wurdest bewertet';
+      default:
+        return 'Neue Aktivität';
+    }
+  }
+
+  String _activitySubtitle(Map<String, dynamic> a) {
+    final payload = (a['payload'] as num?)?.toInt() ?? 0;
+    switch (a['type']) {
+      case 'rated':
+        return '+$payload Punkte von der Community erhalten';
+      default:
+        return '';
+    }
+  }
+
+  // "vor 5 Min." / "vor 3 Std." / "vor 2 Tg." / ab einer Woche das Datum.
+  // Der Server schickt UTC-Zeitstempel; die Differenz ist davon unabhängig
+  // (beide Seiten werden auf denselben absoluten Zeitpunkt bezogen), nur fürs
+  // Datum am Ende brauchen wir toLocal().
+  String _relativeTime(DateTime? dt) {
+    if (dt == null) return '';
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'jetzt';
+    if (diff.inMinutes < 60) return 'vor ${diff.inMinutes} Min.';
+    if (diff.inHours < 24) return 'vor ${diff.inHours} Std.';
+    if (diff.inDays < 7) return 'vor ${diff.inDays} Tg.';
+    return DateFormat('dd.MM.yyyy').format(dt.toLocal());
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -404,6 +511,86 @@ class _ProfileState extends State<Profile> {
     height: 36,
     color: AppColors.primary.withOpacity(0.07),
   );
+}
+
+// ── Liga-Fortschritt ──────────────────────────────────────────────────────────
+// Karte mit Liga-Name, XP-Balken und "Noch X XP bis <nächste Liga>".
+// Alle Werte kommen fertig berechnet vom Server (get_league) — hier wird
+// nichts selbst hergeleitet, nur angezeigt.
+class _LeagueProgress extends StatelessWidget {
+  final Map<String, dynamic> league;
+  final Color color;
+  const _LeagueProgress({required this.league, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = league['league']?.toString() ?? '';
+    final next = league['next_league']?.toString();
+    final xpInto = (league['xp_into_league'] as num?)?.toInt() ?? 0;
+    final span = (league['league_span'] as num?)?.toInt() ?? 0;
+    final xpForNext = (league['xp_for_next'] as num?)?.toInt() ?? 0;
+
+    // Höchste Liga liefert league_span == 0 -> Balken voll statt durch 0 teilen.
+    final double progress =
+        span == 0 ? 1.0 : (xpInto / span).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield_rounded, size: 18, color: color),
+              const SizedBox(width: 6),
+              Text(
+                name.toUpperCase(),
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                next == null ? 'MAX' : '$xpInto / $span XP',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: AppColors.surfaceContainerHighest,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            next == null
+                ? 'Höchste Liga erreicht'
+                : 'Noch $xpForNext XP bis $next',
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Top App Bar ───────────────────────────────────────────────────────────────
