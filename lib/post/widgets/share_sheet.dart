@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../app_colors.dart';
 import '../../local_data/database.dart';
 import '../../messenger/messenger_controller.dart';
+import '../../net_image.dart';
 // Noetig fuer die Extension-Methoden auf dem Service (sendDirectMessage,
 // sendGroupMessage, isConnected, reconnect) — die leben in Part-Dateien
 // dieser Library und sind sonst nicht im Scope.
@@ -113,7 +114,7 @@ class _ShareSheetState extends State<ShareSheet>
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.onSurfaceVariant.withOpacity(0.25),
+                    color: AppColors.onSurfaceVariant.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -138,7 +139,7 @@ class _ShareSheetState extends State<ShareSheet>
                 Divider(
                   height: 1,
                   thickness: 1,
-                  color: AppColors.outlineVariant.withOpacity(0.4),
+                  color: AppColors.outlineVariant.withValues(alpha: 0.4),
                 ),
                 // Avatar Grid (Kontakte)
                 Expanded(
@@ -199,7 +200,7 @@ class _ShareSheetState extends State<ShareSheet>
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: _linkCopied
-                ? AppColors.primary.withOpacity(0.12)
+                ? AppColors.primary.withValues(alpha: 0.12)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
@@ -251,13 +252,18 @@ class _ShareSheetState extends State<ShareSheet>
               color: AppColors.surfaceContainer,
               shape: BoxShape.circle,
               border: Border.all(
-                color: AppColors.outlineVariant.withOpacity(0.5),
+                color: AppColors.outlineVariant.withValues(alpha: 0.5),
               ),
             ),
             child: ClipOval(
               child: hasPic
-                  ? Image.network(
-                      contact.avatarUrl!,
+                  ? Image(
+                      // Container ist 62x62 -> 62 logische px reichen.
+                      image: netImage(
+                        context,
+                        contact.avatarUrl!,
+                        logicalWidth: 62,
+                      ),
                       fit: BoxFit.cover,
                       width: double.infinity,
                       height: double.infinity,
@@ -304,7 +310,7 @@ class _ShareSheetState extends State<ShareSheet>
     return Positioned.fill(
       child: IgnorePointer(
         child: Container(
-          color: AppColors.surface.withOpacity(0.96),
+          color: AppColors.surface.withValues(alpha: 0.96),
           child: Center(
             child: AnimatedBuilder(
               animation: _confirmController,
@@ -337,7 +343,7 @@ class _ShareSheetState extends State<ShareSheet>
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
+                          color: AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 30,
                           spreadRadius: 4,
                         ),

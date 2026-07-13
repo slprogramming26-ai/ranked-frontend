@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
+import 'net_image.dart';
 import 'profile.dart';
 import 'local_data/database.dart';
 import 'package:provider/provider.dart';
@@ -267,9 +268,9 @@ class _SearchBarStub extends StatelessWidget {
         height: 52,
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHigh.withOpacity(0.6),
+          color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: AppColors.primary.withOpacity(0.06)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.06)),
         ),
         child: Row(
           children: [
@@ -327,8 +328,9 @@ class _UserResultTile extends StatelessWidget {
                 color: AppColors.surfaceContainerHighest,
               ),
               child: (avatarUrl != null && avatarUrl!.isNotEmpty)
-                  ? Image.network(
-                      avatarUrl!,
+                  ? Image(
+                      // Container ist 44x44 -> 44 logische px reichen.
+                      image: netImage(context, avatarUrl!, logicalWidth: 44),
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _avatarFallback(username),
                     )
@@ -556,8 +558,9 @@ class _HistoryTile extends StatelessWidget {
                   ),
                 ),
                 child: (avatarUrl != null && avatarUrl!.isNotEmpty)
-                    ? Image.network(
-                        avatarUrl!,
+                    ? Image(
+                        // Container ist 46x46 -> 46 logische px reichen.
+                        image: netImage(context, avatarUrl!, logicalWidth: 46),
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => _avatarFallback(),
                       )

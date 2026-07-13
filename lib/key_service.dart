@@ -27,6 +27,16 @@ class KeyService {
   static const _storage = FlutterSecureStorage();
   static const _baseUrl = 'https://web-production-1bb6f.up.railway.app';
 
+  // Session-Cache: Ein Secure-Storage-Read geht durch Keychain/Keystore (IPC,
+  // teuer) und fiel bisher pro entschluesselter Nachricht an. Einmal geladene
+  // Schluessel bleiben deshalb fuer die App-Session im RAM. Die Map-Keys
+  // enthalten userId bzw. Gruppe+Epoche — ein User-Wechsel kollidiert also
+  // nicht mit alten Eintraegen.
+  static final Map<String, SecureKey> _secretKeyCache = {};
+  static final Map<String, SecureKey> _groupKeyCache = {};
+  static String _groupCacheKey(int groupId, int version) =>
+      '$groupId:$version';
+
   static String _privStorageKey(String userId) => 'e2ee_priv_$userId';
   static String _pubStorageKey(String userId) => 'e2ee_pub_$userId';
 
@@ -47,6 +57,7 @@ class KeyService {
       // Bereits vorhanden: laden
       final sodium = await SodiumInit.init();
       final secretKey = sodium.secureCopy(base64.decode(storedPriv));
+      _secretKeyCache[userId] = secretKey;
       return (storedPub, secretKey);
     }
 
@@ -60,17 +71,21 @@ class KeyService {
     await _storage.write(key: _privStorageKey(userId), value: privBase64);
     await _storage.write(key: _pubStorageKey(userId), value: pubBase64);
 
+    _secretKeyCache[userId] = keyPair.secretKey;
     return (pubBase64, keyPair.secretKey);
   }
 
   static Future<SecureKey?> getSecretKey(String userId) async {
+    final cached = _secretKeyCache[userId];
+    if (cached != null) return cached;
     final stored = await _storage.read(key: _privStorageKey(userId));
     if (stored == null) return null;
     final sodium = await SodiumInit.init();
-    return sodium.secureCopy(base64.decode(stored));
+    return _secretKeyCache[userId] = sodium.secureCopy(base64.decode(stored));
   }
 
   static Future<void> deleteKeypair(String userId) async {
+    _secretKeyCache.remove(userId);
     await _storage.delete(key: _privStorageKey(userId));
     await _storage.delete(key: _pubStorageKey(userId));
   }
@@ -107,6 +122,7 @@ class KeyService {
     int version,
     SecureKey key,
   ) async {
+    _groupKeyCache[_groupCacheKey(groupId, version)] = key;
     await _storage.write(
       key: _groupKeyStorageKey(groupId, version),
       value: base64.encode(key.extractBytes()),
@@ -123,12 +139,15 @@ class KeyService {
   // Lädt den Schlüssel einer bestimmten Epoche, oder null falls nicht lokal
   // vorhanden (dann muss der Aufrufer ihn vom Server holen).
   static Future<SecureKey?> getGroupKey(int groupId, int version) async {
+    final cached = _groupKeyCache[_groupCacheKey(groupId, version)];
+    if (cached != null) return cached;
     final stored = await _storage.read(
       key: _groupKeyStorageKey(groupId, version),
     );
     if (stored == null) return null;
     final sodium = await SodiumInit.init();
-    return sodium.secureCopy(base64.decode(stored));
+    return _groupKeyCache[_groupCacheKey(groupId, version)] =
+        sodium.secureCopy(base64.decode(stored));
   }
 
   // Höchste Epoche, die wir für diese Gruppe kennen (= womit wir senden).

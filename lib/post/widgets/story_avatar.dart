@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app_colors.dart';
+import '../../net_image.dart';
 
 /// Ein Story-Ring im Feed. Zeigt das Profilbild des Owners, einen Gradient-Ring
 /// (signalisiert: hat aktive Stories) und den Usernamen. [stories] sind alle
@@ -53,12 +54,24 @@ class ShowStoryAvatar extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
                     child: hasPic
-                        ? Image.network(
-                            picUrl,
+                        ? Image(
+                            // 64er-Ring minus Padding — 64 logische px
+                            // reichen als Dekodier-Breite locker.
+                            image: netImage(context, picUrl,
+                                logicalWidth: 64),
                             fit: BoxFit.cover,
                             width: double.infinity,
                             height: double.infinity,
                             errorBuilder: (_, __, ___) => _fallback(username),
+                            // Weich einblenden statt aufpoppen; aus dem
+                            // Cache (wasSync) sofort zeigen.
+                            frameBuilder: (_, child, frame, wasSync) => wasSync
+                                ? child
+                                : AnimatedOpacity(
+                                    opacity: frame != null ? 1 : 0,
+                                    duration: const Duration(milliseconds: 250),
+                                    child: child,
+                                  ),
                           )
                         : _fallback(username),
                   ),

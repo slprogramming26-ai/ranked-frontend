@@ -5,9 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../app_colors.dart';
+import '../net_image.dart';
 import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
-import 'ranking_widgets.dart' show GradientButton;
+import 'ranking_widgets.dart' show GradientButton, PopIn;
 
 // ─── RankingPages: Tinder-Style Swipe ─────────────────────────────────────────
 class RankingPages extends StatefulWidget {
@@ -25,6 +26,8 @@ class _RankingPagesState extends State<RankingPages> {
 
   List<dynamic> _posts = [];
   int? _targetUserId;
+  // Wer bewertet wird — kommt schon in der my_target-Response mit (user_data).
+  Map<String, dynamic>? _targetUser;
   bool _isLoading = true;
   bool _submitting = false;
 
@@ -45,6 +48,7 @@ class _RankingPagesState extends State<RankingPages> {
     if (!mounted) return;
     setState(() {
       _posts = (data['posts'] as List<dynamic>?) ?? [];
+      _targetUser = data['user_data'] as Map<String, dynamic>?;
       _targetUserId = data['user_data']?['id'] as int?;
       _isLoading = false;
     });
@@ -53,7 +57,10 @@ class _RankingPagesState extends State<RankingPages> {
   bool _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
     final post = _posts[previousIndex];
     final isRight = direction == CardSwiperDirection.right;
-    _swipes.add({'post_id': post['id'], 'direction': isRight});
+    // setState nur fuer die UI: Fortschrittsbalken + Zaehler bauen neu.
+    setState(() {
+      _swipes.add({'post_id': post['id'], 'direction': isRight});
+    });
     HapticFeedback.lightImpact();
     return true;
   }
@@ -139,23 +146,11 @@ class _RankingPagesState extends State<RankingPages> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
-              child: Row(
-                children: [
-                  BackButton(color: AppColors.primary),
-                  Text(
-                    'RANK IT',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
+            // Header: Story-Progress + Target-User + Karten-Zaehler
+            _SessionHeader(
+              targetUser: _targetUser,
+              totalCards: _posts.length,
+              swipedCards: _swipes.length,
             ),
             Expanded(
               child: _submitting
@@ -166,7 +161,12 @@ class _RankingPagesState extends State<RankingPages> {
                       controller: _controller,
                       cardsCount: _posts.length,
                       isLoop: false,
-                      numberOfCardsDisplayed: _posts.length >= 2 ? 2 : 1,
+                      // Bis zu 3 Karten sichtbar: hintere lugen skaliert
+                      // darunter hervor -> echter Deck-Look statt Einzelkarte.
+                      numberOfCardsDisplayed:
+                          _posts.length < 3 ? _posts.length : 3,
+                      backCardOffset: const Offset(0, 36),
+                      scale: 0.92,
                       allowedSwipeDirection:
                           const AllowedSwipeDirection.only(left: true, right: true),
                       padding: const EdgeInsets.all(20),
@@ -196,11 +196,15 @@ class _RankingPagesState extends State<RankingPages> {
                     _SwipeActionButton(
                       icon: Icons.close_rounded,
                       color: AppColors.secondary,
+                      size: 60,
                       onTap: () => _controller.swipe(CardSwiperDirection.left),
                     ),
+                    // Like ist groesser + gradient-gefuellt: die "Haupt-Aktion".
                     _SwipeActionButton(
                       icon: Icons.favorite_rounded,
                       color: AppColors.primary,
+                      size: 72,
+                      filled: true,
                       onTap: () => _controller.swipe(CardSwiperDirection.right),
                     ),
                   ],
@@ -208,6 +212,130 @@ class _RankingPagesState extends State<RankingPages> {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Session Header ───────────────────────────────────────────────────────────
+// Story-Style Fortschritt (ein Segment pro Karte), wer bewertet wird und ein
+// Zaehler-Chip. Rein visuell — der Fortschritt kommt aus _swipes.length.
+class _SessionHeader extends StatelessWidget {
+  const _SessionHeader({
+    required this.targetUser,
+    required this.totalCards,
+    required this.swipedCards,
+  });
+
+  final Map<String, dynamic>? targetUser;
+  final int totalCards;
+  final int swipedCards;
+
+  @override
+  Widget build(BuildContext context) {
+    final username = targetUser?['username']?.toString() ?? '';
+    final picUrl = targetUser?['profile_picture_url']?.toString();
+    // Aktuelle Kartennummer: eins weiter als die schon gewerteten, aber nie
+    // ueber das Deck hinaus (letzte Karte bleibt "5/5").
+    final current = (swipedCards + 1).clamp(1, totalCards == 0 ? 1 : totalCards);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        children: [
+          // ── Fortschrittssegmente ────────────────────────────────────────
+          Row(
+            children: List.generate(totalCards, (i) {
+              final done = i < swipedCards;
+              return Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOutCubic,
+                  height: 5,
+                  margin:
+                      EdgeInsets.only(right: i == totalCards - 1 ? 0 : 6),
+                  decoration: BoxDecoration(
+                    gradient: done
+                        ? LinearGradient(
+                            colors: [
+                              AppColors.primary,
+                              AppColors.primaryContainer,
+                            ],
+                          )
+                        : null,
+                    color: done ? null : AppColors.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          // ── Zurueck + Target-User + Zaehler ─────────────────────────────
+          Row(
+            children: [
+              BackButton(color: AppColors.primary),
+              const Spacer(),
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.surfaceContainerHighest,
+                // Avatar-Radius 18 -> Durchmesser 36 als Dekodier-Breite.
+                backgroundImage: (picUrl != null && picUrl.isNotEmpty)
+                    ? netImage(context, picUrl, logicalWidth: 36)
+                    : null,
+                child: (picUrl != null && picUrl.isNotEmpty)
+                    ? null
+                    : Icon(
+                        Icons.person,
+                        size: 18,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DU BEWERTEST',
+                    style: GoogleFonts.inter(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    username.isEmpty ? '—' : '@$username',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              // Zaehler-Chip "2/5"
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainer,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  '$current/$totalCards',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -236,14 +364,50 @@ class _SwipeCard extends StatelessWidget {
     final dateString = DateFormat('dd.MM.yyyy').format(createdAt);
     final progress = (horizontalThreshold.abs() / 100).clamp(0.0, 1.0);
     final isLike = horizontalThreshold > 0;
+    final glowColor = isLike ? AppColors.primary : AppColors.secondary;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
-      child: Stack(
+    return Container(
+      // Glow waehrend des Ziehens: farbiger Schatten, Staerke folgt progress.
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+          if (progress > 0.05)
+            BoxShadow(
+              color: glowColor.withValues(alpha: 0.45 * progress),
+              blurRadius: 36,
+              spreadRadius: 2,
+            ),
+        ],
+      ),
+      // Border als foregroundDecoration: liegt UEBER dem Bild, sonst wuerde
+      // das Cover-Foto sie einfach zudecken.
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        border: progress > 0.05
+            ? Border.all(
+                color: glowColor.withValues(alpha: progress),
+                width: 3,
+              )
+            : null,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            imageUrl,
+          Image(
+            // Karte ist bildschirmbreit -> logische Bildschirmbreite als
+            // Dekodier-Breite.
+            image: netImage(
+              context,
+              imageUrl,
+              logicalWidth: MediaQuery.sizeOf(context).width,
+            ),
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Container(
               color: const Color(0xFF240306),
@@ -256,15 +420,30 @@ class _SwipeCard extends StatelessWidget {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withOpacity(0.5),
+                  Colors.black.withValues(alpha: 0.5),
                   Colors.transparent,
                   Colors.transparent,
-                  Colors.black.withOpacity(0.85),
+                  Colors.black.withValues(alpha: 0.85),
                 ],
                 stops: const [0.0, 0.2, 0.55, 1.0],
               ),
             ),
           ),
+          // Farb-Wash von der Zugseite her (Like: von links, Nope: von rechts)
+          if (progress > 0.05)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin:
+                      isLike ? Alignment.centerLeft : Alignment.centerRight,
+                  end: isLike ? Alignment.centerRight : Alignment.centerLeft,
+                  colors: [
+                    glowColor.withValues(alpha: 0.35 * progress),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
           if (flag != null && flag!.isNotEmpty)
             Positioned(
               top: 16,
@@ -315,7 +494,7 @@ class _SwipeCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       height: 1.4,
                     ),
                   ),
@@ -368,43 +547,79 @@ class _SwipeCard extends StatelessWidget {
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 // ─── Swipe Action Button (Nope / Like) ────────────────────────────────────────
-class _SwipeActionButton extends StatelessWidget {
+// Stateful wegen der Press-Animation: onTapDown/-Up steuern _pressed, der
+// AnimatedScale federt den Button beim Druecken kurz ein.
+class _SwipeActionButton extends StatefulWidget {
   const _SwipeActionButton({
     required this.icon,
     required this.color,
     required this.onTap,
+    this.size = 64,
+    this.filled = false,
   });
 
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
+  final double size;
+  final bool filled;
+
+  @override
+  State<_SwipeActionButton> createState() => _SwipeActionButtonState();
+}
+
+class _SwipeActionButtonState extends State<_SwipeActionButton> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainer,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.25),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.82 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            gradient: widget.filled
+                ? LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryContainer],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: widget.filled ? null : AppColors.surfaceContainer,
+            shape: BoxShape.circle,
+            border: widget.filled
+                ? null
+                : Border.all(color: AppColors.outlineVariant, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: widget.color.withValues(alpha: widget.filled ? 0.4 : 0.2),
+                blurRadius: widget.filled ? 18 : 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Icon(
+            widget.icon,
+            color: widget.filled ? Colors.white : widget.color,
+            size: widget.size * 0.45,
+          ),
         ),
-        child: Icon(icon, color: color, size: 30),
       ),
     );
   }
@@ -418,9 +633,14 @@ class _SwipeResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = result['total_points'] ?? 0;
+    // toInt: der Count-up unten braucht einen echten int fuer den IntTween.
+    final total = (result['total_points'] as num? ?? 0).toInt();
     final breakdown =
         (result['breakdown'] as Map?)?.cast<String, dynamic>() ?? {};
+    // Als Liste, damit jede Zeile ueber ihren Index ihr Stagger-Delay bekommt.
+    final breakdownRows = breakdown.entries
+        .where((e) => (e.value as num? ?? 0) != 0)
+        .toList();
     final message = result['message']?.toString() ?? '';
     // Belohnung fuer den BEWERTER (seit XP-Update in der Response enthalten).
     final xpGained = (result['xp_gained'] as num?)?.toInt() ?? 0;
@@ -435,115 +655,177 @@ class _SwipeResultScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(),
+              // Badge poppt elastisch rein (leichtes Ueberschwingen durch
+              // elasticOut). Opacity muss geclampt werden, weil elasticOut
+              // ueber 1.0 hinausschiesst — Scale darf das, Opacity nicht.
               Center(
-                child: Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryContainer],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.elasticOut,
+                  builder: (context, t, child) => Transform.scale(
+                    scale: 0.4 + 0.6 * t,
+                    child: Opacity(opacity: t.clamp(0.0, 1.0), child: child),
                   ),
-                  child:
-                      const Icon(Icons.bolt_rounded, color: Colors.white, size: 48),
+                  // Glow-Ring: aeusserer Kreis in zartem Primary + Schatten
+                  // hinter dem eigentlichen Gradient-Badge.
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primary.withValues(alpha: 0.06),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        width: 2,
+                      ),
+                    ),
+                    child: Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primaryContainer,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.45),
+                            blurRadius: 36,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.bolt_rounded,
+                        color: Colors.white,
+                        size: 48,
+                      ),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
-              Text(
-                '+$total',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 64,
-                  fontWeight: FontWeight.w900,
-                  fontStyle: FontStyle.italic,
-                  color: AppColors.primary,
-                  height: 1.0,
+              // Count-up: der IntTween zaehlt von 0 bis total hoch, easeOut
+              // laesst ihn am Ende "ausrollen" wie ein Spielautomat.
+              TweenAnimationBuilder<int>(
+                tween: IntTween(begin: 0, end: total),
+                duration: const Duration(milliseconds: 900),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, _) => Text(
+                  '+$value',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 64,
+                    fontWeight: FontWeight.w900,
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.primary,
+                    height: 1.0,
+                  ),
                 ),
               ),
-              Text(
-                'PUNKTE VERGEBEN',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: AppColors.onSurfaceVariant,
+              PopIn(
+                delayMs: 250,
+                child: Text(
+                  'PUNKTE VERGEBEN',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                 ),
               ),
               if (message.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    color: AppColors.onSurfaceVariant,
+                PopIn(
+                  delayMs: 350,
+                  child: Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
               // Deine Belohnung als Bewerter: XP + Streak aus der Response.
               if (xpGained > 0 || streak > 0) ...[
                 const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (xpGained > 0)
-                      _RewardChip(
-                        icon: Icons.auto_awesome_rounded,
-                        label: '+$xpGained XP',
-                        bg: AppColors.tertiaryContainer,
-                        fg: AppColors.tertiary,
-                      ),
-                    if (xpGained > 0 && streak > 0) const SizedBox(width: 12),
-                    if (streak > 0)
-                      _RewardChip(
-                        icon: Icons.local_fire_department_rounded,
-                        label: streak == 1 ? '1 TAG' : '$streak TAGE',
-                        bg: AppColors.primaryContainer,
-                        fg: AppColors.primary,
-                      ),
-                  ],
+                PopIn(
+                  delayMs: 550,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (xpGained > 0)
+                        _RewardChip(
+                          icon: Icons.auto_awesome_rounded,
+                          label: '+$xpGained XP',
+                          bg: AppColors.tertiaryContainer,
+                          fg: AppColors.tertiary,
+                        ),
+                      if (xpGained > 0 && streak > 0)
+                        const SizedBox(width: 12),
+                      if (streak > 0)
+                        _RewardChip(
+                          icon: Icons.local_fire_department_rounded,
+                          label: streak == 1 ? '1 TAG' : '$streak TAGE',
+                          bg: AppColors.primaryContainer,
+                          fg: AppColors.primary,
+                        ),
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(height: 32),
-              ...breakdown.entries
-                  .where((e) => (e.value as num? ?? 0) != 0)
-                  .map(
-                    (e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            e.key.toUpperCase(),
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurfaceVariant,
-                            ),
+              // Zeile fuer Zeile einsliden: jede startet 130ms nach der vorigen.
+              ...List.generate(breakdownRows.length, (i) {
+                final e = breakdownRows[i];
+                return PopIn(
+                  delayMs: 700 + i * 130,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          e.key.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurfaceVariant,
                           ),
-                          Text(
-                            '+${e.value}',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.primary,
-                            ),
+                        ),
+                        Text(
+                          '+${e.value}',
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.primary,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
+                );
+              }),
               const Spacer(),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 40),
-                child: GradientButton(
-                  label: 'FERTIG',
-                  isLoading: false,
-                  onPressed: () => Navigator.pop(context),
+              PopIn(
+                delayMs: 900,
+                dy: 0,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: GradientButton(
+                    label: 'FERTIG',
+                    isLoading: false,
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ),
               ),
             ],

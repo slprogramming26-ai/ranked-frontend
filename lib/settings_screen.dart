@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'app_colors.dart';
 import 'api_client.dart';
+import 'location_picker.dart';
 import 'theme_provider.dart';
 import 'user_api_service.dart';
 
@@ -16,6 +17,62 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _busy = false; // blockt Doppel-Taps waehrend Logout/Delete laufen
+
+  // Aktueller Heimatort ({id, name} oder null), kommt aus GET /users/.
+  Map<String, dynamic>? _location;
+  bool _locationLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocation();
+  }
+
+  Future<void> _loadLocation() async {
+    final user = await UserApiService.getCurrentUser();
+    if (!mounted) return;
+    setState(() {
+      _location = user['location'] as Map<String, dynamic>?;
+      _locationLoading = false;
+    });
+  }
+
+  // ── Standort ──────────────────────────────────────────────────────────────
+  Future<void> _handlePickLocation() async {
+    final loc = await showLocationPicker(context);
+    if (loc == null || !mounted) return;
+
+    setState(() => _busy = true);
+    final ok = await UserApiService.setLocation(loc['id'] as int);
+    if (!mounted) return;
+    setState(() {
+      // Erst nach Server-OK anzeigen — sonst zeigt die Zeile einen Ort,
+      // den das Backend nie gespeichert hat.
+      if (ok) _location = loc;
+      _busy = false;
+    });
+    if (!ok) _showSnack('Ort konnte nicht gespeichert werden.');
+  }
+
+  Future<void> _handleClearLocation() async {
+    final confirmed = await _confirm(
+      title: 'Standort entfernen?',
+      message: 'Ohne Standort kannst du den lokalen Feed nicht nutzen, '
+          'bis du wieder einen Ort waehlst.',
+      confirmLabel: 'Entfernen',
+      destructive: false,
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy = true);
+    final ok = await UserApiService.setLocation(null);
+    if (!mounted) return;
+    setState(() {
+      if (ok) _location = null;
+      _busy = false;
+    });
+    if (!ok) _showSnack('Entfernen fehlgeschlagen. Bitte erneut versuchen.');
+  }
 
   // ── Logout ────────────────────────────────────────────────────────────────
   Future<void> _handleLogout() async {
@@ -175,6 +232,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // ── Profil ───────────────────────────────────────────────
+                _SectionLabel('PROFIL'),
+                _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.location_on_outlined,
+                      title: 'Standort',
+                      subtitle: _locationLoading
+                          ? 'Wird geladen …'
+                          : (_location?['name'] as String? ??
+                              'Kein Ort gesetzt'),
+                      trailing: _location == null
+                          ? Icon(Icons.chevron_right,
+                              color: AppColors.onSurfaceVariant, size: 22)
+                          : IconButton(
+                              icon: Icon(Icons.close,
+                                  color: AppColors.onSurfaceVariant, size: 20),
+                              tooltip: 'Standort entfernen',
+                              onPressed: _busy ? null : _handleClearLocation,
+                            ),
+                      onTap:
+                          _busy || _locationLoading ? null : _handlePickLocation,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
                 // ── Rechtliches ──────────────────────────────────────────
                 _SectionLabel('RECHTLICHES'),
                 _SettingsCard(
@@ -218,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             if (_busy)
               Positioned.fill(
                 child: ColoredBox(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   child: Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
                   ),
@@ -261,7 +345,7 @@ class _SettingsCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primary.withOpacity(0.07)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.07)),
         ),
         child: Column(children: children),
       );
@@ -275,7 +359,7 @@ class _TileDivider extends StatelessWidget {
         height: 1,
         thickness: 1,
         indent: 60,
-        color: AppColors.primary.withOpacity(0.06),
+        color: AppColors.primary.withValues(alpha: 0.06),
       );
 }
 
@@ -316,7 +400,7 @@ class _SettingsTile extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.10),
+                  color: iconColor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(9),
                 ),
                 child: Icon(icon, size: 18, color: iconColor),

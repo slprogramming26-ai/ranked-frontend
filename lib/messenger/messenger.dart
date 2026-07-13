@@ -10,6 +10,7 @@ import 'messenger_controller.dart';
 import '../profile.dart';
 import 'chat_screen.dart';
 import '../app_colors.dart';
+import '../net_image.dart';
 import '../user_api_service.dart';
 
 class MessengerHomescreen extends StatefulWidget {
@@ -414,8 +415,13 @@ class _ChatTile extends StatelessWidget {
                 ),
                 child:
                     (contact.avatarUrl != null && contact.avatarUrl!.isNotEmpty)
-                    ? Image.network(
-                        contact.avatarUrl!,
+                    ? Image(
+                        // Container ist 48x48 -> 48 logische px reichen.
+                        image: netImage(
+                          context,
+                          contact.avatarUrl!,
+                          logicalWidth: 48,
+                        ),
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => _fallback(raw, isGroup),
                       )
@@ -950,8 +956,13 @@ class _UserResultTile extends StatelessWidget {
                   ),
                 ),
                 child: (avatarUrl != null && avatarUrl!.isNotEmpty)
-                    ? Image.network(
-                        avatarUrl!,
+                    ? Image(
+                        // Container ist 46x46 -> 46 logische px reichen.
+                        image: netImage(
+                          context,
+                          avatarUrl!,
+                          logicalWidth: 46,
+                        ),
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => _fallback(),
                       )

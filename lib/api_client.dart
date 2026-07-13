@@ -8,6 +8,12 @@ import 'token_storage.dart';
 class ApiClient {
   static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
 
+  // EIN wiederverwendeter Client fuer alle Requests. Die Top-Level-Funktionen
+  // http.get/post/... erzeugen intern pro Aufruf einen frischen Client ->
+  // jedes Mal neuer TCP+TLS-Handshake. Dieser hier haelt die Verbindung offen
+  // (Keep-Alive), Folge-Requests sparen sich den Verbindungsaufbau.
+  static final http.Client _client = http.Client();
+
   // Refresh mit Single-Flight-Lock
 
 
@@ -33,7 +39,7 @@ class ApiClient {
     if (refreshToken == null) return false; // gar kein Token -> direkt raus
 
     try {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/refresh'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'refresh_token': refreshToken}),
@@ -112,23 +118,24 @@ class ApiClient {
 
 
   static Future<http.Response> get(Uri url, {Map<String, String>? headers}) {
-    return _send((token) => http.get(url, headers: _auth(token, headers)));
+    return _send((token) => _client.get(url, headers: _auth(token, headers)));
   }
 
   static Future<http.Response> post(Uri url,
       {Object? body, Map<String, String>? headers}) {
-    return _send(
-        (token) => http.post(url, headers: _auth(token, headers), body: body));
+    return _send((token) =>
+        _client.post(url, headers: _auth(token, headers), body: body));
   }
 
   static Future<http.Response> put(Uri url,
       {Object? body, Map<String, String>? headers}) {
-    return _send(
-        (token) => http.put(url, headers: _auth(token, headers), body: body));
+    return _send((token) =>
+        _client.put(url, headers: _auth(token, headers), body: body));
   }
 
   static Future<http.Response> delete(Uri url, {Map<String, String>? headers}) {
-    return _send((token) => http.delete(url, headers: _auth(token, headers)));
+    return _send(
+        (token) => _client.delete(url, headers: _auth(token, headers)));
   }
 
   static Future<http.Response> uploadFile(Uri url, File file,
@@ -141,7 +148,9 @@ class ApiClient {
         file.path,
         contentType: MediaType('image', 'jpeg'),
       ));
-      final streamed = await request.send();
+      // request.send() wuerde intern wieder einen Einweg-Client bauen —
+      // deshalb explizit ueber unseren wiederverwendeten Client schicken.
+      final streamed = await _client.send(request);
       return http.Response.fromStream(streamed);
     });
   }

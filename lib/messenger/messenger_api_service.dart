@@ -64,6 +64,12 @@ class MessengerApiService {
   // Unser Griff auf die AKTUELLE Verbindung — zum Zumachen beim disconnect().
   StreamSubscription<dynamic>? _channelSub;
 
+  // Single-Flight fuer connect(): Solange ein Verbindungsaufbau laeuft, steht
+  // hier sein Future. Jeder weitere connect()-Aufruf haengt sich an dieses
+  // Future, statt einen zweiten, parallelen Aufbau zu starten. null = kein
+  // Aufbau unterwegs. (Gleiches Muster wie ApiClient._refreshOnce.)
+  Future<void>? _connectFuture;
+
   // Reconnect-Zustand (Details siehe connection-Part):
   bool _manuallyClosed = false; // true = absichtlich geschlossen, kein Reconnect
   Timer? _reconnectTimer;

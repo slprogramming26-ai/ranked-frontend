@@ -85,16 +85,22 @@ class UserApiService {
   }
 
   static Future<Map<String, dynamic>> addUserDetails(String vibe_factor_1,
-      String vibe_factor_2, String imageUrl, String bio) async {
+      String vibe_factor_2, String imageUrl, String bio,
+      {int? locationId}) async {
+    final body = <String, dynamic>{
+      "vibe_factor_1": vibe_factor_1,
+      "vibe_factor_2": vibe_factor_2,
+      "profile_picture_url": imageUrl,
+      "biography": bio,
+    };
+    // exclude_unset im Backend: Key nur mitschicken, wenn im Sign-up wirklich
+    // ein Ort gewaehlt wurde — `"location_id": null` wuerde einen gesetzten
+    // Ort explizit loeschen (siehe setLocation).
+    if (locationId != null) body["location_id"] = locationId;
     await ApiClient.put(
       Uri.parse('$baseUrl/users/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "vibe_factor_1": vibe_factor_1,
-        "vibe_factor_2": vibe_factor_2,
-        "profile_picture_url": imageUrl,
-        "biography": bio
-      }),
+      body: jsonEncode(body),
     );
     return {};
   }
@@ -148,6 +154,35 @@ class UserApiService {
     final response =
         await ApiClient.delete(Uri.parse('$baseUrl/users/delete'));
     return response.statusCode == 204;
+  }
+
+  /// Ortssuche fuer den Location-Picker. Liefert max. 20 Orte als
+  /// `{id, name}`-Maps, Prefix-Treffer zuerst (macht das Backend).
+  static Future<List<Map<String, dynamic>>> getLocations(String search) async {
+    final uri = Uri.parse('$baseUrl/locations/').replace(
+      queryParameters: {'search': search},
+    );
+    final response = await ApiClient.get(uri);
+    if (response.statusCode == 200) {
+      // bodyBytes + utf8.decode wegen Umlauten in Ortsnamen (z.B. "Muenchen"
+      // vs. "München") — response.body wuerde Latin-1 raten.
+      final data = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+      return data.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  /// Setzt (oder loescht mit `null`) den Heimatort des Users.
+  /// Wichtig: Das Backend nutzt exclude_unset — der Key "location_id" muss
+  /// also explizit im JSON stehen, sonst passiert gar nichts. jsonEncode
+  /// schreibt `"location_id": null` mit rein, das reicht.
+  static Future<bool> setLocation(int? locationId) async {
+    final response = await ApiClient.put(
+      Uri.parse('$baseUrl/users/'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({"location_id": locationId}),
+    );
+    return response.statusCode >= 200 && response.statusCode < 300;
   }
 
   // Gibt den HTTP-Status zurueck, damit der Aufrufer 201 (ok) von

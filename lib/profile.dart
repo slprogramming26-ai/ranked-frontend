@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
+import 'net_image.dart';
 import 'ranking/ranking_api_service.dart';
 import 'settings_screen.dart';
 
@@ -179,7 +180,7 @@ class _ProfileState extends State<Profile> {
                               ? LinearGradient(
                                   colors: [
                                     tierColor,
-                                    tierColor.withOpacity(0.35),
+                                    tierColor.withValues(alpha: 0.35),
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -190,7 +191,7 @@ class _ProfileState extends State<Profile> {
                               : null,
                           border: league == null
                               ? Border.all(
-                                  color: AppColors.primary.withOpacity(0.05),
+                                  color: AppColors.primary.withValues(alpha: 0.05),
                                   width: 4,
                                 )
                               : null,
@@ -203,8 +204,14 @@ class _ProfileState extends State<Profile> {
                           ),
                           child: ClipOval(
                             child: avatarUrl != null
-                                ? Image.network(
-                              avatarUrl,
+                                ? Image(
+                              // Aeusserer Ring ist 128x128 -> 128 logische
+                              // px als Dekodier-Breite.
+                              image: netImage(
+                                context,
+                                avatarUrl,
+                                logicalWidth: 128,
+                              ),
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) =>
                                   _avatarFallback(username),
@@ -276,7 +283,7 @@ class _ProfileState extends State<Profile> {
                         decoration: BoxDecoration(
                           border: Border.symmetric(
                             horizontal: BorderSide(
-                              color: AppColors.primary.withOpacity(0.07),
+                              color: AppColors.primary.withValues(alpha: 0.07),
                             ),
                           ),
                         ),
@@ -460,7 +467,7 @@ class _ProfileState extends State<Profile> {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.primary.withOpacity(0.07)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.07)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -509,7 +516,7 @@ class _ProfileState extends State<Profile> {
   Widget _statDivider() => Container(
     width: 1,
     height: 36,
-    color: AppColors.primary.withOpacity(0.07),
+    color: AppColors.primary.withValues(alpha: 0.07),
   );
 }
 
@@ -609,7 +616,7 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surface.withOpacity(0.85),
+      color: AppColors.surface.withValues(alpha: 0.85),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
         bottom: 12,
@@ -627,7 +634,10 @@ class _TopBar extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               decoration: const BoxDecoration(shape: BoxShape.circle),
               child: avatarUrl != null
-                  ? Image.network(avatarUrl!, fit: BoxFit.cover,
+                  ? Image(
+                      // Container ist 32x32 -> 32 logische px reichen.
+                      image: netImage(context, avatarUrl!, logicalWidth: 32),
+                      fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => _fallback())
                   : _fallback(),
             )
@@ -709,7 +719,7 @@ class _PrimaryButtonState extends State<_PrimaryButton> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.15),
+                color: AppColors.primary.withValues(alpha: 0.15),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -753,13 +763,13 @@ class _FollowButton extends StatelessWidget {
           color: isFollowing ? AppColors.surfaceContainerHigh : AppColors.primary,
           borderRadius: BorderRadius.circular(12),
           border: isFollowing
-              ? Border.all(color: AppColors.primary.withOpacity(0.3))
+              ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
               : null,
           boxShadow: isFollowing
               ? null
               : [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),

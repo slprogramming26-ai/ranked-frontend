@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'post_api_service.dart';
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
+import '../location_picker.dart';
+import '../user_api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
@@ -25,6 +27,12 @@ class _CreatePostState extends State<CreatePost> {
   bool isPublic = true;
   File? _image;
 
+  // Heimatort des Users — nur Anzeige ("erbt der Post automatisch").
+  String? _defaultLocationName;
+  // Explizit gewaehlter Ort fuer DIESEN Post (z.B. Urlaub). null = kein
+  // Override, das Backend nimmt dann den Heimatort.
+  Map<String, dynamic>? _overrideLocation;
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +40,22 @@ class _CreatePostState extends State<CreatePost> {
     titleController = TextEditingController();
     contentController = TextEditingController();
     fetchPostDraft();
+    _loadDefaultLocation();
+  }
+
+  Future<void> _loadDefaultLocation() async {
+    final user = await UserApiService.getCurrentUser();
+    if (!mounted) return;
+    setState(() {
+      _defaultLocationName =
+          (user['location'] as Map<String, dynamic>?)?['name'] as String?;
+    });
+  }
+
+  Future<void> _pickLocation() async {
+    final loc = await showLocationPicker(context);
+    if (loc == null || !mounted) return;
+    setState(() => _overrideLocation = loc);
   }
 
   @override
@@ -146,14 +170,14 @@ class _CreatePostState extends State<CreatePost> {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFAF9),
       appBar: AppBar(
-        backgroundColor: Colors.white.withOpacity(0.6),
+        backgroundColor: Colors.white.withValues(alpha: 0.6),
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: AppColors.outlineVariant.withOpacity(0.1),
+            color: AppColors.outlineVariant.withValues(alpha: 0.1),
           ),
         ),
         leading: Padding(
@@ -161,7 +185,7 @@ class _CreatePostState extends State<CreatePost> {
           child: IconButton(
             icon: Icon(
               Icons.close,
-              color: AppColors.onSurface.withOpacity(0.7),
+              color: AppColors.onSurface.withValues(alpha: 0.7),
             ),
             onPressed: () => Navigator.pop(context),
           ),
@@ -222,6 +246,7 @@ class _CreatePostState extends State<CreatePost> {
                         .map((e) => e.key)
                         .firstOrNull
                         ?.toLowerCase(),
+                    locationId: _overrideLocation?['id'] as int?,
                   );
 
                   if (!context.mounted) return;
@@ -251,7 +276,7 @@ class _CreatePostState extends State<CreatePost> {
                 foregroundColor: Colors.white,
                 shape: const StadiumBorder(),
                 elevation: 4,
-                shadowColor: AppColors.primary.withOpacity(0.3),
+                shadowColor: AppColors.primary.withValues(alpha: 0.3),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 0,
@@ -276,13 +301,13 @@ class _CreatePostState extends State<CreatePost> {
               child: _image == null
                   ? CustomPaint(
                       painter: _DashedBorderPainter(
-                        color: AppColors.outlineVariant.withOpacity(0.4),
+                        color: AppColors.outlineVariant.withValues(alpha: 0.4),
                         strokeWidth: 2,
                         borderRadius: 28,
                       ),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.02),
+                          color: AppColors.primary.withValues(alpha: 0.02),
                           borderRadius: BorderRadius.circular(28),
                         ),
                         child: Column(
@@ -320,8 +345,8 @@ class _CreatePostState extends State<CreatePost> {
                                 'Share a photo or video to start climbing the rankings.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: AppColors.onSurfaceVariant.withOpacity(
-                                    0.8,
+                                  color: AppColors.onSurfaceVariant.withValues(
+                                    alpha: 0.8,
                                   ),
                                   fontSize: 13,
                                   height: 1.5,
@@ -373,7 +398,7 @@ class _CreatePostState extends State<CreatePost> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: AppColors.outlineVariant.withOpacity(0.1),
+                  color: AppColors.outlineVariant.withValues(alpha: 0.1),
                 ),
                 boxShadow: _kPremiumShadow,
               ),
@@ -393,7 +418,7 @@ class _CreatePostState extends State<CreatePost> {
                               border: Border.all(color: Colors.white, width: 2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
+                                  color: Colors.black.withValues(alpha: 0.08),
                                   blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
@@ -441,8 +466,8 @@ class _CreatePostState extends State<CreatePost> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.onSurfaceVariant.withOpacity(
-                                0.6,
+                              color: AppColors.onSurfaceVariant.withValues(
+                                alpha: 0.6,
                               ),
                               letterSpacing: 1.0,
                             ),
@@ -464,7 +489,7 @@ class _CreatePostState extends State<CreatePost> {
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 8),
                       hintStyle: TextStyle(
-                        color: AppColors.outlineVariant.withOpacity(0.7),
+                        color: AppColors.outlineVariant.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -483,14 +508,14 @@ class _CreatePostState extends State<CreatePost> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                       hintStyle: TextStyle(
-                        color: AppColors.outlineVariant.withOpacity(0.7),
+                        color: AppColors.outlineVariant.withValues(alpha: 0.7),
                         fontSize: 15,
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Divider(
-                    color: AppColors.outlineVariant.withOpacity(0.15),
+                    color: AppColors.outlineVariant.withValues(alpha: 0.15),
                     height: 1,
                   ),
                   const SizedBox(height: 14),
@@ -535,7 +560,7 @@ class _CreatePostState extends State<CreatePost> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.bolt, color: AppColors.primary, size: 20),
@@ -559,7 +584,7 @@ class _CreatePostState extends State<CreatePost> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
-                  color: AppColors.onSurfaceVariant.withOpacity(0.7),
+                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -588,7 +613,7 @@ class _CreatePostState extends State<CreatePost> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: AppColors.outlineVariant.withOpacity(0.1),
+                  color: AppColors.outlineVariant.withValues(alpha: 0.1),
                 ),
                 boxShadow: _kPremiumShadow,
               ),
@@ -624,7 +649,7 @@ class _CreatePostState extends State<CreatePost> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.onSurfaceVariant.withOpacity(0.7),
+                          color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -639,7 +664,102 @@ class _CreatePostState extends State<CreatePost> {
               ),
             ),
 
+            const SizedBox(height: 16),
+
+            // 5. LOCATION CARD
+            _buildLocationCard(),
+
             const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationCard() {
+    final override = _overrideLocation;
+    final String subtitle;
+    if (override != null) {
+      subtitle = 'Nur für diesen Post';
+    } else if (_defaultLocationName != null) {
+      subtitle = 'Dein Standort';
+    } else {
+      subtitle = 'Optional hinzufügen';
+    }
+    final title = override?['name'] as String? ??
+        _defaultLocationName ??
+        'Kein Standort';
+
+    return GestureDetector(
+      onTap: _pickLocation,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: AppColors.outlineVariant.withValues(alpha: 0.1),
+          ),
+          boxShadow: _kPremiumShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.location_on_outlined,
+                color: AppColors.onSurfaceVariant,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (override != null)
+              // Override zuruecknehmen -> Post erbt wieder den Heimatort.
+              IconButton(
+                icon: Icon(
+                  Icons.close,
+                  size: 20,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                tooltip: 'Zurück zu deinem Standort',
+                onPressed: () => setState(() => _overrideLocation = null),
+              )
+            else
+              Icon(
+                Icons.chevron_right,
+                color: AppColors.onSurfaceVariant,
+                size: 22,
+              ),
           ],
         ),
       ),
@@ -649,7 +769,7 @@ class _CreatePostState extends State<CreatePost> {
   Widget _buildCaptionAction(IconData icon) {
     return Icon(
       icon,
-      color: AppColors.onSurfaceVariant.withOpacity(0.7),
+      color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
       size: 20,
     );
   }
@@ -658,12 +778,12 @@ class _CreatePostState extends State<CreatePost> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
+        color: Colors.white.withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -701,8 +821,8 @@ class _CreatePostState extends State<CreatePost> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
               color: isActive
-                  ? AppColors.primary.withOpacity(0.25)
-                  : AppColors.outlineVariant.withOpacity(0.12),
+                  ? AppColors.primary.withValues(alpha: 0.25)
+                  : AppColors.outlineVariant.withValues(alpha: 0.12),
             ),
             boxShadow: isActive ? _kPremiumShadow : [],
           ),
@@ -713,7 +833,7 @@ class _CreatePostState extends State<CreatePost> {
                 height: 48,
                 decoration: BoxDecoration(
                   color: isActive
-                      ? AppColors.primary.withOpacity(0.1)
+                      ? AppColors.primary.withValues(alpha: 0.1)
                       : AppColors.surfaceContainerHigh,
                   borderRadius: BorderRadius.circular(14),
                 ),
@@ -736,7 +856,7 @@ class _CreatePostState extends State<CreatePost> {
                     subtitle,
                     style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.onSurfaceVariant.withOpacity(0.6),
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -852,7 +972,7 @@ void _showLoadingDialog(BuildContext context) {
   showDialog(
     context: context,
     barrierDismissible: false,
-    barrierColor: AppColors.onSurface.withOpacity(0.55),
+    barrierColor: AppColors.onSurface.withValues(alpha: 0.55),
     builder: (context) => const _RankedLoadingDialog(),
   );
 }

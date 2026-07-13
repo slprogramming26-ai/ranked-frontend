@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'conversation.dart';
 import '../app_colors.dart';
+import '../net_image.dart';
 import '../user_api_service.dart';
 import '../post/post_api_service.dart';
 
@@ -530,8 +531,9 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
                 borderRadius: BorderRadius.circular(12),
                 child: AspectRatio(
                   aspectRatio: 16 / 9,
-                  child: Image.network(
-                    imageUrl,
+                  child: Image(
+                    // Vorschau ist in einer SizedBox mit Breite 240.
+                    image: netImage(context, imageUrl, logicalWidth: 240),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stack) => Container(
                       color: AppColors.surfaceContainerLow,

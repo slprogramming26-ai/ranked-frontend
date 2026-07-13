@@ -2,18 +2,31 @@ import 'dart:convert';
 import 'dart:io';
 import '../api_client.dart';
 
+/// Wird von [PostApiService.getPosts] geworfen, wenn der lokale Feed
+/// angefragt wird, der User aber keinen Ort gesetzt hat (Backend: 400).
+/// So kann der Feed "kein Ort" von "Ort hat einfach keine Posts" (leere
+/// Liste) unterscheiden und den Location-Picker anbieten.
+class NoLocationException implements Exception {}
+
 class PostApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
   static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
 
   static Future<List<Map<String, dynamic>>> getPosts(
-      String limit, String skip) async {
+      String limit, String skip,
+      {bool local = false}) async {
+    final localParam = local ? '&local=true' : '';
     final response = await ApiClient.get(
-      Uri.parse('$baseUrl/posts/?limit=$limit&skip=$skip'),
+      Uri.parse('$baseUrl/posts/?limit=$limit&skip=$skip$localParam'),
     );
     if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
+      // bodyBytes + utf8.decode: ohne charset im Content-Type raet http
+      // Latin-1 — Umlaute in Ortsnamen/Texten wuerden sonst garbeln.
+      final List data = jsonDecode(utf8.decode(response.bodyBytes));
       return data.cast<Map<String, dynamic>>();
+    }
+    if (local && response.statusCode == 400) {
+      throw NoLocationException();
     }
     return [];
   }
@@ -34,7 +47,8 @@ class PostApiService {
   }
 
   static Future<bool> createPost(String title, String content, bool published,
-      String? imageUrl, String? flag) async {
+      String? imageUrl, String? flag,
+      {int? locationId}) async {
     final response = await ApiClient.post(
       Uri.parse('$baseUrl/posts/'),
       headers: {'Content-Type': 'application/json'},
@@ -44,6 +58,9 @@ class PostApiService {
         'published': published,
         'image_url': imageUrl,
         'flag': flag,
+        // null = Post erbt den Heimatort des Users (macht das Backend);
+        // eine explizite id ueberschreibt ihn nur fuer diesen Post.
+        'location_id': locationId,
       }),
     );
     return response.statusCode == 201;

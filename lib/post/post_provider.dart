@@ -1,18 +1,31 @@
 import 'package:flutter/material.dart';
 
+// Verwaltet NUR die Feed-Posts (Kommentare leben im CommentProvider).
+// Wichtig fuer die Performance: Der Feed abonniert diesen Provider im build —
+// jede notifyListeners()-Glocke hier MUSS also feed-relevant sein.
 class PostProvider extends ChangeNotifier {
 
   List<Map<String, dynamic>> _posts = [];
-  List<Map<String, dynamic>> _comments = [];
 
   bool _isLoading = false;
-  bool _isLoadingComments = false;
+
+  // Welcher Feed liegt gerade in _posts? Flag und Liste gehoeren zusammen
+  // und wechseln nur gemeinsam (switchFeed) — so koennen nie Posts des
+  // einen Feeds unter dem Label des anderen stehen.
+  bool _isLocalFeed = false;
 
 
   List<Map<String, dynamic>> get posts => _posts;
-  List<Map<String, dynamic>> get comments => _comments;
   bool get isLoading => _isLoading;
-  bool get isLoadingComments => _isLoadingComments;
+  bool get isLocalFeed => _isLocalFeed;
+
+  void switchFeed(bool local) {
+    if (_isLocalFeed == local) return;
+    _isLocalFeed = local;
+    _posts = []; // alte Posts gehoeren zum anderen Feed
+    _isLoading = true; // Feed zeigt sofort Skeletons statt alter Posts
+    notifyListeners();
+  }
 
 
   void setPosts(List<Map<String, dynamic>> fetchPosts) {
@@ -31,18 +44,6 @@ class PostProvider extends ChangeNotifier {
     _isLoading = loading;
     notifyListeners();
   }
-
-  void setLoadingComments(bool loading) {
-    _isLoadingComments = loading;
-    notifyListeners();
-  }
-
-  void setComment(List<Map<String, dynamic>> fetchComments) {
-    _comments = fetchComments;
-    _isLoadingComments = false;
-    notifyListeners();
-  }
-
 
   // Setzt den Like-Status eines Posts und passt den Vote-Counter passend an.
   // Wird sowohl für optimistische Updates als auch für Rollbacks benutzt.

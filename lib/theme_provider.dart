@@ -6,17 +6,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ThemeProvider extends ChangeNotifier {
   static const _key = 'dark_mode';
 
-  bool _isDark = false;
+  bool _isDark;
   bool get isDark => _isDark;
 
-  ThemeProvider() {
-    _load(); // beim Start gespeicherte Wahl nachladen
-  }
+  ThemeProvider(this._isDark);
 
-  Future<void> _load() async {
+  /// Liest die gespeicherte Wahl VOR runApp (wird in main() awaited, waehrend
+  /// der native Splash noch steht). Frueher lud der Konstruktor asynchron
+  /// nach -> die App startete immer hell und sprang dann auf dunkel um.
+  static Future<ThemeProvider> load() async {
     final prefs = await SharedPreferences.getInstance();
-    _isDark = prefs.getBool(_key) ?? false;
-    notifyListeners();
+    return ThemeProvider(prefs.getBool(_key) ?? false);
   }
 
   /// Umschalten + sofort speichern. notifyListeners() rebuildet alles,

@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'post/post_provider.dart';
+import 'post/comment_provider.dart';
 import 'story/story.dart';
 import 'story/story_create_screen.dart';
 import 'app_colors.dart';
@@ -21,8 +22,20 @@ import 'messenger/messenger_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'login_screen.dart';
 import 'floating_nav.dart';
+import 'splash_screen.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-void main() {
+Future<void> main() async {
+  // Haelt den nativen OS-Splash fest, bis Flutter seinen ersten Frame fertig
+  // hat (remove() ruft der SplashScreen selbst). Ohne preserve() gaebe es
+  // zwischen OS-Splash und erstem Flutter-Frame einen kurzen weissen Blitzer.
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Dark-Mode-Wahl VOR dem ersten Frame laden (der native Splash steht noch),
+  // sonst startet die App hell und springt sichtbar auf dunkel um.
+  final themeProvider = await ThemeProvider.load();
+
   final db = AppDatabase();
 
   runApp(
@@ -30,9 +43,10 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => RankingProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
+        ChangeNotifierProvider(create: (_) => CommentProvider()),
         ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider.value(value: themeProvider),
         // Besitzt den MessengerApiService fuer die ganze Login-Session
         // (Verdrahtung mit Login/Logout folgt in Schritt 2).
         ChangeNotifierProvider(create: (_) => MessengerController()),
@@ -120,13 +134,19 @@ class _MyHomePageState extends State<MyHomePage> {
   int _currentIndex = 0;
   bool? loggedIn; // null = loading, true = eingeloggt, false = Login-Screen
   StreamSubscription<void>? _logoutSub;
-  final List<Widget> _screens = [
-    PostsFeed(),
-    RankingHome(),
-    MessengerHomescreen(),
-    Profile(),
-    SearchPage(),
+  // Lazy IndexedStack: Jeder Tab wird erst beim ERSTEN Besuch gebaut
+  // (_screens[i] bleibt bis dahin null) und lebt danach im IndexedStack
+  // weiter — kein dispose/remount mehr beim Tab-Wechsel, Feed und
+  // Scroll-Position bleiben erhalten.
+  final List<Widget Function()> _screenBuilders = [
+    () => PostsFeed(),
+    () => RankingHome(),
+    () => MessengerHomescreen(),
+    () => Profile(),
+    () => SearchPage(),
   ];
+  late final List<Widget?> _screens =
+      List<Widget?>.filled(_screenBuilders.length, null);
 
   @override
   void initState() {
@@ -149,12 +169,18 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _checkExistingSession() async {
+    // Mindestanzeigedauer des Splashs: laeuft PARALLEL zum Token-Check (der
+    // Timer startet jetzt, nicht nach dem Check). Ein Splash, der nach 150ms
+    // wieder wegblitzt, wirkt wie ein Glitch — also warten wir am Ende auf
+    // beides: Ergebnis da UND Minimum abgelaufen.
+    final minSplash = Future<void>.delayed(const Duration(milliseconds: 1100));
+
     final refreshToken = await TokenStorage.getRefreshToken();
-    if (refreshToken == null) {
-      setState(() => loggedIn = false);
-      return;
-    }
-    final ok = await ApiClient.tryRefreshOnStart();
+    final ok = refreshToken == null
+        ? false
+        : await ApiClient.tryRefreshOnStart();
+
+    await minSplash;
     if (!mounted) return;
     setState(() => loggedIn = ok);
     if (ok) {
@@ -266,6 +292,13 @@ class _MyHomePageState extends State<MyHomePage> {
     await db.clearDatabase();
     if (mounted) {
       setState(() {
+        // Tab-Cache leeren: sonst wuerden nach einem Re-Login alle vorher
+        // besuchten Tabs sofort gleichzeitig starten (und ggf. Daten des
+        // alten Users zeigen). So startet der neue User wieder lazy bei Tab 0.
+        for (var i = 0; i < _screens.length; i++) {
+          _screens[i] = null;
+        }
+        _currentIndex = 0;
         loggedIn = true;
       });
       _startMessenger();
@@ -274,25 +307,60 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final dynamic currentScreen = _screens[_currentIndex];
+    // AnimatedSwitcher blendet zwischen den drei Zustaenden (Splash / Home /
+    // Login) weich ueber, statt hart umzuschalten. Er vergleicht Kinder per
+    // Key: gleicher Key = kein Uebergang, nur Rebuild — deshalb bekommt jeder
+    // Zustand einen festen ValueKey (Tab-Wechsel innerhalb von Home bleiben
+    // dadurch uebergangsfrei).
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        // Leichter Zoom dazu: Neues waechst von 97% auf 100%, das alte
+        // schrumpft beim Ausblenden (gleiche Animation rueckwaerts).
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.97, end: 1).animate(animation),
+          child: child,
+        ),
+      ),
+      child: _buildCurrentState(),
+    );
+  }
 
+  Widget _buildCurrentState() {
     if (loggedIn == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const SplashScreen(key: ValueKey('splash'));
     }
 
     if (loggedIn == true) {
+      // Aktuellen Tab bauen, falls er zum ersten Mal besucht wird.
+      _screens[_currentIndex] ??= _screenBuilders[_currentIndex]();
       return Scaffold(
+        key: const ValueKey('home'),
         backgroundColor: AppColors.surface,
         extendBody: true,
-        body: currentScreen,
+        // IndexedStack haelt alle bereits gebauten Tabs im Baum und zeigt nur
+        // den aktiven — die anderen behalten ihren State, werden aber nicht
+        // gemalt. Unbesuchte Tabs sind nur leere Platzhalter.
+        body: IndexedStack(
+          index: _currentIndex,
+          children: [
+            for (final screen in _screens) screen ?? const SizedBox.shrink(),
+          ],
+        ),
         bottomNavigationBar: FloatingNavBar(
           currentIndex: _currentIndex,
           onTabSelected: (i) => setState(() => _currentIndex = i),
         ),
       );
-    } else {
-      return LoginScreen(onLoginSuccess: _onLoginSuccess);
     }
+
+    return LoginScreen(
+      key: const ValueKey('login'),
+      onLoginSuccess: _onLoginSuccess,
+    );
   }
 
 }

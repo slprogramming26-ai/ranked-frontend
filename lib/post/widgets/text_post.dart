@@ -5,11 +5,14 @@ import 'package:provider/provider.dart';
 import 'dart:ui';
 import '../../app_colors.dart';
 import '../../local_data/database.dart';
+import '../../net_image.dart';
 import '../../messenger/messenger_controller.dart';
 import '../../user_api_service.dart';
 import '../post_provider.dart';
+import '../comment_provider.dart';
 import '../post_api_service.dart';
 import 'comment.dart';
+import 'feed_image.dart';
 import 'share_sheet.dart';
 
 class TextPost extends StatefulWidget {
@@ -24,6 +27,7 @@ class TextPost extends StatefulWidget {
     this.imageUrl,
     this.profilePictureUrl,
     this.flag,
+    this.locationName,
     required this.timeDifference,
     this.isMine = false,
     this.isLiked = false,
@@ -39,6 +43,8 @@ class TextPost extends StatefulWidget {
   final String? profilePictureUrl;
   final String timeDifference;
   final String? flag;
+  // Ort des Posts (beim Erstellen eingefroren); null bei Posts ohne Ort.
+  final String? locationName;
   final bool isMine;
   final bool isLiked;
 
@@ -106,10 +112,10 @@ class _TextPostState extends State<TextPost>
 
 
   Future<void> _fetchData(BuildContext context) async {
-    final provider = Provider.of<PostProvider>(context, listen: false);
-    provider.setLoadingComments(true);
+    final provider = Provider.of<CommentProvider>(context, listen: false);
+    provider.setLoading(true);
     final comments = await PostApiService.getComments(widget.post_id);
-    provider.setComment(comments);
+    provider.setComments(comments);
   }
 
   void showCommentSection(BuildContext context) async {
@@ -119,7 +125,7 @@ class _TextPostState extends State<TextPost>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (BuildContext context) {
         return Container(
           height: MediaQuery.of(context).size.height * 0.75,
@@ -135,7 +141,7 @@ class _TextPostState extends State<TextPost>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -153,9 +159,9 @@ class _TextPostState extends State<TextPost>
 
               // Kommentar-Liste
               Expanded(
-                child: Consumer<PostProvider>(
+                child: Consumer<CommentProvider>(
                   builder: (context, provider, child) {
-                    if (provider.isLoadingComments) {
+                    if (provider.isLoading) {
                       return Center(
                         child: CircularProgressIndicator(color: AppColors.primary),
                       );
@@ -199,10 +205,10 @@ class _TextPostState extends State<TextPost>
                         decoration: InputDecoration(
                           hintText: "Write a comment...",
                           hintStyle: TextStyle(
-                            color: AppColors.onSurfaceVariant.withOpacity(0.5),
+                            color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
                           ),
                           filled: true,
-                          fillColor: AppColors.surfaceContainerHighest.withOpacity(0.3),
+                          fillColor: AppColors.surfaceContainerHighest.withValues(alpha: 0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide.none,
@@ -268,10 +274,10 @@ class _TextPostState extends State<TextPost>
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.02),
+              color: AppColors.primary.withValues(alpha: 0.02),
               blurRadius: 30,
               offset: const Offset(0, 4),
             ),
@@ -316,9 +322,9 @@ class _TextPostState extends State<TextPost>
         child: Icon(
           Icons.bolt,
           size: 110,
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           shadows: [
-            Shadow(color: AppColors.primary.withOpacity(0.6), blurRadius: 30),
+            Shadow(color: AppColors.primary.withValues(alpha: 0.6), blurRadius: 30),
           ],
         ),
       ),
@@ -341,11 +347,26 @@ class _TextPostState extends State<TextPost>
             ),
             child: ClipOval(
               child: widget.profilePictureUrl != null
-                  ? Image.network(
-                      widget.profilePictureUrl.toString(),
+                  ? Image(
+                      // 44er-Avatar → 44 logische px Dekodier-Breite.
+                      image: netImage(
+                        context,
+                        widget.profilePictureUrl.toString(),
+                        logicalWidth: 44,
+                      ),
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) =>
                           _avatarFallback(widget.owner_username),
+                      // Weich einblenden statt aufpoppen; aus dem Cache
+                      // (wasSync) sofort zeigen, sonst blendet jedes
+                      // Zurueckscrollen erneut.
+                      frameBuilder: (_, child, frame, wasSync) => wasSync
+                          ? child
+                          : AnimatedOpacity(
+                              opacity: frame != null ? 1 : 0,
+                              duration: const Duration(milliseconds: 250),
+                              child: child,
+                            ),
                     )
                   : _avatarFallback(widget.owner_username),
             ),
@@ -399,8 +420,16 @@ class _TextPostState extends State<TextPost>
           ],
         ],
       ),
+      // Nur vorhandene Teile mit • verbinden — kein haengender Punkt mehr,
+      // und der Ort reiht sich dezent ein statt als eigenes Element.
       subtitle: Text(
-        "${widget.timeDifference} • ${widget.flag ?? ''}",
+        [
+          widget.timeDifference,
+          if (widget.flag != null && widget.flag!.isNotEmpty) widget.flag!,
+          if (widget.locationName != null) '📍 ${widget.locationName}',
+        ].join(' • '),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(fontSize: 10),
       ),
       trailing: IconButton(
@@ -415,7 +444,7 @@ class _TextPostState extends State<TextPost>
   void showMiniMenu(BuildContext context, String post_id) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.1), // Sanfterer Backdrop
+      barrierColor: Colors.black.withValues(alpha: 0.1), // Sanfterer Backdrop
       builder: (_) {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
@@ -430,7 +459,7 @@ class _TextPostState extends State<TextPost>
               padding: EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24.0),
-                border: Border.all(color: AppColors.primary.withOpacity(0.05)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
               ),
               child: Column(
                 mainAxisSize:
@@ -450,7 +479,7 @@ class _TextPostState extends State<TextPost>
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Divider(
-                        color: AppColors.primary.withOpacity(0.1),
+                        color: AppColors.primary.withValues(alpha: 0.1),
                         thickness: 1,
                       ),
                     ),
@@ -536,7 +565,7 @@ class _TextPostState extends State<TextPost>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (sheetContext) {
         return Container(
           decoration: BoxDecoration(
@@ -552,7 +581,7 @@ class _TextPostState extends State<TextPost>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -663,11 +692,7 @@ class _TextPostState extends State<TextPost>
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: Image.network(
-                widget.imageUrl!,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              child: FeedImage(url: widget.imageUrl!),
             ),
           ),
         Padding(
@@ -749,15 +774,15 @@ class _TextPostState extends State<TextPost>
               : null,
           color: liked
               ? null
-              : AppColors.surfaceContainerHighest.withOpacity(0.4),
+              : AppColors.surfaceContainerHighest.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(30),
           border: liked
               ? null
-              : Border.all(color: AppColors.primary.withOpacity(0.3)),
+              : Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
           boxShadow: liked
               ? [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.2),
+                    color: AppColors.primary.withValues(alpha: 0.2),
                     blurRadius: 15,
                     offset: const Offset(0, 8),
                   ),

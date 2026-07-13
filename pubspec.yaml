@@ -52,6 +52,11 @@ dependencies:
   # E2EE: libsodium-Bindings. Baut libsodium nativ ueber Dart build hooks
   # (kein sodium_libs noetig, das ist deprecated).
   sodium: ^4.0.2
+  flutter_native_splash: ^2.4.8
+
+  # Netzwerkbilder: Disk-Cache (statt jedes Bild bei App-Start neu laden)
+  # + memCacheWidth-Downsizing (statt Vollaufloesung in kleine Widgets dekodieren).
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +89,22 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/RankedLogo (2).png"
+
+# Nativer Start-Splash (der Screen, den das OS zeichnet, BEVOR Flutter laeuft).
+# Farben = AppColors.primary (light/dark), damit der Uebergang in den Flutter-
+# Splash (gleicher Gradient-Startpunkt) nahtlos wirkt. Nach Aenderungen hier:
+# dart run flutter_native_splash:create
+flutter_native_splash:
+  color: "#B41B00"
+  color_dark: "#FF7058"
+  image: "assets/RankedLogo (2).png"
+  fullscreen: true
+  # Android 12+: bewusst KEIN eigenes Bild — das System zeigt dann das
+  # Launcher-Icon, korrekt kreisfoermig maskiert. Nur die Hintergrundfarbe
+  # setzen wir passend zur App.
+  android_12:
+    color: "#B41B00"
+    color_dark: "#FF7058"
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'package:ranked/main.dart';
 import 'user_api_service.dart';
+import 'location_picker.dart';
 import 'package:email_validator/email_validator.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -104,7 +105,7 @@ class _SignInState extends State<SignIn> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.05),
+                color: AppColors.primary.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -116,7 +117,7 @@ class _SignInState extends State<SignIn> {
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.tertiary.withOpacity(0.05),
+                color: AppColors.tertiary.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -253,7 +254,7 @@ class _SignInState extends State<SignIn> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.25),
+                            color: AppColors.primary.withValues(alpha: 0.25),
                             blurRadius: 20,
                             offset: Offset(0, 8),
                           ),
@@ -290,7 +291,7 @@ class _SignInState extends State<SignIn> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 10,
-                        color: AppColors.onSurfaceVariant.withOpacity(0.6),
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.5,
                       ),
@@ -359,11 +360,11 @@ class _SignInState extends State<SignIn> {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(
-            color: AppColors.onSurfaceVariant.withOpacity(0.5),
+            color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
             fontWeight: FontWeight.w500,
           ),
           prefixIcon: icon != null
-              ? Icon(icon, color: AppColors.primary.withOpacity(0.6), size: 20)
+              ? Icon(icon, color: AppColors.primary.withValues(alpha: 0.6), size: 20)
               : prefixText != null
               ? Padding(
                   padding: const EdgeInsets.only(left: 16, right: 8),
@@ -405,6 +406,7 @@ class _IntroScreenState extends State<IntroScreen> {
   late int length;
   String _finalImageUrl = "";
   String _finalBio = '';
+  int? _finalLocationId;
 
   // Im PageView:
 
@@ -455,6 +457,7 @@ class _IntroScreenState extends State<IntroScreen> {
         selectedVibes[1],
         _finalImageUrl,
         _finalBio,
+        locationId: _finalLocationId,
       );
 
       if (!mounted) return;
@@ -541,6 +544,9 @@ class _IntroScreenState extends State<IntroScreen> {
                     onAboutMeFinished: (bio) {
                       _finalBio = bio;
                     },
+                    onLocationPicked: (locationId) {
+                      _finalLocationId = locationId;
+                    },
                   ),
                 ],
               ),
@@ -559,7 +565,7 @@ class _IntroScreenState extends State<IntroScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -797,11 +803,13 @@ class _IntroScreenState extends State<IntroScreen> {
 class AboutMeStep extends StatefulWidget {
   final Function(String url) onImageUploaded;
   final Function(String bio) onAboutMeFinished;
+  final Function(int locationId) onLocationPicked;
 
   const AboutMeStep({
     super.key,
     required this.onImageUploaded,
     required this.onAboutMeFinished,
+    required this.onLocationPicked,
   });
 
   @override
@@ -813,6 +821,16 @@ class _AboutMeStepState extends State<AboutMeStep> {
   bool _isUploading = false;
   final _picker = ImagePicker();
   late TextEditingController _bioController;
+  // Nur fuer die Anzeige in der ORIGIN-Card — die id wandert per Callback
+  // hoch in den IntroScreen und geht erst mit addUserDetails ans Backend.
+  String? _locationName;
+
+  Future<void> _pickLocation() async {
+    final loc = await showLocationPicker(context);
+    if (loc == null || !mounted) return;
+    setState(() => _locationName = loc['name'] as String?);
+    widget.onLocationPicked(loc['id'] as int);
+  }
 
   @override
   void initState() {
@@ -910,7 +928,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.35),
+                        color: AppColors.primary.withValues(alpha: 0.35),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -1033,7 +1051,12 @@ class _AboutMeStepState extends State<AboutMeStep> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _bentoCard(Icons.location_on, "ORIGIN", "Add City"),
+                child: _bentoCard(
+                  Icons.location_on,
+                  "ORIGIN",
+                  _locationName ?? "Add City",
+                  onTap: _pickLocation,
+                ),
               ),
             ],
           ),
@@ -1044,49 +1067,60 @@ class _AboutMeStepState extends State<AboutMeStep> {
     );
   }
 
-  Widget _bentoCard(IconData icon, String label, String value) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainer,
-              borderRadius: BorderRadius.circular(10),
+  Widget _bentoCard(IconData icon, String label, String value,
+      {VoidCallback? onTap}) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainer,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 18),
             ),
-            child: Icon(icon, color: AppColors.primary, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFFA26769),
-                  letterSpacing: 1.2,
-                ),
+            const SizedBox(width: 10),
+            // Expanded, damit lange Ortsnamen ("Garmisch-Partenkirchen")
+            // die Row nicht sprengen, sondern mit … abgeschnitten werden.
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFA26769),
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.onSurface,
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

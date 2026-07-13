@@ -26,20 +26,20 @@ class FloatingNavBar extends StatelessWidget {
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.navGlass.withOpacity(0.88),
+                  color: AppColors.navGlass.withValues(alpha: 0.88),
                   borderRadius: BorderRadius.circular(40),
                   border: Border.all(
-                    color: AppColors.navBorder.withOpacity(0.6),
+                    color: AppColors.navBorder.withValues(alpha: 0.6),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.12),
+                      color: AppColors.primary.withValues(alpha: 0.12),
                       blurRadius: 40,
                       offset: const Offset(0, 10),
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -97,12 +97,12 @@ class FloatingNavBar extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.45),
+                      color: AppColors.primary.withValues(alpha: 0.45),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.2),
+                      color: AppColors.primary.withValues(alpha: 0.2),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
@@ -141,7 +141,7 @@ class FloatingNavBar extends StatelessWidget {
                 key: ValueKey(isSelected),
                 color: isSelected
                     ? AppColors.primary
-                    : AppColors.onSurfaceVariant.withOpacity(0.45),
+                    : AppColors.onSurfaceVariant.withValues(alpha: 0.45),
                 size: 24,
               ),
             ),

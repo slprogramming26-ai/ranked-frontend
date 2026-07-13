@@ -66,26 +66,49 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
           ),
         ),
         actions: [
+          // Streak als Gradient-Pill statt loser Icon+Zahl. Center verhindert,
+          // dass die Pill auf volle AppBar-Hoehe gestreckt wird.
           Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.local_fire_department_rounded,
-                  color: AppColors.primary,
-                  size: 22,
-                ),
-                const SizedBox(width: 2),
-                Text(
-                  '${provider.userdata["streak_count"] ?? 0}',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.primary,
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary, AppColors.primaryContainer],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(50),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.local_fire_department_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${provider.userdata["streak_count"] ?? 0}',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -96,9 +119,9 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
         onRefresh: () => provider.refreshLeaderboard(),
 
         child: provider.isLoadingLeaderboard
-            ? Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
-              )
+            // Skeleton statt Spinner: pulsierende Platzhalter in Layout-Form,
+            // der Umschlag auf echte Daten wirkt dadurch fast nahtlos.
+            ? const LeaderboardSkeleton()
             : Stack(
                 children: [
                   CustomScrollView(
@@ -171,6 +194,8 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                               const SizedBox(height: 24),
 
                               // ── Ranks 4+ list ─────────────────────────────
+                              // Jede Zeile slidet 90ms nach der vorigen rein,
+                              // startend nachdem das Podium (300ms) durch ist.
                               if (leaderboard.length > 3)
                                 ...leaderboard
                                     .skip(3)
@@ -178,13 +203,16 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                     .asMap()
                                     .entries
                                     .map(
-                                      (e) => Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 12,
-                                        ),
-                                        child: RankListTile(
-                                          rank: e.key + 4,
-                                          entry: e.value,
+                                      (e) => PopIn(
+                                        delayMs: 450 + e.key * 90,
+                                        child: Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: RankListTile(
+                                            rank: e.key + 4,
+                                            entry: e.value,
+                                          ),
                                         ),
                                       ),
                                     ),

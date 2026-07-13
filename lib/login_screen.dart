@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.2),
+                            color: AppColors.primary.withValues(alpha: 0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -233,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Expanded(
                           child: Divider(
-                            color: AppColors.onSurface.withOpacity(0.1),
+                            color: AppColors.onSurface.withValues(alpha: 0.1),
                           ),
                         ),
                         Padding(
@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         Expanded(
                           child: Divider(
-                            color: AppColors.onSurface.withOpacity(0.1),
+                            color: AppColors.onSurface.withValues(alpha: 0.1),
                           ),
                         ),
                       ],
@@ -335,13 +335,13 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: InputDecoration(
         prefixIcon: Icon(
           icon,
-          color: AppColors.onSurfaceVariant.withOpacity(0.5),
+          color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
         ),
         hintText: hint,
-        hintStyle: TextStyle(color: AppColors.onSurface.withOpacity(0.3)),
+        hintStyle: TextStyle(color: AppColors.onSurface.withValues(alpha: 0.3)),
         filled: true,
-        fillColor: AppColors.surfaceContainerHighest.withOpacity(
-          0.3,
+        fillColor: AppColors.surfaceContainerHighest.withValues(
+          alpha: 0.3,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
@@ -358,7 +358,7 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.onSurface.withOpacity(0.05)),
+        border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.05)),
       ),
       child: Center(
         child: Text(

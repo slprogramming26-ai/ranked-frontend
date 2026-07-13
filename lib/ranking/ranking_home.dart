@@ -60,7 +60,7 @@ class _RankingHomeState extends State<RankingHome> {
                   height: 300,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.primary.withOpacity(0.05),
+                    color: AppColors.primary.withValues(alpha: 0.05),
                   ),
                 ),
               ),
@@ -72,7 +72,7 @@ class _RankingHomeState extends State<RankingHome> {
                   height: 240,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.tertiary.withOpacity(0.05),
+                    color: AppColors.tertiary.withValues(alpha: 0.05),
                   ),
                 ),
               ),
@@ -100,7 +100,7 @@ class _RankingHomeState extends State<RankingHome> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.3),
+                              color: AppColors.primary.withValues(alpha: 0.3),
                               blurRadius: 24,
                               offset: const Offset(0, 10),
                             ),

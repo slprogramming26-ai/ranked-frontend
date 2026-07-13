@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../app_colors.dart';
+import '../net_image.dart';
 import '../user_api_service.dart';
 import 'story.dart';
 
@@ -76,7 +77,16 @@ class _StoryViewerState extends State<StoryViewer>
       _progress.forward();
       return;
     }
-    precacheImage(NetworkImage(url), context).whenComplete(() {
+    // Gleiche logicalWidth wie beim Anzeige-Provider unten (Vollbild-Story),
+    // sonst stimmen die Cache-Keys nicht ueberein und Vorladen bringt nichts.
+    precacheImage(
+      netImage(
+        context,
+        url,
+        logicalWidth: MediaQuery.sizeOf(context).width,
+      ),
+      context,
+    ).whenComplete(() {
       if (mounted) _progress.forward();
     });
   }
@@ -168,8 +178,14 @@ class _StoryViewerState extends State<StoryViewer>
             // Story-Bild
             if (imageUrl != null && imageUrl.isNotEmpty)
               Center(
-                child: Image.network(
-                  imageUrl,
+                child: Image(
+                  // Vollbild-Story -> logische Bildschirmbreite, muss mit
+                  // precacheImage oben uebereinstimmen (gleicher Cache-Key).
+                  image: netImage(
+                    context,
+                    imageUrl,
+                    logicalWidth: MediaQuery.sizeOf(context).width,
+                  ),
                   fit: BoxFit.contain,
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
@@ -272,7 +288,10 @@ class _StoryViewerState extends State<StoryViewer>
         CircleAvatar(
           radius: 18,
           backgroundColor: AppColors.surfaceContainerHighest,
-          backgroundImage: hasPic ? NetworkImage(picUrl!) : null,
+          // Avatar-Radius 18 -> Durchmesser 36 als Dekodier-Breite.
+          backgroundImage: hasPic
+              ? netImage(context, picUrl!, logicalWidth: 36)
+              : null,
           child: hasPic
               ? null
               : Text(
