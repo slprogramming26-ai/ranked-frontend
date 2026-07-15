@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'chat_info_sheet.dart';
 import 'conversation.dart';
 import '../app_colors.dart';
 import '../net_image.dart';
-import '../user_api_service.dart';
 import '../post/post_api_service.dart';
 
 /// Erkennt einen geteilten Post-Link der Form `ranked://post/<id>`.
@@ -60,44 +60,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _textController.clear();
   }
 
-  // Fragt erst nach (Blocken ist folgenreich), ruft dann den Endpoint im
-  // UserApiService auf (/users/block/{id}) und zeigt das Ergebnis als SnackBar.
-  Future<void> _confirmBlock(int peerId, String name) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => _BlockDialog(name: name),
-    );
-    if (confirmed != true) return;
-
-    final ok = await UserApiService.blockUser(peerId);
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor:
-            ok ? AppColors.onSurface : AppColors.primary,
-        content: Text(
-          ok
-              ? '$name wurde blockiert.'
-              : 'Blockieren fehlgeschlagen. Versuch es erneut.',
-          style: GoogleFonts.inter(
-            fontSize: 13.5,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final conversation = widget.conversation;
     final title = conversation.title;
-    // Blocken gibt es nur im DM – in der Gruppe gibt es keinen einzelnen Peer.
-    final dmPeerId =
-        conversation is DmConversation ? conversation.peerId : null;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -110,84 +76,55 @@ class _ChatScreenState extends State<ChatScreen> {
           icon: Icon(Icons.arrow_back, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          if (dmPeerId != null)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert_rounded,
-                  color: AppColors.primary),
-              color: AppColors.surfaceContainerLow,
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              onSelected: (value) {
-                if (value == 'block') _confirmBlock(dmPeerId, title);
-              },
-              itemBuilder: (_) => [
-                PopupMenuItem<String>(
-                  value: 'block',
-                  child: Row(
-                    children: [
-                      Icon(Icons.block_rounded,
-                          size: 20, color: AppColors.primary),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Blockieren',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
-                        ),
+        // Der ganze Header ist tappbar (WhatsApp-Stil) und öffnet das
+        // Chat-Info-Sheet (Mini-Profil bzw. Gruppen-Info).
+        title: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => showChatInfoSheet(context, conversation),
+          child: Row(
+            children: [
+              _Avatar(name: title, avatarUrl: conversation.avatarUrl),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.onSurface,
+                        letterSpacing: -0.3,
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-        ],
-        title: Row(
-          children: [
-            _Avatar(name: title),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.onSurface,
-                      letterSpacing: -0.3,
                     ),
-                  ),
-                  const SizedBox(height: 1),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.lock_rounded,
-                        size: 10,
-                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Ende-zu-Ende verschlüsselt',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.onSurfaceVariant,
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.lock_rounded,
+                          size: 10,
+                          color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 4),
+                        Text(
+                          'Ende-zu-Ende verschlüsselt',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       body: Column(
@@ -426,7 +363,11 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh.withValues(alpha: 0.7),
+        // Gleiche Logik wie bei der Text-Bubble: eigene Nachricht = primary,
+        // fremde = neutrale Container-Farbe.
+        color: widget.isMe
+            ? AppColors.primary
+            : AppColors.surfaceContainerHigh.withValues(alpha: 0.7),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(20),
           topRight: const Radius.circular(20),
@@ -438,13 +379,18 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
         future: _postFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return _wrap(const SizedBox(
+            return _wrap(SizedBox(
               height: 60,
               child: Center(
                 child: SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    // Auf der roten eigenen Bubble wäre der Standard-Spinner
+                    // (primary) unsichtbar.
+                    color: widget.isMe ? Colors.white : AppColors.primary,
+                  ),
                 ),
               ),
             ));
@@ -480,7 +426,9 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
-                color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                color: widget.isMe
+                    ? Colors.white.withValues(alpha: 0.75)
+                    : AppColors.onSurfaceVariant.withValues(alpha: 0.8),
               ),
             ),
           ),
@@ -490,10 +438,12 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
   }
 
   Widget _buildUnavailable() {
+    final muted = widget.isMe
+        ? Colors.white.withValues(alpha: 0.75)
+        : AppColors.onSurfaceVariant;
     return Row(
       children: [
-        Icon(Icons.hide_source_rounded,
-            size: 20, color: AppColors.onSurfaceVariant),
+        Icon(Icons.hide_source_rounded, size: 20, color: muted),
         const SizedBox(width: 8),
         Flexible(
           child: Text(
@@ -501,7 +451,7 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w500,
-              color: AppColors.onSurfaceVariant,
+              color: muted,
             ),
           ),
         ),
@@ -514,6 +464,11 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
     final owner = post['owner'] as Map<String, dynamic>?;
     final username = owner?['username']?.toString() ?? 'Unbekannt';
     final imageUrl = post['image_url']?.toString();
+
+    // Auf der roten eigenen Bubble wäre primary-auf-primary unsichtbar –
+    // dort übernimmt Weiß die Akzent-Rolle.
+    final accent = widget.isMe ? Colors.white : AppColors.primary;
+    final textColor = widget.isMe ? Colors.white : AppColors.onSurface;
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
@@ -551,15 +506,14 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.article_outlined,
-                          size: 13, color: AppColors.primary),
+                      Icon(Icons.article_outlined, size: 13, color: accent),
                       const SizedBox(width: 4),
                       Text(
                         '@$username',
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                          color: accent,
                         ),
                       ),
                     ],
@@ -574,7 +528,7 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
                         fontSize: 14,
                         height: 1.25,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.onSurface,
+                        color: textColor,
                       ),
                     ),
                   ],
@@ -625,17 +579,17 @@ class _DateChip extends StatelessWidget {
 
 class _Avatar extends StatelessWidget {
   final String name;
-  const _Avatar({required this.name});
+  final String? avatarUrl;
+  const _Avatar({required this.name, this.avatarUrl});
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.trim().isNotEmpty
-        ? name.trim()[0].toUpperCase()
-        : '?';
+    final url = avatarUrl;
     return Container(
       width: 38,
       height: 38,
       alignment: Alignment.center,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: AppColors.surfaceContainerHighest,
@@ -644,13 +598,27 @@ class _Avatar extends StatelessWidget {
           width: 1.5,
         ),
       ),
-      child: Text(
-        initial,
-        style: GoogleFonts.plusJakartaSans(
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-          color: AppColors.primary,
-        ),
+      child: url != null && url.isNotEmpty
+          ? Image(
+              image: netImage(context, url, logicalWidth: 38),
+              fit: BoxFit.cover,
+              width: 38,
+              height: 38,
+              // Bild kaputt/offline -> zurück zur Initiale statt Fehler-Icon.
+              errorBuilder: (_, _, _) => _initial(),
+            )
+          : _initial(),
+    );
+  }
+
+  Widget _initial() {
+    final letter = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?';
+    return Text(
+      letter,
+      style: GoogleFonts.plusJakartaSans(
+        fontSize: 16,
+        fontWeight: FontWeight.w800,
+        color: AppColors.primary,
       ),
     );
   }
@@ -749,107 +717,6 @@ class _Composer extends StatelessWidget {
                   ),
                 );
               },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
-//  Block-Bestätigung
-// -----------------------------------------------------------------------------
-
-class _BlockDialog extends StatelessWidget {
-  final String name;
-  const _BlockDialog({required this.name});
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.block_rounded,
-                  color: AppColors.primary, size: 28),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '$name blockieren?',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: AppColors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Ihr könnt einander keine Nachrichten mehr schreiben. '
-              'Du kannst die Blockierung später wieder aufheben.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                height: 1.4,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 22),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      'Abbrechen',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      'Blockieren',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

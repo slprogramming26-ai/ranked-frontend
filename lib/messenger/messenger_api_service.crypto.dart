@@ -135,7 +135,8 @@ extension MessengerCrypto on MessengerApiService {
 
       final groupKey = await KeyService.generateGroupKey();
       final keys = <Map<String, dynamic>>[];
-      for (final memberId in members) {
+      // fetchGroupMembers liefert volle Profile — hier zaehlen nur die IDs.
+      for (final memberId in members.map((m) => m.id)) {
         final pub = await _getPartnerPublicKey(memberId);
         if (pub == null) {
           // Ein Mitglied hat (noch) keinen Public Key -> wir koennen die

@@ -113,18 +113,25 @@ class MessengerApiService {
     return response.statusCode == 200;
   }
 
-  // GET /group_chat/{id}/members — aktuelle Mitglieder (nur deren user_id).
-  // Basis fuer den Rekey-Flow: fuer jeden brauchen wir je eine Schluesselkopie.
-  static Future<List<int>> fetchGroupMembers(int groupChatId) async {
+  // GET /group_chat/{id}/members — aktuelle Mitglieder inkl. Username/Avatar
+  // (der Server joint die users-Tabelle schon mit). Zwei Abnehmer:
+  //  * Rekey-Flow: braucht nur die IDs (je eine Schluesselkopie pro Mitglied)
+  //  * Chat-Info-Sheet: zeigt die Mitgliederliste mit Namen an
+  static Future<List<({int id, String username, String? avatarUrl})>>
+  fetchGroupMembers(int groupChatId) async {
     final response = await ApiClient.get(
       Uri.parse("$_baseUrl/group_chat/$groupChatId/members"),
     );
     if (response.statusCode != 200) return const [];
-    final raw = jsonDecode(response.body) as List;
-    return raw
-        .cast<Map<String, dynamic>>()
-        .map((e) => e['user_id'] as int)
-        .toList();
+    final raw = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+    return raw.cast<Map<String, dynamic>>().map((e) {
+      final id = e['user_id'] as int;
+      return (
+        id: id,
+        username: (e['username'] as String?) ?? 'User $id',
+        avatarUrl: e['profile_picture_url'] as String?,
+      );
+    }).toList();
   }
 
   // GET /group_chat/my — alle Gruppen, denen ICH angehoere (id + Name + Avatar).

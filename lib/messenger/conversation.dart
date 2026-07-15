@@ -15,6 +15,7 @@ class ChatMessage {
 
 abstract class Conversation {
   String get title;
+  String? get avatarUrl;
   int get myUserId;
   Stream<List<ChatMessage>> watch();
   void send(String text);
@@ -27,16 +28,24 @@ class DmConversation implements Conversation {
   final AppDatabase db;
   final MessengerApiService service;
 
+  // Anzeige-Daten aus der OpenChats-Zeile (Chatliste). Nullable, weil ein
+  // Chat theoretisch auch ohne bekannten Namen geoeffnet werden kann —
+  // dann greift der Fallback in `title`.
+  final String? displayName;
+  @override
+  final String? avatarUrl;
+
   DmConversation({
     required this.peerId,
     required this.myUserId,
     required this.db,
     required this.service,
+    this.displayName,
+    this.avatarUrl,
   });
 
-@override
-// TODO: implement title
-  String get title => 'Chat mit User $peerId';
+  @override
+  String get title => displayName ?? 'User $peerId';
 
 
 @override
@@ -69,11 +78,17 @@ class GroupConversation implements Conversation{
   final AppDatabase db;
   final MessengerApiService service;
 
+  final String? displayName;
+  @override
+  final String? avatarUrl;
+
   GroupConversation({
     required this.groupChatId,
     required this.myUserId,
     required this.db,
     required this.service,
+    this.displayName,
+    this.avatarUrl,
   });
 
   @override
@@ -92,6 +107,5 @@ class GroupConversation implements Conversation{
   }
 
   @override
-  // TODO: implement title
-  String get title => "Group $groupChatId";
+  String get title => displayName ?? 'Gruppe $groupChatId';
 }

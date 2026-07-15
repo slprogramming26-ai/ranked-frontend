@@ -355,12 +355,16 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
                                   myUserId: myUserId,
                                   db: db,
                                   service: service,
+                                  displayName: c.username,
+                                  avatarUrl: c.avatarUrl,
                                 )
                               : DmConversation(
                                   peerId: c.id,
                                   myUserId: myUserId,
                                   db: db,
                                   service: service,
+                                  displayName: c.username,
+                                  avatarUrl: c.avatarUrl,
                                 ),
                         ),
                       ),
