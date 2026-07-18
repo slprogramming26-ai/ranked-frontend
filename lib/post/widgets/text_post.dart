@@ -752,7 +752,7 @@ class _TextPostState extends State<TextPost>
       builder: (sheetContext) => ShareSheet(
         db: db,
         controller: controller,
-        postLink: postLink,
+        link: postLink,
       ),
     );
   }

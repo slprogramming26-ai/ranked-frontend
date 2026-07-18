@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'app_colors.dart';
 import 'api_client.dart';
 import 'location_picker.dart';
+import 'profile.dart';
 import 'theme_provider.dart';
 import 'user_api_service.dart';
 
@@ -29,10 +30,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadLocation() async {
-    final user = await UserApiService.getCurrentUser();
+    // fetchUser() ist geguarded (_hasFetched) — meist schon seit dem Login
+    // geladen, kein zusaetzlicher Request noetig.
+    final provider = context.read<ProfileProvider>();
+    await provider.fetchUser();
     if (!mounted) return;
     setState(() {
-      _location = user['location'] as Map<String, dynamic>?;
+      _location = provider.userdata['location'] as Map<String, dynamic>?;
       _locationLoading = false;
     });
   }

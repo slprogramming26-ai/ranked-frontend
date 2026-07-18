@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import '../app_colors.dart';
 import '../net_image.dart';
+import '../profile.dart';
 import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
 import 'ranking_widgets.dart' show GradientButton, PopIn;
@@ -89,7 +90,9 @@ class _RankingPagesState extends State<RankingPages> {
 
     final provider = Provider.of<RankingProvider>(context, listen: false);
     provider.refreshLeaderboard();
-    provider.refetchUserCredentials();
+    // Punkte/Streak haben sich durch die Session geaendert -> forceRefresh.
+    Provider.of<ProfileProvider>(context, listen: false)
+        .fetchUser(forceRefresh: true);
     Streak.markRankedToday();
 
     Navigator.pushReplacement(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../app_colors.dart';
+import '../profile.dart';
 import 'ranking_provider.dart';
 import 'ranking_pages.dart';
 import 'ranking_widgets.dart';
@@ -42,9 +43,11 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
   Widget build(BuildContext context) {
     final provider = Provider.of<RankingProvider>(context);
     final leaderboard = provider.leaderboardData;
-    // Persönliche Stats für die Bento-Cards — beide Quellen liegen schon im
-    // Provider (userdata bzw. leaderboard.me), kein zusätzlicher Request.
-    final streak = (provider.userdata['streak_count'] as num?)?.toInt() ?? 0;
+    // Persönliche Stats für die Bento-Cards — beide Quellen liegen schon in
+    // den Providern (ProfileProvider.userdata bzw. leaderboard.me), kein
+    // zusätzlicher Request.
+    final streak = (Provider.of<ProfileProvider>(context)
+        .userdata['streak_count'] as num?)?.toInt() ?? 0;
     final myPoints =
         (provider.leaderboardMe?['my_points'] as num?)?.toInt() ?? 0;
 
@@ -99,7 +102,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${provider.userdata["streak_count"] ?? 0}',
+                      '$streak',
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,

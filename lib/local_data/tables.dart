@@ -53,6 +53,12 @@ class OpenChats extends Table {
   TextColumn get username => text().withDefault(const Constant('New'))();
   TextColumn get avatarUrl => text().nullable()();
 
+  // Chat-Anfrage: true = ein Fremder hat diesen Chat per Erstnachricht
+  // eroeffnet und der User hat ihn noch nicht angenommen. Default false ->
+  // Bestandschats nach der Migration und alle selbst gestarteten Chats
+  // (User-Suche, Gruppen-Beitritt) gelten als angenommen.
+  BoolColumn get isPending => boolean().withDefault(const Constant(false))();
+
 }
 
 // Entwurf des Create-Post-Screens. Wird VOR dem Kamera-Start geschrieben,

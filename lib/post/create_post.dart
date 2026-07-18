@@ -5,7 +5,7 @@ import 'post_api_service.dart';
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
 import '../location_picker.dart';
-import '../user_api_service.dart';
+import '../profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:async';
@@ -44,11 +44,14 @@ class _CreatePostState extends State<CreatePost> {
   }
 
   Future<void> _loadDefaultLocation() async {
-    final user = await UserApiService.getCurrentUser();
+    // fetchUser() ist geguarded (_hasFetched) — meist schon seit dem Login
+    // geladen, kein zusaetzlicher Request noetig.
+    final provider = context.read<ProfileProvider>();
+    await provider.fetchUser();
     if (!mounted) return;
     setState(() {
-      _defaultLocationName =
-          (user['location'] as Map<String, dynamic>?)?['name'] as String?;
+      _defaultLocationName = (provider.userdata['location']
+          as Map<String, dynamic>?)?['name'] as String?;
     });
   }
 

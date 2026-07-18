@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'ranking_api_service.dart';
-import '../user_api_service.dart';
 
 // ─── RankingProvider ──────────────────────────────────────────────────────────
+// Userdaten (id, ranking_enabled, streak_count, ...) kommen NICHT mehr von
+// hier, sondern aus ProfileProvider — die haelt sie schon als einzige Quelle
+// (siehe profile.dart). Doppelter GET /users/-Call sonst bei jedem ersten
+// Besuch des Ranking-Tabs.
 class RankingProvider extends ChangeNotifier {
 
   bool _isLoading = false;
-  bool _isLoadingHome = false;
-  bool _hasFetched = false;
-  Map<String, dynamic> _userdata = {};
   List<Map<String, dynamic>> _leaderboardData = [];
   // Die "Du"-Zeile: eigener Stand (my_rank / my_points / points_to_next).
   // Kann null sein, wenn das Backend noch keine 'me'-Daten liefert.
@@ -18,9 +18,6 @@ class RankingProvider extends ChangeNotifier {
   bool _isLoadingLeaderboard = false;
 
   bool get isLoading => _isLoading;
-  bool get isLoadingHome => _isLoadingHome;
-  bool get hasFetched => _hasFetched;
-  Map<String, dynamic> get userdata => _userdata;
   List<Map<String, dynamic>> get leaderboardData => _leaderboardData;
   Map<String, dynamic>? get leaderboardMe => _leaderboardMe;
   bool get hasFetchedLeaderboard => _hasFetchedLeaderboard;
@@ -31,21 +28,6 @@ class RankingProvider extends ChangeNotifier {
     return Streak.didActivityToday(prefs);
   }
 
-  Future<void> refetchUserCredentials() async {
-
-    try {
-      final data = await UserApiService.getCurrentUser();
-      _userdata = data;
-      _hasFetched = true;
-    } catch (e) {
-      print("Fehler beim Laden: $e");
-    } finally {
-      _isLoadingHome = false;
-      notifyListeners();
-    }
-  }
-
-
   void trueLoading() {
     _isLoading = true;
     notifyListeners();
@@ -54,13 +36,6 @@ class RankingProvider extends ChangeNotifier {
   void falseLoading() {
     _isLoading = false;
     notifyListeners();
-  }
-
-  Future<void> fetchUserCredentials() async {
-    if (_hasFetched) return;
-    _isLoadingHome = true;
-    notifyListeners();
-    await refetchUserCredentials(); // setzt _isLoadingHome=false im finally
   }
 
   Future<void> fetchLeaderboard() async {

@@ -8,6 +8,7 @@ import 'package:ranked/local_data/database.dart';
 import 'messenger_api_service.dart';
 import 'messenger_controller.dart';
 import '../profile.dart';
+import 'chat_requests.dart';
 import 'chat_screen.dart';
 import '../app_colors.dart';
 import '../net_image.dart';
@@ -56,7 +57,16 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
     final existing = await (db.select(db.openChats)
           ..where((t) => t.id.equals(userId) & t.isGroupChat.equals(false)))
         .getSingleOrNull();
-    if (existing != null) return;
+    if (existing != null) {
+      // Liegt der Chat noch als Anfrage vor, ist "selbst anschreiben" die
+      // deutlichste Zustimmung -> direkt annehmen statt stumm abzubrechen.
+      if (existing.isPending) {
+        await (db.update(db.openChats)
+              ..where((t) => t.localId.equals(existing.localId)))
+            .write(const OpenChatsCompanion(isPending: Value(false)));
+      }
+      return;
+    }
 
     await db.into(db.openChats).insert(
           OpenChatsCompanion.insert(
@@ -107,7 +117,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
     _snack('Gruppe $newGroupId erfolgreich erstellt!');
   }
 
-  Future<void> _joinExistingGroup(int groupId) async {
+  Future<void> _joinGroupWithCode(int code) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -115,11 +125,12 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
     );
-    final success = await MessengerApiService.joinGroup(groupId);
+    // Welche Gruppe hinter dem Code steckt, wissen wir erst nach der Antwort.
+    final groupId = await MessengerApiService.joinGroupByCode(code);
     if (!mounted) return;
     Navigator.pop(context);
-    if (!success) {
-      _snack('Fehler beim Beitritt. Existiert die Gruppe?');
+    if (groupId == null) {
+      _snack('Beitritt fehlgeschlagen. Ist der Code noch gültig?');
       return;
     }
     final db = context.read<AppDatabase>();
@@ -176,7 +187,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
           keyboardType: TextInputType.number,
           style: GoogleFonts.inter(color: AppColors.onSurface),
           decoration: InputDecoration(
-            hintText: 'Gruppen-ID',
+            hintText: 'Einladungs-Code',
             hintStyle: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
             filled: true,
             fillColor: AppColors.surface.withValues(alpha: 0.6),
@@ -210,7 +221,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
         ],
       ),
     );
-    if (id != null) await _joinExistingGroup(id);
+    if (id != null) await _joinGroupWithCode(id);
   }
 
   Future<void> _showActionSheet() async {
@@ -267,7 +278,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
               _ActionTile(
                 icon: Icons.meeting_room_rounded,
                 label: 'Gruppe beitreten',
-                subtitle: 'Per Gruppen-ID einsteigen',
+                subtitle: 'Mit Einladungs-Code einsteigen',
                 onTap: () => Navigator.pop(ctx, 'join_group'),
               ),
             ],
@@ -328,13 +339,30 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
             }
             final contacts = snapshot.data!;
             if (contacts.isEmpty) return const _EmptyChats();
+            // Anfragen (Erstkontakt von Fremden) fliegen aus der normalen
+            // Liste und sammeln sich hinter EINER Zeile oben — die nur
+            // existiert, wenn es gerade Anfragen gibt.
+            final requests = contacts.where((c) => c.isPending).toList();
+            final chats = contacts.where((c) => !c.isPending).toList();
+            final hasRequestsRow = requests.isNotEmpty;
             return ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
               physics: const BouncingScrollPhysics(),
-              itemCount: contacts.length,
+              itemCount: chats.length + (hasRequestsRow ? 1 : 0),
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                final c = contacts[index];
+                if (hasRequestsRow && index == 0) {
+                  return _RequestsRow(
+                    count: requests.length,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChatRequestsPage(),
+                      ),
+                    ),
+                  );
+                }
+                final c = chats[hasRequestsRow ? index - 1 : index];
                 return _ChatTile(
                   key: ValueKey('${c.isGroupChat}-${c.id}'),
                   contact: c,
@@ -381,6 +409,96 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
 }
 
 
+
+// Sammel-Zeile fuer offene Chat-Anfragen. Wird nur gerendert, wenn es
+// welche gibt — ihr Erscheinen (plus Count-Badge) ist das Signal.
+class _RequestsRow extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _RequestsRow({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primary.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                ),
+                child: Icon(
+                  Icons.mark_email_unread_rounded,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Anfragen',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      count == 1
+                          ? '1 Person möchte dir schreiben'
+                          : '$count Personen möchten dir schreiben',
+                      style: GoogleFonts.inter(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$count',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _ChatTile extends StatelessWidget {
   final OpenChat contact;

@@ -16,16 +16,17 @@ import 'package:ranked/messenger/messenger_api_service.dart';
 /// Share-Sheet: Kontakte als Avatar-Grid, dazu eine Link-Kopieren-Action.
 /// Nach dem Senden zeigt ein bounce-animiertes Overlay im Sheet die
 /// Bestaetigung (statt einer Mini-SnackBar) und schliesst sich danach von
-/// selbst.
+/// selbst. Verschickt einen beliebigen In-App-Link (`ranked://post/1`,
+/// `ranked://group/1234`, …) als normale Textnachricht.
 class ShareSheet extends StatefulWidget {
   final AppDatabase db;
   final MessengerController controller;
-  final String postLink;
+  final String link;
 
   const ShareSheet({
     required this.db,
     required this.controller,
-    required this.postLink,
+    required this.link,
   });
 
   @override
@@ -54,7 +55,7 @@ class _ShareSheetState extends State<ShareSheet>
   }
 
   Future<void> _copyLink() async {
-    await Clipboard.setData(ClipboardData(text: widget.postLink));
+    await Clipboard.setData(ClipboardData(text: widget.link));
     HapticFeedback.selectionClick();
     setState(() => _linkCopied = true);
     await Future.delayed(const Duration(milliseconds: 1400));
@@ -85,9 +86,9 @@ class _ShareSheetState extends State<ShareSheet>
     // getAllContacts liefert DMs UND Gruppen — Gruppen brauchen den
     // Sender-Keys-Pfad.
     if (contact.isGroupChat) {
-      service.sendGroupMessage(contact.id, widget.postLink);
+      service.sendGroupMessage(contact.id, widget.link);
     } else {
-      service.sendDirectMessage(contact.id, widget.postLink);
+      service.sendDirectMessage(contact.id, widget.link);
     }
     HapticFeedback.mediumImpact();
     setState(() => _sentToUsername = contact.username);

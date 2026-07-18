@@ -1,10 +1,15 @@
+import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'chat_info_sheet.dart';
 import 'conversation.dart';
+import 'messenger_api_service.dart';
 import '../app_colors.dart';
+import '../local_data/database.dart';
 import '../net_image.dart';
 import '../post/post_api_service.dart';
+import '../user_api_service.dart';
 
 /// Erkennt einen geteilten Post-Link der Form `ranked://post/<id>`.
 ///
@@ -21,12 +26,25 @@ int? _tryParsePostId(String text) {
   return int.tryParse(match.group(1)!);
 }
 
+/// Erkennt eine Gruppen-Einladung der Form `ranked://group/<code>`.
+/// Gleiche Idee (und gleiche strenge Verankerung) wie [_tryParsePostId].
+int? _tryParseGroupCode(String text) {
+  final match = RegExp(r'^ranked://group/(\d+)$').firstMatch(text.trim());
+  if (match == null) return null;
+  return int.tryParse(match.group(1)!);
+}
+
 class ChatScreen extends StatefulWidget {
   final Conversation conversation;
 
+  // true = der Chat ist eine noch offene Anfrage (Erstkontakt von einem
+  // Fremden): statt des Eingabefelds erscheint unten Annehmen/Ablehnen.
+  final bool isRequest;
+
   const ChatScreen({
     super.key,
-    required this.conversation
+    required this.conversation,
+    this.isRequest = false,
   });
 
   @override
@@ -41,10 +59,15 @@ class _ChatScreenState extends State<ChatScreen> {
   // Screens bestehen und feuert nur bei echten DB-Aenderungen.
   late final Stream<List<ChatMessage>> _messages;
 
+  // Lokale Kopie des Request-Zustands: nach "Annehmen" muss nur DIESER
+  // Screen umschalten (Composer statt Leiste), kein Neu-Navigieren noetig.
+  late bool _isRequest;
+
   @override
   void initState() {
     super.initState();
     _messages = widget.conversation.watch();
+    _isRequest = widget.isRequest;
   }
 
   @override
@@ -169,11 +192,72 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          _Composer(
-            controller: _textController,
-            onSend: _send,
-          ),
+          if (_isRequest)
+            _RequestBar(
+              onAccept: _acceptRequest,
+              onDecline: _declineRequest,
+            )
+          else
+            _Composer(
+              controller: _textController,
+              onSend: _send,
+            ),
         ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Chat-Anfrage annehmen / ablehnen
+  // ---------------------------------------------------------------------------
+
+  // Annehmen = nur das pending-Flag in der Chatliste loeschen. Der Drift-
+  // Stream der Chatliste zieht den Chat dann automatisch aus "Anfragen"
+  // in die normale Liste.
+  Future<void> _acceptRequest() async {
+    final dm = widget.conversation as DmConversation;
+    await (dm.db.update(dm.db.openChats)
+          ..where((t) => t.id.equals(dm.peerId) & t.isGroupChat.equals(false)))
+        .write(const OpenChatsCompanion(isPending: Value(false)));
+    if (mounted) setState(() => _isRequest = false);
+  }
+
+  // Ablehnen loescht die Chatlisten-Zeile (die Nachrichten-Historie bleibt,
+  // sie ist reiner Cache). Ohne Blockieren kann dieselbe Person die Anfrage
+  // mit ihrer naechsten Nachricht neu erzeugen — deshalb bietet der Dialog
+  // das Blockieren gleich mit an.
+  Future<void> _declineRequest() async {
+    final dm = widget.conversation as DmConversation;
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+
+    final action = await showDialog<String>(
+      context: context,
+      builder: (_) => _DeclineDialog(username: dm.title),
+    );
+    if (action == null || !mounted) return;
+
+    if (action == 'block') {
+      await UserApiService.blockUser(dm.peerId);
+    }
+    await (dm.db.delete(dm.db.openChats)
+          ..where((t) => t.id.equals(dm.peerId) & t.isGroupChat.equals(false)))
+        .go();
+    nav.pop(); // zurueck zur Anfragen-Liste
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.onSurface,
+        content: Text(
+          action == 'block'
+              ? 'Anfrage abgelehnt und ${dm.title} blockiert.'
+              : 'Anfrage abgelehnt.',
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
@@ -272,6 +356,21 @@ class _MessageBubble extends StatelessWidget {
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: width * 0.76),
             child: _PostPreviewCard(postId: postId, time: time, isMe: isMe),
+          ),
+        ),
+      );
+    }
+
+    // Oder eine Gruppen-Einladung? Dann Card mit Beitreten-Button.
+    final groupCode = _tryParseGroupCode(text);
+    if (groupCode != null) {
+      return Padding(
+        padding: EdgeInsets.only(top: groupedWithPrevious ? 2 : 8),
+        child: Align(
+          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: width * 0.76),
+            child: _GroupInviteCard(code: groupCode, time: time, isMe: isMe),
           ),
         ),
       );
@@ -543,6 +642,228 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
 }
 
 // -----------------------------------------------------------------------------
+//  Gruppen-Einladung (geteilter Invite-Code im Chat)
+// -----------------------------------------------------------------------------
+
+enum _JoinState { idle, loading, joined }
+
+/// Einladungs-Card für `ranked://group/<code>`-Nachrichten: zeigt den Code und
+/// einen Beitreten-Button. Der Button macht genau das, was auch der
+/// Code-Dialog in der Chatliste macht (joinGroupByCode + OpenChat anlegen) —
+/// nur ohne Tipparbeit. Abgelaufene Codes meldet der Server mit einem Fehler,
+/// dann bleibt die Card benutzbar und eine SnackBar erklärt das Problem.
+class _GroupInviteCard extends StatefulWidget {
+  final int code;
+  final String time;
+  final bool isMe;
+
+  const _GroupInviteCard({
+    required this.code,
+    required this.time,
+    required this.isMe,
+  });
+
+  @override
+  State<_GroupInviteCard> createState() => _GroupInviteCardState();
+}
+
+class _GroupInviteCardState extends State<_GroupInviteCard> {
+  _JoinState _state = _JoinState.idle;
+
+  Future<void> _join() async {
+    // Messenger/DB VOR dem ersten await sichern (Screen könnte weg sein).
+    final messenger = ScaffoldMessenger.of(context);
+    final db = context.read<AppDatabase>();
+    setState(() => _state = _JoinState.loading);
+
+    // Welche Gruppe hinter dem Code steckt, verrät erst die Server-Antwort.
+    final groupId = await MessengerApiService.joinGroupByCode(widget.code);
+    if (!mounted) return;
+
+    if (groupId == null) {
+      setState(() => _state = _JoinState.idle);
+      messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primary,
+          content: Text(
+            'Beitritt fehlgeschlagen. Ist der Code noch gültig?',
+            style: GoogleFonts.inter(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Wie beim Code-Dialog: Chatlisten-Eintrag nur anlegen, wenn er fehlt
+    // (man kann derselben Gruppe nicht zweimal in der Liste stehen).
+    final existing =
+        await (db.select(db.openChats)
+              ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
+            .getSingleOrNull();
+    if (existing == null) {
+      await db
+          .into(db.openChats)
+          .insert(
+            OpenChatsCompanion.insert(
+              id: groupId,
+              isGroupChat: true,
+              username: Value('Gruppe $groupId'),
+            ),
+          );
+    }
+    if (!mounted) return;
+    setState(() => _state = _JoinState.joined);
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.onSurface,
+        content: Text(
+          'Gruppe beigetreten! Du findest sie in deiner Chatliste.',
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Farblogik wie bei der Post-Vorschau: auf der eigenen (roten) Bubble
+    // übernimmt Weiß die Akzent-Rolle, sonst primary.
+    final accent = widget.isMe ? Colors.white : AppColors.primary;
+    final textColor = widget.isMe ? Colors.white : AppColors.onSurface;
+    final muted = widget.isMe
+        ? Colors.white.withValues(alpha: 0.75)
+        : AppColors.onSurfaceVariant;
+    // Button invertiert die Bubble-Farben, damit er sich abhebt.
+    final buttonBg = widget.isMe ? Colors.white : AppColors.primary;
+    final buttonFg = widget.isMe ? AppColors.primary : Colors.white;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.isMe
+            ? AppColors.primary
+            : AppColors.surfaceContainerHigh.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(20),
+          topRight: const Radius.circular(20),
+          bottomLeft: Radius.circular(widget.isMe ? 20 : 6),
+          bottomRight: Radius.circular(widget.isMe ? 6 : 20),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+      child: SizedBox(
+        width: 220,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.groups_rounded, size: 22, color: accent),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Gruppeneinladung',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Code ${widget.code}',
+                        style: GoogleFonts.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: widget.isMe ? null : FilledButton(
+                onPressed: _state == _JoinState.idle ? _join : null,
+                style: FilledButton.styleFrom(
+                  backgroundColor: buttonBg,
+                  foregroundColor: buttonFg,
+                  // "Beigetreten" soll nicht wie ein Fehler aussehen — nur
+                  // leicht abgeschwächt.
+                  disabledBackgroundColor: buttonBg.withValues(alpha: 0.55),
+                  disabledForegroundColor: buttonFg.withValues(alpha: 0.9),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _state == _JoinState.loading
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: buttonFg,
+                        ),
+                      )
+                    : Text(
+                        _state == _JoinState.joined
+                            ? 'Beigetreten'
+                            : 'Beitreten',
+                        style: GoogleFonts.inter(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.only(left: 4),
+              child: Text(
+                widget.time,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: muted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
 //  Datums-Chip
 // -----------------------------------------------------------------------------
 
@@ -717,6 +1038,200 @@ class _Composer extends StatelessWidget {
                   ),
                 );
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+//  Anfrage-Leiste (ersetzt den Composer, solange der Chat pending ist)
+// -----------------------------------------------------------------------------
+
+class _RequestBar extends StatelessWidget {
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+
+  const _RequestBar({required this.onAccept, required this.onDecline});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Nimm die Anfrage an, um antworten zu können.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w500,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onDecline,
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      side: BorderSide(
+                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.4),
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Ablehnen',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: onAccept,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      'Annehmen',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Nachfrage beim Ablehnen. Gibt per Navigator.pop zurueck:
+/// 'decline' = nur ablehnen, 'block' = ablehnen UND blockieren, null = abbrechen.
+class _DeclineDialog extends StatelessWidget {
+  final String username;
+  const _DeclineDialog({required this.username});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person_off_rounded,
+                color: AppColors.primary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Anfrage ablehnen?',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Der Chat wird aus deiner Liste entfernt. Ohne Blockieren kann '
+              '$username dir aber erneut eine Anfrage schicken.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                height: 1.4,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pop(context, 'decline'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  'Ablehnen',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.pop(context, 'block'),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  'Ablehnen & blockieren',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Abbrechen',
+                style: GoogleFonts.inter(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
             ),
           ],
         ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../profile.dart';
 import '../user_api_service.dart';
 import 'package:provider/provider.dart';
 import '../app_colors.dart';
-import 'ranking_provider.dart';
 import 'ranking_widgets.dart';
 import 'ranking_leaderboard.dart';
 
@@ -22,18 +22,15 @@ class _RankingHomeState extends State<RankingHome> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<RankingProvider>(
-        context,
-        listen: false,
-      ).fetchUserCredentials();
+      Provider.of<ProfileProvider>(context, listen: false).fetchUser();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<RankingProvider>(context);
+    final profile = Provider.of<ProfileProvider>(context);
 
-    if (provider.isLoadingHome || provider.userdata.isEmpty) {
+    if (profile.isLoading || profile.userdata.isEmpty) {
       return Scaffold(
         backgroundColor: AppColors.surface,
         body: Center(
@@ -42,7 +39,7 @@ class _RankingHomeState extends State<RankingHome> {
       );
     }
 
-    if (provider.userdata["ranking_enabled"] == true) {
+    if (profile.userdata["ranking_enabled"] == true) {
       return const RankingEnabledView();
     } else {
       // ── Opt-In Screen ──────────────────────────────────────────────────────
@@ -143,7 +140,10 @@ class _RankingHomeState extends State<RankingHome> {
                       onPressed: () async {
                         setState(() => _isLoading = true);
                         await UserApiService.setRankingEnabled(true);
-                        await provider.fetchUserCredentials();
+                        // forceRefresh: ohne den waere hier ein No-Op, da
+                        // ProfileProvider schon laengst _hasFetched=true hat
+                        // -> ranking_enabled bliebe faelschlich false.
+                        await profile.fetchUser(forceRefresh: true);
                         setState(() => _isLoading = false);
                       },
                     ),

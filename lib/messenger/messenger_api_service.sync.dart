@@ -15,7 +15,10 @@ extension MessengerSync on MessengerApiService {
   Future<void> _persistIncoming(ChatEvent event) async {
     switch (event) {
       case IncomingDm dm:
-        await _ensureDmOpenChat(dm.senderId);
+        // Muss hier eine neue Chatlisten-Zeile entstehen, ist das ein
+        // Erstkontakt durch einen Fremden -> Chat-Anfrage. Existiert der
+        // Chat schon, ist pending wirkungslos (ensure aendert nichts).
+        await _ensureDmOpenChat(dm.senderId, pending: true);
         final plaintext = await _decryptDm(dm.message, dm.senderId);
         await _db.saveDm(
           senderId: dm.senderId,
@@ -57,7 +60,10 @@ extension MessengerSync on MessengerApiService {
 
   // Legt einen OpenChat-Eintrag für einen DM-Partner an, falls noch keiner existiert.
   // Holt Username/Avatar per API; bei Fehler bleibt der Fallback "User $id".
-  Future<void> _ensureDmOpenChat(int peerId) async {
+  // pending: true = Chat entsteht durch die Erstnachricht eines Fremden ->
+  // landet als Anfrage in der Chatliste. Bestehende Zeilen werden NIE
+  // umgeflaggt — einmal angenommen bleibt angenommen.
+  Future<void> _ensureDmOpenChat(int peerId, {bool pending = false}) async {
     final existing =
         await (_db.select(_db.openChats)
               ..where((t) => t.id.equals(peerId) & t.isGroupChat.equals(false)))
@@ -84,6 +90,7 @@ extension MessengerSync on MessengerApiService {
             isGroupChat: false,
             username: Value(username),
             avatarUrl: Value(avatarUrl),
+            isPending: Value(pending),
           ),
         );
   }
@@ -158,6 +165,9 @@ extension MessengerSync on MessengerApiService {
     // groesste created_at ueber ALLE Partner. Die Partner-IDs sammeln wir
     // separat (als Set), um jeden Chat in der Kontaktliste sicherzustellen.
     final partners = <int>{};
+    // Anfrage-Regel nach Re-Login (DB leer, Server kennt kein "angenommen"):
+    // jemals selbst an den Partner geschrieben = angenommen, sonst Anfrage.
+    final wroteTo = <int>{};
     DateTime? newest;
 
     for (final m in messages) {
@@ -178,12 +188,13 @@ extension MessengerSync on MessengerApiService {
       // Partner = die Seite, die nicht ich bin
       final partnerId = senderId == _myUserId ? recipientId : senderId;
       partners.add(partnerId);
+      if (senderId == _myUserId) wroteTo.add(partnerId);
 
       if (newest == null || createdAt.isAfter(newest)) newest = createdAt;
     }
 
     for (final partnerId in partners) {
-      await _ensureDmOpenChat(partnerId);
+      await _ensureDmOpenChat(partnerId, pending: !wroteTo.contains(partnerId));
     }
     if (newest != null) await _db.updateSyncMarker('dm', newest);
   }

@@ -21,8 +21,8 @@ class ProfileProvider extends ChangeNotifier {
   bool get isLoading  => _isLoading;
   bool get hasFetched => _hasFetched;
 
-  Future<void> fetchUser() async {
-    if (_hasFetched) return; // schon geladen? nichts tun
+  Future<void> fetchUser({bool forceRefresh = false}) async {
+    if (_hasFetched && !forceRefresh) return; // schon geladen? nichts tun
     _isLoading = true;
     notifyListeners();
 

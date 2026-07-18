@@ -1340,6 +1340,21 @@ class $OpenChatsTable extends OpenChats
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isPendingMeta = const VerificationMeta(
+    'isPending',
+  );
+  @override
+  late final GeneratedColumn<bool> isPending = GeneratedColumn<bool>(
+    'is_pending',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pending" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     localId,
@@ -1347,6 +1362,7 @@ class $OpenChatsTable extends OpenChats
     id,
     username,
     avatarUrl,
+    isPending,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1394,6 +1410,12 @@ class $OpenChatsTable extends OpenChats
         avatarUrl.isAcceptableOrUnknown(data['avatar_url']!, _avatarUrlMeta),
       );
     }
+    if (data.containsKey('is_pending')) {
+      context.handle(
+        _isPendingMeta,
+        isPending.isAcceptableOrUnknown(data['is_pending']!, _isPendingMeta),
+      );
+    }
     return context;
   }
 
@@ -1423,6 +1445,10 @@ class $OpenChatsTable extends OpenChats
         DriftSqlType.string,
         data['${effectivePrefix}avatar_url'],
       ),
+      isPending: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pending'],
+      )!,
     );
   }
 
@@ -1438,12 +1464,14 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
   final int id;
   final String username;
   final String? avatarUrl;
+  final bool isPending;
   const OpenChat({
     required this.localId,
     required this.isGroupChat,
     required this.id,
     required this.username,
     this.avatarUrl,
+    required this.isPending,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1455,6 +1483,7 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
     if (!nullToAbsent || avatarUrl != null) {
       map['avatar_url'] = Variable<String>(avatarUrl);
     }
+    map['is_pending'] = Variable<bool>(isPending);
     return map;
   }
 
@@ -1467,6 +1496,7 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
       avatarUrl: avatarUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(avatarUrl),
+      isPending: Value(isPending),
     );
   }
 
@@ -1481,6 +1511,7 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
       id: serializer.fromJson<int>(json['id']),
       username: serializer.fromJson<String>(json['username']),
       avatarUrl: serializer.fromJson<String?>(json['avatarUrl']),
+      isPending: serializer.fromJson<bool>(json['isPending']),
     );
   }
   @override
@@ -1492,6 +1523,7 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
       'id': serializer.toJson<int>(id),
       'username': serializer.toJson<String>(username),
       'avatarUrl': serializer.toJson<String?>(avatarUrl),
+      'isPending': serializer.toJson<bool>(isPending),
     };
   }
 
@@ -1501,12 +1533,14 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
     int? id,
     String? username,
     Value<String?> avatarUrl = const Value.absent(),
+    bool? isPending,
   }) => OpenChat(
     localId: localId ?? this.localId,
     isGroupChat: isGroupChat ?? this.isGroupChat,
     id: id ?? this.id,
     username: username ?? this.username,
     avatarUrl: avatarUrl.present ? avatarUrl.value : this.avatarUrl,
+    isPending: isPending ?? this.isPending,
   );
   OpenChat copyWithCompanion(OpenChatsCompanion data) {
     return OpenChat(
@@ -1517,6 +1551,7 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
       id: data.id.present ? data.id.value : this.id,
       username: data.username.present ? data.username.value : this.username,
       avatarUrl: data.avatarUrl.present ? data.avatarUrl.value : this.avatarUrl,
+      isPending: data.isPending.present ? data.isPending.value : this.isPending,
     );
   }
 
@@ -1527,14 +1562,15 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
           ..write('isGroupChat: $isGroupChat, ')
           ..write('id: $id, ')
           ..write('username: $username, ')
-          ..write('avatarUrl: $avatarUrl')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('isPending: $isPending')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(localId, isGroupChat, id, username, avatarUrl);
+      Object.hash(localId, isGroupChat, id, username, avatarUrl, isPending);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1543,7 +1579,8 @@ class OpenChat extends DataClass implements Insertable<OpenChat> {
           other.isGroupChat == this.isGroupChat &&
           other.id == this.id &&
           other.username == this.username &&
-          other.avatarUrl == this.avatarUrl);
+          other.avatarUrl == this.avatarUrl &&
+          other.isPending == this.isPending);
 }
 
 class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
@@ -1552,12 +1589,14 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
   final Value<int> id;
   final Value<String> username;
   final Value<String?> avatarUrl;
+  final Value<bool> isPending;
   const OpenChatsCompanion({
     this.localId = const Value.absent(),
     this.isGroupChat = const Value.absent(),
     this.id = const Value.absent(),
     this.username = const Value.absent(),
     this.avatarUrl = const Value.absent(),
+    this.isPending = const Value.absent(),
   });
   OpenChatsCompanion.insert({
     this.localId = const Value.absent(),
@@ -1565,6 +1604,7 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
     required int id,
     this.username = const Value.absent(),
     this.avatarUrl = const Value.absent(),
+    this.isPending = const Value.absent(),
   }) : isGroupChat = Value(isGroupChat),
        id = Value(id);
   static Insertable<OpenChat> custom({
@@ -1573,6 +1613,7 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
     Expression<int>? id,
     Expression<String>? username,
     Expression<String>? avatarUrl,
+    Expression<bool>? isPending,
   }) {
     return RawValuesInsertable({
       if (localId != null) 'local_id': localId,
@@ -1580,6 +1621,7 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
       if (id != null) 'id': id,
       if (username != null) 'username': username,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
+      if (isPending != null) 'is_pending': isPending,
     });
   }
 
@@ -1589,6 +1631,7 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
     Value<int>? id,
     Value<String>? username,
     Value<String?>? avatarUrl,
+    Value<bool>? isPending,
   }) {
     return OpenChatsCompanion(
       localId: localId ?? this.localId,
@@ -1596,6 +1639,7 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
       id: id ?? this.id,
       username: username ?? this.username,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      isPending: isPending ?? this.isPending,
     );
   }
 
@@ -1617,6 +1661,9 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
     if (avatarUrl.present) {
       map['avatar_url'] = Variable<String>(avatarUrl.value);
     }
+    if (isPending.present) {
+      map['is_pending'] = Variable<bool>(isPending.value);
+    }
     return map;
   }
 
@@ -1627,7 +1674,8 @@ class OpenChatsCompanion extends UpdateCompanion<OpenChat> {
           ..write('isGroupChat: $isGroupChat, ')
           ..write('id: $id, ')
           ..write('username: $username, ')
-          ..write('avatarUrl: $avatarUrl')
+          ..write('avatarUrl: $avatarUrl, ')
+          ..write('isPending: $isPending')
           ..write(')'))
         .toString();
   }
@@ -3081,6 +3129,7 @@ typedef $$OpenChatsTableCreateCompanionBuilder =
       required int id,
       Value<String> username,
       Value<String?> avatarUrl,
+      Value<bool> isPending,
     });
 typedef $$OpenChatsTableUpdateCompanionBuilder =
     OpenChatsCompanion Function({
@@ -3089,6 +3138,7 @@ typedef $$OpenChatsTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> username,
       Value<String?> avatarUrl,
+      Value<bool> isPending,
     });
 
 class $$OpenChatsTableFilterComposer
@@ -3122,6 +3172,11 @@ class $$OpenChatsTableFilterComposer
 
   ColumnFilters<String> get avatarUrl => $composableBuilder(
     column: $table.avatarUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPending => $composableBuilder(
+    column: $table.isPending,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3159,6 +3214,11 @@ class $$OpenChatsTableOrderingComposer
     column: $table.avatarUrl,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get isPending => $composableBuilder(
+    column: $table.isPending,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$OpenChatsTableAnnotationComposer
@@ -3186,6 +3246,9 @@ class $$OpenChatsTableAnnotationComposer
 
   GeneratedColumn<String> get avatarUrl =>
       $composableBuilder(column: $table.avatarUrl, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPending =>
+      $composableBuilder(column: $table.isPending, builder: (column) => column);
 }
 
 class $$OpenChatsTableTableManager
@@ -3221,12 +3284,14 @@ class $$OpenChatsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> username = const Value.absent(),
                 Value<String?> avatarUrl = const Value.absent(),
+                Value<bool> isPending = const Value.absent(),
               }) => OpenChatsCompanion(
                 localId: localId,
                 isGroupChat: isGroupChat,
                 id: id,
                 username: username,
                 avatarUrl: avatarUrl,
+                isPending: isPending,
               ),
           createCompanionCallback:
               ({
@@ -3235,12 +3300,14 @@ class $$OpenChatsTableTableManager
                 required int id,
                 Value<String> username = const Value.absent(),
                 Value<String?> avatarUrl = const Value.absent(),
+                Value<bool> isPending = const Value.absent(),
               }) => OpenChatsCompanion.insert(
                 localId: localId,
                 isGroupChat: isGroupChat,
                 id: id,
                 username: username,
                 avatarUrl: avatarUrl,
+                isPending: isPending,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

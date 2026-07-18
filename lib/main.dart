@@ -134,6 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int _currentIndex = 0;
   bool? loggedIn; // null = loading, true = eingeloggt, false = Login-Screen
   StreamSubscription<void>? _logoutSub;
+  late final ThemeProvider _themeProvider;
   // Lazy IndexedStack: Jeder Tab wird erst beim ERSTEN Besuch gebaut
   // (_screens[i] bleibt bis dahin null) und lebt danach im IndexedStack
   // weiter — kein dispose/remount mehr beim Tab-Wechsel, Feed und
@@ -153,6 +154,11 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
     _checkExistingSession();
+    // Bereits gebaute Tabs lesen AppColors nur beim eigenen Build — ohne
+    // diesen Listener bleiben sie nach einem Dark-Mode-Toggle in den alten
+    // Farben haengen (siehe Kommentar am Screen-Cache oben).
+    _themeProvider = context.read<ThemeProvider>();
+    _themeProvider.addListener(_onThemeChanged);
     _logoutSub = ApiClient.forceLogoutStream.listen((_) async {
       if (mounted) {
         final db = context.read<AppDatabase>();
@@ -281,8 +287,21 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  // Wirft alle bereits gebauten Tabs weg, damit sie beim naechsten Anzeigen
+  // mit den aktuellen AppColors neu gebaut werden. Kostet Scroll-Position
+  // etc. der Tabs, aber ein Dark-Mode-Toggle ist selten genug, dass das ok ist.
+  void _onThemeChanged() {
+    if (!mounted) return;
+    setState(() {
+      for (var i = 0; i < _screens.length; i++) {
+        _screens[i] = null;
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _themeProvider.removeListener(_onThemeChanged);
     _logoutSub?.cancel();
     super.dispose();
   }

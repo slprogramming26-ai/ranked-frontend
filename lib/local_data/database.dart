@@ -11,7 +11,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'ranked'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +54,11 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(postDrafts);
       } else if (from < 9) {
         await m.addColumn(postDrafts, postDrafts.draftType);
+      }
+      if (from < 10) {
+        // Chat-Anfragen: Spalte mit Default false anhaengen — Bestandschats
+        // gelten damit als angenommen, kein Tabellen-Neubau noetig.
+        await m.addColumn(openChats, openChats.isPending);
       }
     },
   );

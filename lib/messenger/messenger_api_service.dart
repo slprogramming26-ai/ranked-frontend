@@ -92,11 +92,29 @@ class MessengerApiService {
     return body['group_chat_id'] as int;
   }
 
-  static Future<bool> joinGroup(int groupChatId) async {
+  // POST /group_chat/group_chat_join_code/{id} — erzeugt einen frischen,
+  // zeitlich begrenzten Einladungs-Code (nur als Mitglied moeglich).
+  // null = fehlgeschlagen (keine Gruppe / kein Mitglied / Netzfehler).
+  static Future<int?> createGroupJoinCode(int groupChatId) async {
     final response = await ApiClient.post(
-      Uri.parse("$_baseUrl/group_chat/join/$groupChatId"),
+      Uri.parse("$_baseUrl/group_chat/group_chat_join_code/$groupChatId"),
     );
-    return response.statusCode == 201;
+    if (response.statusCode != 201) return null;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body['code'] as int;
+  }
+
+  // POST /group_chat/join/{code} — tritt der Gruppe hinter dem Code bei.
+  // Der Server verraet uns erst in der Antwort, WELCHE Gruppe das war —
+  // die ID brauchen wir, um den Chat lokal (OpenChats) anzulegen.
+  // null = Code unbekannt/abgelaufen, schon Mitglied oder Netzfehler.
+  static Future<int?> joinGroupByCode(int code) async {
+    final response = await ApiClient.post(
+      Uri.parse("$_baseUrl/group_chat/join/$code"),
+    );
+    if (response.statusCode != 201) return null;
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return body['group_chat_id'] as int;
   }
 
   static Future<bool> deleteGroup(int groupChatId) async {

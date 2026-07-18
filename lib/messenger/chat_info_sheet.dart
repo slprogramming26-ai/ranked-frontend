@@ -9,13 +9,17 @@
 
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../app_colors.dart';
 import '../net_image.dart';
+import '../post/widgets/share_sheet.dart';
 import '../profile.dart';
 import '../user_api_service.dart';
 import 'conversation.dart';
 import 'messenger_api_service.dart';
+import 'messenger_controller.dart';
 
 /// Einstiegspunkt: entscheidet anhand des Conversation-Typs, welches Sheet
 /// gezeigt wird. Wird vom ChatScreen-Header aufgerufen.
@@ -173,6 +177,61 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     );
   }
 
+  Future<void> _showInviteCode() async {
+    // Wie überall im Sheet: Messenger vor dem ersten await sichern.
+    final messenger = ScaffoldMessenger.of(context);
+
+    final code = await MessengerApiService.createGroupJoinCode(
+      widget.conversation.groupChatId,
+    );
+    if (!mounted) return;
+
+    if (code == null) {
+      messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: AppColors.primary,
+          content: Text(
+            'Code konnte nicht erstellt werden. Versuch es erneut.',
+            style: GoogleFonts.inter(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Der Dialog gibt true zurück, wenn der User "Im Chat teilen" gewählt hat
+    // (Kopieren erledigt der Dialog selbst und gibt nichts zurück).
+    final share = await showDialog<bool>(
+      context: context,
+      builder: (_) => _InviteCodeDialog(code: code),
+    );
+    if (share != true || !mounted) return;
+
+    // Gleicher Link-Trick wie beim Post-Teilen: der Code geht als
+    // "ranked://group/<code>"-Textnachricht raus, der ChatScreen rendert
+    // daraus eine Einladungs-Card mit Beitreten-Button.
+    final db = widget.conversation.db;
+    final controller = context.read<MessengerController>();
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => ShareSheet(
+        db: db,
+        controller: controller,
+        link: 'ranked://group/$code',
+      ),
+    );
+  }
+
   Future<void> _confirmLeave() async {
     // Wie im DM-Sheet: Messenger/Navigator vor dem ersten await sichern.
     final messenger = ScaffoldMessenger.of(context);
@@ -274,6 +333,12 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
               const SizedBox(height: 8),
               Flexible(child: _buildMemberList()),
               const SizedBox(height: 12),
+              _ActionTile(
+                icon: Icons.person_add_rounded,
+                label: 'Einladen',
+                onTap: _showInviteCode,
+              ),
+              const SizedBox(height: 8),
               _ActionTile(
                 icon: Icons.logout_rounded,
                 label: 'Gruppe verlassen',
@@ -585,6 +650,157 @@ class _ActionTile extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Zeigt einen frisch erzeugten Einladungs-Code groß an. Tap auf den Code
+/// (oder den Button) kopiert ihn in die Zwischenablage.
+class _InviteCodeDialog extends StatelessWidget {
+  final int code;
+  const _InviteCodeDialog({required this.code});
+
+  void _copy(BuildContext context) {
+    // Messenger VOR dem pop holen — danach hängt der Dialog-Context in der Luft.
+    final messenger = ScaffoldMessenger.of(context);
+    Clipboard.setData(ClipboardData(text: '$code'));
+    Navigator.pop(context);
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.onSurface,
+        content: Text(
+          'Code kopiert!',
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.person_add_rounded,
+                color: AppColors.primary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Einladungs-Code',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.onSurface,
+              ),
+            ),
+            const SizedBox(height: 14),
+            InkWell(
+              onTap: () => _copy(context),
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHigh.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '$code',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 6,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Nur für begrenzte Zeit gültig. Wer den Code eingibt, '
+              'tritt der Gruppe bei.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                height: 1.4,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                // Nur den Dialog mit "teilen gewünscht" schließen — das
+                // ShareSheet öffnet der Aufrufer (_showInviteCode), weil der
+                // Dialog-Context dafür nach dem pop nicht mehr taugt.
+                onPressed: () => Navigator.pop(context, true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(Icons.send_rounded,
+                    size: 18, color: Colors.white),
+                label: Text(
+                  'Im Chat teilen',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                onPressed: () => _copy(context),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: Icon(Icons.copy_rounded,
+                    size: 18, color: AppColors.primary),
+                label: Text(
+                  'Code kopieren',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
