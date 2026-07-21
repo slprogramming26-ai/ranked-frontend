@@ -62,10 +62,14 @@ class UserApiService {
   }
 
   // createUser bleibt roher http-Call: Registrierung braucht keinen Token.
-  static Future<Map<String, dynamic>> createUser(
+  // Gibt null bei Erfolg zurueck, sonst die anzeigbare Fehlermeldung.
+  // Das Backend liefert bei 409 (E-Mail/Username vergeben) und 403 (<16)
+  // fertige deutsche Texte im "detail"-Feld — die reichen wir 1:1 durch.
+  static Future<String?> createUser(
     String email,
     String username,
     String password,
+    int age,
   ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/users/'),
@@ -74,28 +78,30 @@ class UserApiService {
         "email": email,
         "username": username,
         "passwort": password,
+        "age": age,
       }),
     );
-    if (response.statusCode == 201) {
-      return {};
-    } else if (response.statusCode == 409) {
-      return {"Fehler": "Email oder username schon benutzt"};
-    }
-    return {};
+    if (response.statusCode == 201) return null;
+    try {
+      final detail = jsonDecode(utf8.decode(response.bodyBytes))['detail'];
+      if (detail is String) return detail;
+    } catch (_) {}
+    return 'Registrierung fehlgeschlagen (Fehler ${response.statusCode})';
   }
 
-  static Future<Map<String, dynamic>> addUserDetails(String vibe_factor_1,
-      String vibe_factor_2, String imageUrl, String bio,
+  static Future<Map<String, dynamic>> addUserDetails(String? vibe_factor_1,
+      String? vibe_factor_2, String imageUrl, String bio,
       {int? locationId}) async {
     final body = <String, dynamic>{
-      "vibe_factor_1": vibe_factor_1,
-      "vibe_factor_2": vibe_factor_2,
       "profile_picture_url": imageUrl,
       "biography": bio,
     };
-    // exclude_unset im Backend: Key nur mitschicken, wenn im Sign-up wirklich
-    // ein Ort gewaehlt wurde — `"location_id": null` wuerde einen gesetzten
-    // Ort explizit loeschen (siehe setLocation).
+    // exclude_unset im Backend: Keys nur mitschicken, wenn im Sign-up wirklich
+    // etwas gewaehlt wurde — Vibes sind optional ("Share only what you want
+    // to share"), und `"location_id": null` wuerde einen gesetzten Ort
+    // explizit loeschen (siehe setLocation).
+    if (vibe_factor_1 != null) body["vibe_factor_1"] = vibe_factor_1;
+    if (vibe_factor_2 != null) body["vibe_factor_2"] = vibe_factor_2;
     if (locationId != null) body["location_id"] = locationId;
     await ApiClient.put(
       Uri.parse('$baseUrl/users/'),
@@ -126,6 +132,7 @@ class UserApiService {
       final data = jsonDecode(response.body);
       return data['image_url'] as String;
     }
+    print('Upload fehlgeschlagen: ${response.statusCode} – ${response.body}');
     return null;
   }
 

@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'user_api_service.dart';
-import 'sign_in.dart';
+import 'onboarding/onboarding_flow.dart';
 import 'app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -282,7 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const SignIn(),
+                                builder: (context) => const OnboardingFlow(),
                               ),
                             ),
                             child: Text(

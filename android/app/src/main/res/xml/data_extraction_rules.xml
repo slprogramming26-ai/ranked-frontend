@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backup-Regeln fuer Android 12+ (android:dataExtractionRules).
+     Die Drift-DB enthaelt entschluesselte Chat-Nachrichten und darf weder
+     ins Google-Drive-Backup noch in die Geraet-zu-Geraet-Uebertragung.
+     flutter_secure_storage: Werte sind mit einem Android-Keystore-Schluessel
+     verschluesselt, der nie mitgesichert wird - nach einem Restore waeren sie
+     unlesbar und koennen den Storage-Zugriff zum Absturz bringen. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" path="app_flutter/ranked.sqlite" />
+        <exclude domain="root" path="app_flutter/ranked.sqlite-wal" />
+        <exclude domain="root" path="app_flutter/ranked.sqlite-shm" />
+        <exclude domain="root" path="app_flutter/ranked.sqlite-journal" />
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" path="app_flutter/ranked.sqlite" />
+        <exclude domain="root" path="app_flutter/ranked.sqlite-wal" />
+        <exclude domain="root" path="app_flutter/ranked.sqlite-shm" />
+        <exclude domain="root" path="app_flutter/ranked.sqlite-journal" />
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+        <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+    </device-transfer>
+</data-extraction-rules>

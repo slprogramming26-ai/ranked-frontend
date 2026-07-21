@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Auto-Backup-Regeln fuer Android 6-11 (android:fullBackupContent).
+     Gleiche Ausschluesse wie in data_extraction_rules.xml, nur im aelteren
+     Format: Drift-DB (Klartext-Nachrichten) und flutter_secure_storage
+     (nach Restore ohnehin unlesbar) bleiben draussen. -->
+<full-backup-content>
+    <exclude domain="root" path="app_flutter/ranked.sqlite" />
+    <exclude domain="root" path="app_flutter/ranked.sqlite-wal" />
+    <exclude domain="root" path="app_flutter/ranked.sqlite-shm" />
+    <exclude domain="root" path="app_flutter/ranked.sqlite-journal" />
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    <exclude domain="sharedpref" path="FlutterSecureKeyStorage.xml" />
+</full-backup-content>
