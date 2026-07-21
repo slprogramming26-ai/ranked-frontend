@@ -39,22 +39,53 @@ Future<void> main() async {
   final db = AppDatabase();
 
   runApp(
+    // Diese beiden ueberleben die ganze App-Laufzeit unabhaengig vom Login:
+    // ThemeProvider ist eine Geraete-Einstellung, die DB-Instanz wird beim
+    // Logout separat per clearDatabase() geleert statt neu erzeugt.
     MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: themeProvider),
+        Provider.value(value: db),
+      ],
+      child: const SessionScope(child: MyApp()),
+    ),
+  );
+}
+
+// Haelt die Provider, die an einen eingeloggten User gebunden sind. Bei
+// startNewSession() aendert sich der Key des inneren MultiProvider -> Flutter
+// disposed den kompletten Subtree (alle 6 ChangeNotifier-Instanzen samt
+// ihrer Felder) und baut ihn mit frischen Instanzen neu auf. So bleiben beim
+// naechsten Login keine Werte des vorherigen Users im RAM haengen.
+class SessionScope extends StatefulWidget {
+  const SessionScope({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<SessionScope> createState() => SessionScopeState();
+}
+
+class SessionScopeState extends State<SessionScope> {
+  int _sessionId = 0;
+
+  void startNewSession() => setState(() => _sessionId++);
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      key: ValueKey(_sessionId),
       providers: [
         ChangeNotifierProvider(create: (_) => RankingProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
         ChangeNotifierProvider(create: (_) => CommentProvider()),
         ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        ChangeNotifierProvider.value(value: themeProvider),
-        // Besitzt den MessengerApiService fuer die ganze Login-Session
-        // (Verdrahtung mit Login/Logout folgt in Schritt 2).
         ChangeNotifierProvider(create: (_) => MessengerController()),
-        Provider.value(value: db),
       ],
-      child: const MyApp(),
-    ),
-  );
+      child: widget.child,
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -168,6 +199,10 @@ class _MyHomePageState extends State<MyHomePage> {
         await context.read<MessengerController>().shutdown();
         await db.clearDatabase();
         if (mounted) {
+          // Wirft RankingProvider/PostProvider/CommentProvider/StoryProvider/
+          // ProfileProvider/MessengerController weg und erzeugt sie neu, damit
+          // der naechste User nicht die Werte des vorherigen sieht.
+          context.findAncestorStateOfType<SessionScopeState>()?.startNewSession();
           setState(() => loggedIn = false);
         }
       }
