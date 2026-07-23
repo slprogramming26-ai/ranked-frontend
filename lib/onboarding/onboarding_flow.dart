@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/main.dart';
 import '../app_colors.dart';
+import '../app_loading.dart';
 import '../user_api_service.dart';
 import 'steps/about_me_step.dart';
 import 'steps/age_step.dart';
@@ -73,20 +74,20 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   // Getter statt Feld: Die Widgets muessen bei jedem setState neu gebaut
   // werden, sonst sieht z.B. der VibeStep eine veraltete Auswahl.
   List<Widget> get _pages => [
-        const WelcomeStep(),
-        VibeStep(selections: vibeSelections, onToggle: _toggleVibe),
-        AboutMeStep(
-          onImagePicked: (file) => _finalImageFile = file,
-          onAboutMeFinished: (bio) => _finalBio = bio,
-        ),
-        AgeStep(age: _age, onChanged: (v) => setState(() => _age = v)),
-        CredentialsStep(
-          emailController: _emailController,
-          usernameController: _usernameController,
-          passwordController: _passwordController,
-          errorMessage: _credentialsError,
-        ),
-      ];
+    const WelcomeStep(),
+    VibeStep(selections: vibeSelections, onToggle: _toggleVibe),
+    AboutMeStep(
+      onImagePicked: (file) => _finalImageFile = file,
+      onAboutMeFinished: (bio) => _finalBio = bio,
+    ),
+    AgeStep(age: _age, onChanged: (v) => setState(() => _age = v)),
+    CredentialsStep(
+      emailController: _emailController,
+      usernameController: _usernameController,
+      passwordController: _passwordController,
+      errorMessage: _credentialsError,
+    ),
+  ];
 
   bool get _isLastPage => _currentPage == _pages.length - 1;
 
@@ -157,7 +158,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       return;
     }
 
-    final loggedIn = await UserApiService.login(email, _passwordController.text);
+    final loggedIn = await UserApiService.login(
+      email,
+      _passwordController.text,
+    );
     if (!loggedIn) {
       if (!mounted) return;
       setState(() {
@@ -207,23 +211,43 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            _buildHeader(),
+            Column(
+              children: [
+                _buildHeader(),
 
-            // PageView Content
-            Expanded(
-              child: PageView(
-                controller: _pageController,
-                // Kein freies Wischen: Navigation laeuft nur ueber die
-                // Buttons, damit spaeter kein Step uebersprungen werden kann.
-                physics: const NeverScrollableScrollPhysics(),
-                onPageChanged: (index) => setState(() => _currentPage = index),
-                children: _pages,
-              ),
+                // PageView Content
+                Expanded(
+                  child: PageView(
+                    controller: _pageController,
+                    // Kein freies Wischen: Navigation laeuft nur ueber die
+                    // Buttons, damit spaeter kein Step uebersprungen werden kann.
+                    physics: const NeverScrollableScrollPhysics(),
+                    onPageChanged: (index) =>
+                        setState(() => _currentPage = index),
+                    children: _pages,
+                  ),
+                ),
+
+                _buildFooterButton(),
+              ],
             ),
 
-            _buildFooterButton(),
+            // Konto erstellen laeuft ueber mehrere sequenzielle Requests
+            // (createUser -> login -> Bild-Upload -> Details) - der laengste
+            // der drei Ladevorgaenge in der App, daher wie Post-Upload und
+            // Story-Editor ein blockierendes Overlay statt nur Button-Spinner.
+            if (_isSubmitting)
+              const AppLoadingOverlay(
+                title: 'Setting up your account',
+                messages: [
+                  'Creating your account...',
+                  'Signing you in...',
+                  'Uploading your photo...',
+                  'Almost there...',
+                ],
+              ),
           ],
         ),
       ),
@@ -330,32 +354,24 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            onPressed:
-                (_canProceed && !_isSubmitting) ? _handleNextStep : null,
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 26,
-                    height: 26,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 3,
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _isLastPage ? 'Create Account' : 'Next',
-                        style: GoogleFonts.plusJakartaSans(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      const Icon(Icons.arrow_forward, color: Colors.white),
-                    ],
+            // Waehrend _isSubmitting deckt das AppLoadingOverlay den Button
+            // ohnehin ab - hier reicht das Sperren per onPressed: null.
+            onPressed: (_canProceed && !_isSubmitting) ? _handleNextStep : null,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _isLastPage ? 'Create Account' : 'Next',
+                  style: GoogleFonts.plusJakartaSans(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
                   ),
+                ),
+                const SizedBox(width: 10),
+                const Icon(Icons.arrow_forward, color: Colors.white),
+              ],
+            ),
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 import '../app_colors.dart';
+import '../app_loading.dart';
 import '../local_data/database.dart';
 import 'story.dart';
 import 'story_editor_configs.dart';
@@ -188,10 +189,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
           Positioned(
             top: -50,
             right: -60,
-            child: _floatingBlob(
-              _glowBlob(AppColors.primary, 220),
-              phase: 0,
-            ),
+            child: _floatingBlob(_glowBlob(AppColors.primary, 220), phase: 0),
           ),
           Positioned(
             bottom: -70,
@@ -262,7 +260,8 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                                 AnimatedBuilder(
                                   animation: _rotationController,
                                   builder: (context, child) => Transform.rotate(
-                                    angle: _rotationController.value * 2 * math.pi,
+                                    angle:
+                                        _rotationController.value * 2 * math.pi,
                                     child: child,
                                   ),
                                   child: SizedBox(
@@ -286,7 +285,10 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                                         Positioned(
                                           top: 24,
                                           left: 6,
-                                          child: _sparkleDot(AppColors.primary, 11),
+                                          child: _sparkleDot(
+                                            AppColors.primary,
+                                            11,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -307,7 +309,9 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primary.withValues(alpha: 0.35),
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.35,
+                                        ),
                                         blurRadius: 30,
                                         offset: const Offset(0, 12),
                                         spreadRadius: -6,
@@ -340,7 +344,9 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                             style: TextStyle(
                               fontSize: 14,
                               height: 1.5,
-                              color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                              color: AppColors.onSurfaceVariant.withValues(
+                                alpha: 0.8,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 14),
@@ -501,9 +507,9 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                   onTap: _uploading
                       ? null
                       : () => setState(() {
-                            _stage = _Stage.pick;
-                            _image = null;
-                      }),
+                          _stage = _Stage.pick;
+                          _image = null;
+                        }),
                 ),
               ),
             ),
@@ -540,8 +546,11 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                                 ),
                               )
                             else
-                              const Icon(Icons.send_rounded,
-                                  color: Colors.white, size: 20),
+                              const Icon(
+                                Icons.send_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             const SizedBox(width: 10),
                             Text(
                               _uploading ? 'Wird geteilt...' : 'Story teilen',
@@ -583,39 +592,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
   // --- Format-Loader-Overlay --------------------------------------------------
 
   Widget _buildProcessingOverlay() {
-    return Positioned.fill(
-      // Material statt ColoredBox: das Overlay liegt im Stack NEBEN dem
-      // Scaffold, ohne Material-Vorfahr rendert Text im gelb unterstrichenen
-      // Fallback-Stil.
-      child: Material(
-        color: Colors.black.withValues(alpha: 0.75),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: 64,
-                height: 64,
-                child: CircularProgressIndicator(
-                  strokeWidth: 5,
-                  color: AppColors.primary,
-                  backgroundColor: Colors.white.withValues(alpha: 0.15),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Loading editor...',
-                style: GoogleFonts.plusJakartaSans(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return const AppLoadingOverlay(messages: ['Loading editor...']);
   }
 }
 
@@ -661,7 +638,9 @@ class _SourceCardState extends State<_SourceCard> {
         duration: const Duration(milliseconds: 120),
         curve: Curves.easeOut,
         child: Material(
-          color: widget.filled ? AppColors.primary : AppColors.surfaceContainerHigh,
+          color: widget.filled
+              ? AppColors.primary
+              : AppColors.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(24),
           child: InkWell(
             borderRadius: BorderRadius.circular(24),
@@ -715,7 +694,10 @@ class _SourceCardState extends State<_SourceCard> {
                   const SizedBox(height: 2),
                   Text(
                     widget.subtitle,
-                    style: TextStyle(fontSize: 11, color: fg.withValues(alpha: 0.75)),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: fg.withValues(alpha: 0.75),
+                    ),
                   ),
                 ],
               ),

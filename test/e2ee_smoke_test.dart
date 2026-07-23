@@ -7,8 +7,8 @@ import 'package:sodium/sodium.dart';
 void main() {
   late Sodium sodium;
 
-  setUpAll(() {
-    sodium = SodiumInit.init();
+  setUpAll(() async {
+    sodium = await SodiumInit.init();
   });
 
   test('crypto_box: Bob kann Alice-Nachricht entschlüsseln', () {

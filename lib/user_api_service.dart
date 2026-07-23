@@ -34,7 +34,6 @@ class UserApiService {
   static Future<Map<String, dynamic>> getCurrentUser() async {
     final response = await ApiClient.get(Uri.parse('$baseUrl/users/'));
     if (response.statusCode == 200) {
-      print(response.body);
       return jsonDecode(response.body);
     }
     return {};

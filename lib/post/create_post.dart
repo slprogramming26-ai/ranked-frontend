@@ -1,14 +1,13 @@
-import
-'dart:io';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'post_api_service.dart';
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
+import '../app_loading.dart';
 import '../location_picker.dart';
 import '../profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:async';
 import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
 import 'package:ranked/local_data/database.dart';
@@ -50,8 +49,9 @@ class _CreatePostState extends State<CreatePost> {
     await provider.fetchUser();
     if (!mounted) return;
     setState(() {
-      _defaultLocationName = (provider.userdata['location']
-          as Map<String, dynamic>?)?['name'] as String?;
+      _defaultLocationName =
+          (provider.userdata['location'] as Map<String, dynamic>?)?['name']
+              as String?;
     });
   }
 
@@ -209,7 +209,19 @@ class _CreatePostState extends State<CreatePost> {
               onPressed: () async {
                 try {
                   String? imageUrl;
-                  _showLoadingDialog(context);
+                  AppLoadingDialog.show(
+                    context,
+                    title: 'Sending your Pulse',
+                    messages: const [
+                      'Uploading media...',
+                      'Creating your post...',
+                      'Almost there...',
+                    ],
+                    trailing: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(3, (i) => _Dot(delay: i * 200)),
+                    ),
+                  );
                   if (_image != null) {
                     // Komprimierung im Hintergrund-Isolate – UI/Dialog bleibt flüssig.
                     // compute() schickt NUR den path-String ins Isolate, keine
@@ -652,7 +664,9 @@ class _CreatePostState extends State<CreatePost> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+                          color: AppColors.onSurfaceVariant.withValues(
+                            alpha: 0.7,
+                          ),
                         ),
                       ),
                     ],
@@ -689,9 +703,8 @@ class _CreatePostState extends State<CreatePost> {
     } else {
       subtitle = 'Optional hinzufügen';
     }
-    final title = override?['name'] as String? ??
-        _defaultLocationName ??
-        'Kein Standort';
+    final title =
+        override?['name'] as String? ?? _defaultLocationName ?? 'Kein Standort';
 
     return GestureDetector(
       onTap: _pickLocation,
@@ -969,101 +982,6 @@ class _DashedBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-void _showLoadingDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    barrierColor: AppColors.onSurface.withValues(alpha: 0.55),
-    builder: (context) => const _RankedLoadingDialog(),
-  );
-}
-
-class _RankedLoadingDialog extends StatefulWidget {
-  const _RankedLoadingDialog();
-  @override
-  State<_RankedLoadingDialog> createState() => _RankedLoadingDialogState();
-}
-
-class _RankedLoadingDialogState extends State<_RankedLoadingDialog> {
-  final List<String> _messages = [
-    'Uploading media...',
-    'Creating your post...',
-    'Almost there...',
-  ];
-  int _index = 0;
-  late Timer _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(milliseconds: 1800), (_) {
-      setState(() => _index = (_index + 1) % _messages.length);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 80,
-              height: 80,
-              child: CircularProgressIndicator(
-                strokeWidth: 6,
-                color: AppColors.primary,
-                backgroundColor: AppColors.surfaceContainer,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Sending your Pulse',
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                color: AppColors.onSurface,
-                letterSpacing: -0.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                _messages[_index],
-                key: ValueKey(_index),
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (i) => _Dot(delay: i * 200)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _Dot extends StatefulWidget {

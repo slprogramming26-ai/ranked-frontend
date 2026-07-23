@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import 'app_colors.dart';
 import 'api_client.dart';
+import 'key_service.dart';
 import 'location_picker.dart';
 import 'profile.dart';
 import 'theme_provider.dart';
@@ -98,6 +99,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Account loeschen ────────────────────────────────────────────────────────
   Future<void> _handleDelete() async {
+    // Vor dem ersten await lesen, damit kein BuildContext ueber die
+    // Dialog-/Request-Luecken hinweg gebraucht wird.
+    final userId = context.read<ProfileProvider>().userdata['id'] as int?;
     final confirmed = await _confirm(
       title: 'Account loeschen?',
       message:
@@ -113,8 +117,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) return;
 
     if (ok) {
-      // Server hat den Account geloescht -> lokal genauso aufraeumen wie beim
-      // Logout: Token weg, DB-Wipe + Ruecksprung zum Login via Stream.
+      // Server hat den Account geloescht -> E2EE-Keypair ebenfalls loeschen
+      // (anders als Logout, wo der Key fuer spaeteres Wieder-Einloggen bleibt).
+      if (userId != null) await KeyService.deleteKeypair(userId.toString());
+      // Lokal genauso aufraeumen wie beim Logout: Token weg, DB-Wipe +
+      // Ruecksprung zum Login via Stream.
       await ApiClient.logout();
       if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } else {
