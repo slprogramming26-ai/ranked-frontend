@@ -1961,20 +1961,6 @@ class $PostDraftsTable extends PostDrafts
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _isPublicMeta = const VerificationMeta(
-    'isPublic',
-  );
-  @override
-  late final GeneratedColumn<bool> isPublic = GeneratedColumn<bool>(
-    'is_public',
-    aliasedName,
-    false,
-    type: DriftSqlType.bool,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'CHECK ("is_public" IN (0, 1))',
-    ),
-  );
   static const VerificationMeta _imagePathMeta = const VerificationMeta(
     'imagePath',
   );
@@ -2004,7 +1990,6 @@ class $PostDraftsTable extends PostDrafts
     title,
     content,
     tag,
-    isPublic,
     imagePath,
     savedAt,
   ];
@@ -2051,14 +2036,6 @@ class $PostDraftsTable extends PostDrafts
         tag.isAcceptableOrUnknown(data['tag']!, _tagMeta),
       );
     }
-    if (data.containsKey('is_public')) {
-      context.handle(
-        _isPublicMeta,
-        isPublic.isAcceptableOrUnknown(data['is_public']!, _isPublicMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_isPublicMeta);
-    }
     if (data.containsKey('image_path')) {
       context.handle(
         _imagePathMeta,
@@ -2102,10 +2079,6 @@ class $PostDraftsTable extends PostDrafts
         DriftSqlType.string,
         data['${effectivePrefix}tag'],
       ),
-      isPublic: attachedDatabase.typeMapping.read(
-        DriftSqlType.bool,
-        data['${effectivePrefix}is_public'],
-      )!,
       imagePath: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}image_path'],
@@ -2129,7 +2102,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
   final String title;
   final String content;
   final String? tag;
-  final bool isPublic;
   final String? imagePath;
   final DateTime savedAt;
   const PostDraft({
@@ -2138,7 +2110,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
     required this.title,
     required this.content,
     this.tag,
-    required this.isPublic,
     this.imagePath,
     required this.savedAt,
   });
@@ -2152,7 +2123,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
     if (!nullToAbsent || tag != null) {
       map['tag'] = Variable<String>(tag);
     }
-    map['is_public'] = Variable<bool>(isPublic);
     if (!nullToAbsent || imagePath != null) {
       map['image_path'] = Variable<String>(imagePath);
     }
@@ -2167,7 +2137,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
       title: Value(title),
       content: Value(content),
       tag: tag == null && nullToAbsent ? const Value.absent() : Value(tag),
-      isPublic: Value(isPublic),
       imagePath: imagePath == null && nullToAbsent
           ? const Value.absent()
           : Value(imagePath),
@@ -2186,7 +2155,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
       title: serializer.fromJson<String>(json['title']),
       content: serializer.fromJson<String>(json['content']),
       tag: serializer.fromJson<String?>(json['tag']),
-      isPublic: serializer.fromJson<bool>(json['isPublic']),
       imagePath: serializer.fromJson<String?>(json['imagePath']),
       savedAt: serializer.fromJson<DateTime>(json['savedAt']),
     );
@@ -2200,7 +2168,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
       'title': serializer.toJson<String>(title),
       'content': serializer.toJson<String>(content),
       'tag': serializer.toJson<String?>(tag),
-      'isPublic': serializer.toJson<bool>(isPublic),
       'imagePath': serializer.toJson<String?>(imagePath),
       'savedAt': serializer.toJson<DateTime>(savedAt),
     };
@@ -2212,7 +2179,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
     String? title,
     String? content,
     Value<String?> tag = const Value.absent(),
-    bool? isPublic,
     Value<String?> imagePath = const Value.absent(),
     DateTime? savedAt,
   }) => PostDraft(
@@ -2221,7 +2187,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
     title: title ?? this.title,
     content: content ?? this.content,
     tag: tag.present ? tag.value : this.tag,
-    isPublic: isPublic ?? this.isPublic,
     imagePath: imagePath.present ? imagePath.value : this.imagePath,
     savedAt: savedAt ?? this.savedAt,
   );
@@ -2232,7 +2197,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
       title: data.title.present ? data.title.value : this.title,
       content: data.content.present ? data.content.value : this.content,
       tag: data.tag.present ? data.tag.value : this.tag,
-      isPublic: data.isPublic.present ? data.isPublic.value : this.isPublic,
       imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
       savedAt: data.savedAt.present ? data.savedAt.value : this.savedAt,
     );
@@ -2246,7 +2210,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
           ..write('title: $title, ')
           ..write('content: $content, ')
           ..write('tag: $tag, ')
-          ..write('isPublic: $isPublic, ')
           ..write('imagePath: $imagePath, ')
           ..write('savedAt: $savedAt')
           ..write(')'))
@@ -2254,16 +2217,8 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
   }
 
   @override
-  int get hashCode => Object.hash(
-    id,
-    draftType,
-    title,
-    content,
-    tag,
-    isPublic,
-    imagePath,
-    savedAt,
-  );
+  int get hashCode =>
+      Object.hash(id, draftType, title, content, tag, imagePath, savedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2273,7 +2228,6 @@ class PostDraft extends DataClass implements Insertable<PostDraft> {
           other.title == this.title &&
           other.content == this.content &&
           other.tag == this.tag &&
-          other.isPublic == this.isPublic &&
           other.imagePath == this.imagePath &&
           other.savedAt == this.savedAt);
 }
@@ -2284,7 +2238,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
   final Value<String> title;
   final Value<String> content;
   final Value<String?> tag;
-  final Value<bool> isPublic;
   final Value<String?> imagePath;
   final Value<DateTime> savedAt;
   const PostDraftsCompanion({
@@ -2293,7 +2246,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
     this.title = const Value.absent(),
     this.content = const Value.absent(),
     this.tag = const Value.absent(),
-    this.isPublic = const Value.absent(),
     this.imagePath = const Value.absent(),
     this.savedAt = const Value.absent(),
   });
@@ -2303,12 +2255,10 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
     required String title,
     required String content,
     this.tag = const Value.absent(),
-    required bool isPublic,
     this.imagePath = const Value.absent(),
     required DateTime savedAt,
   }) : title = Value(title),
        content = Value(content),
-       isPublic = Value(isPublic),
        savedAt = Value(savedAt);
   static Insertable<PostDraft> custom({
     Expression<int>? id,
@@ -2316,7 +2266,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
     Expression<String>? title,
     Expression<String>? content,
     Expression<String>? tag,
-    Expression<bool>? isPublic,
     Expression<String>? imagePath,
     Expression<DateTime>? savedAt,
   }) {
@@ -2326,7 +2275,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
       if (title != null) 'title': title,
       if (content != null) 'content': content,
       if (tag != null) 'tag': tag,
-      if (isPublic != null) 'is_public': isPublic,
       if (imagePath != null) 'image_path': imagePath,
       if (savedAt != null) 'saved_at': savedAt,
     });
@@ -2338,7 +2286,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
     Value<String>? title,
     Value<String>? content,
     Value<String?>? tag,
-    Value<bool>? isPublic,
     Value<String?>? imagePath,
     Value<DateTime>? savedAt,
   }) {
@@ -2348,7 +2295,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
       title: title ?? this.title,
       content: content ?? this.content,
       tag: tag ?? this.tag,
-      isPublic: isPublic ?? this.isPublic,
       imagePath: imagePath ?? this.imagePath,
       savedAt: savedAt ?? this.savedAt,
     );
@@ -2372,9 +2318,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
     if (tag.present) {
       map['tag'] = Variable<String>(tag.value);
     }
-    if (isPublic.present) {
-      map['is_public'] = Variable<bool>(isPublic.value);
-    }
     if (imagePath.present) {
       map['image_path'] = Variable<String>(imagePath.value);
     }
@@ -2392,7 +2335,6 @@ class PostDraftsCompanion extends UpdateCompanion<PostDraft> {
           ..write('title: $title, ')
           ..write('content: $content, ')
           ..write('tag: $tag, ')
-          ..write('isPublic: $isPublic, ')
           ..write('imagePath: $imagePath, ')
           ..write('savedAt: $savedAt')
           ..write(')'))
@@ -3483,7 +3425,6 @@ typedef $$PostDraftsTableCreateCompanionBuilder =
       required String title,
       required String content,
       Value<String?> tag,
-      required bool isPublic,
       Value<String?> imagePath,
       required DateTime savedAt,
     });
@@ -3494,7 +3435,6 @@ typedef $$PostDraftsTableUpdateCompanionBuilder =
       Value<String> title,
       Value<String> content,
       Value<String?> tag,
-      Value<bool> isPublic,
       Value<String?> imagePath,
       Value<DateTime> savedAt,
     });
@@ -3530,11 +3470,6 @@ class $$PostDraftsTableFilterComposer
 
   ColumnFilters<String> get tag => $composableBuilder(
     column: $table.tag,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<bool> get isPublic => $composableBuilder(
-    column: $table.isPublic,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3583,11 +3518,6 @@ class $$PostDraftsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<bool> get isPublic => $composableBuilder(
-    column: $table.isPublic,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get imagePath => $composableBuilder(
     column: $table.imagePath,
     builder: (column) => ColumnOrderings(column),
@@ -3622,9 +3552,6 @@ class $$PostDraftsTableAnnotationComposer
 
   GeneratedColumn<String> get tag =>
       $composableBuilder(column: $table.tag, builder: (column) => column);
-
-  GeneratedColumn<bool> get isPublic =>
-      $composableBuilder(column: $table.isPublic, builder: (column) => column);
 
   GeneratedColumn<String> get imagePath =>
       $composableBuilder(column: $table.imagePath, builder: (column) => column);
@@ -3669,7 +3596,6 @@ class $$PostDraftsTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<String> content = const Value.absent(),
                 Value<String?> tag = const Value.absent(),
-                Value<bool> isPublic = const Value.absent(),
                 Value<String?> imagePath = const Value.absent(),
                 Value<DateTime> savedAt = const Value.absent(),
               }) => PostDraftsCompanion(
@@ -3678,7 +3604,6 @@ class $$PostDraftsTableTableManager
                 title: title,
                 content: content,
                 tag: tag,
-                isPublic: isPublic,
                 imagePath: imagePath,
                 savedAt: savedAt,
               ),
@@ -3689,7 +3614,6 @@ class $$PostDraftsTableTableManager
                 required String title,
                 required String content,
                 Value<String?> tag = const Value.absent(),
-                required bool isPublic,
                 Value<String?> imagePath = const Value.absent(),
                 required DateTime savedAt,
               }) => PostDraftsCompanion.insert(
@@ -3698,7 +3622,6 @@ class $$PostDraftsTableTableManager
                 title: title,
                 content: content,
                 tag: tag,
-                isPublic: isPublic,
                 imagePath: imagePath,
                 savedAt: savedAt,
               ),

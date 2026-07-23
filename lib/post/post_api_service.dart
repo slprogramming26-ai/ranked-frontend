@@ -46,7 +46,7 @@ class PostApiService {
     return null;
   }
 
-  static Future<bool> createPost(String title, String content, bool published,
+  static Future<bool> createPost(String title, String content,
       String? imageUrl, String? flag,
       {int? locationId}) async {
     final response = await ApiClient.post(
@@ -55,7 +55,6 @@ class PostApiService {
       body: jsonEncode({
         'title': title,
         'content': content,
-        'published': published,
         'image_url': imageUrl,
         'flag': flag,
         // null = Post erbt den Heimatort des Users (macht das Backend);

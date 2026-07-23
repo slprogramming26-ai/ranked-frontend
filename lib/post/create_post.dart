@@ -23,7 +23,6 @@ class _CreatePostState extends State<CreatePost> {
   late TextEditingController titleController;
   late TextEditingController contentController;
   late final AppDatabase _db;
-  bool isPublic = true;
   File? _image;
 
   // Heimatort des Users — nur Anzeige ("erbt der Post automatisch").
@@ -73,7 +72,6 @@ class _CreatePostState extends State<CreatePost> {
     final postDraft = await _db.getPostDraft();
     if (postDraft == null || !mounted) return;
 
-    isPublic = postDraft.isPublic;
     titleController.text = postDraft.title;
     contentController.text = postDraft.content;
     final tag = postDraft.tag;
@@ -116,7 +114,6 @@ class _CreatePostState extends State<CreatePost> {
         title: titleController.text,
         content: contentController.text,
         tag: selectedTag,
-        isPublic: isPublic,
         imagePath: _image?.path,
       );
     }
@@ -254,7 +251,6 @@ class _CreatePostState extends State<CreatePost> {
                   final success = await PostApiService.createPost(
                     titleController.text,
                     contentController.text,
-                    isPublic,
                     imageUrl,
                     iconActivated.entries
                         .where((e) => e.value)
@@ -621,69 +617,7 @@ class _CreatePostState extends State<CreatePost> {
 
             const SizedBox(height: 24),
 
-            // 4. VISIBILITY SWITCH
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.1),
-                ),
-                boxShadow: _kPremiumShadow,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.public,
-                      color: AppColors.onSurfaceVariant,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Public Post',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Visible to the global Pulse',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.onSurfaceVariant.withValues(
-                            alpha: 0.7,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Switch(
-                    value: isPublic,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) => setState(() => isPublic = val),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 5. LOCATION CARD
+            // 4. LOCATION CARD
             _buildLocationCard(),
 
             const SizedBox(height: 32),

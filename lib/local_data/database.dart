@@ -11,7 +11,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'ranked'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -59,6 +59,10 @@ class AppDatabase extends _$AppDatabase {
         // Chat-Anfragen: Spalte mit Default false anhaengen — Bestandschats
         // gelten damit als angenommen, kein Tabellen-Neubau noetig.
         await m.addColumn(openChats, openChats.isPending);
+      }
+      if (from < 11) {
+        // "Public Post"-Toggle war funktionslos (Frontend + Backend) -> raus.
+        await m.alterTable(TableMigration(postDrafts));
       }
     },
   );
@@ -222,7 +226,6 @@ class AppDatabase extends _$AppDatabase {
     required String title,
     required String content,
     String? tag,
-    required bool isPublic,
     String? imagePath,
     String draftType = 'post',
   }) async {
@@ -233,7 +236,6 @@ class AppDatabase extends _$AppDatabase {
         title: Value(title),
         content: Value(content),
         tag: Value(tag),
-        isPublic: Value(isPublic),
         imagePath: Value(imagePath),
         savedAt: Value(DateTime.now()),
       ),
@@ -256,7 +258,6 @@ class AppDatabase extends _$AppDatabase {
       await savePostDraft(
         title: '',
         content: '',
-        isPublic: true,
         imagePath: imagePath,
       );
     }

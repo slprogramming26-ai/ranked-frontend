@@ -76,7 +76,6 @@ class PostDrafts extends Table {
   TextColumn get title => text()();
   TextColumn get content => text()();
   TextColumn get tag => text().nullable()();
-  BoolColumn get isPublic => boolean()();
   TextColumn get imagePath => text().nullable()();
   DateTimeColumn get savedAt => dateTime()();
 

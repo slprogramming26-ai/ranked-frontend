@@ -84,7 +84,6 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
       await _db.savePostDraft(
         title: '',
         content: '',
-        isPublic: true,
         draftType: 'story',
       );
     }
