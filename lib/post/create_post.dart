@@ -8,8 +8,8 @@ import '../location_picker.dart';
 import '../profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image/image.dart' as img;
 import 'package:provider/provider.dart';
+import '../image_sanitizer.dart';
 import 'package:ranked/local_data/database.dart';
 
 class CreatePost extends StatefulWidget {
@@ -220,17 +220,34 @@ class _CreatePostState extends State<CreatePost> {
                     ),
                   );
                   if (_image != null) {
-                    // Komprimierung im Hintergrund-Isolate – UI/Dialog bleibt flüssig.
-                    // compute() schickt NUR den path-String ins Isolate, keine
-                    // Closure die den Widget-Baum einfängt (sonst „unsendable").
-                    final path = _image!.path;
-                    final compressedPath = await compute(_compressImage, path);
-                    final fileToUpload = compressedPath != null
-                        ? File(compressedPath)
-                        : _image!;
+                    // Metadaten raus + Komprimierung im Hintergrund-Isolate –
+                    // UI/Dialog bleibt flüssig. compute() schickt NUR den
+                    // Record ins Isolate, keine Closure die den Widget-Baum
+                    // einfängt (sonst „unsendable").
+                    final cleanPath = await compute(
+                      sanitizeImageFile,
+                      (path: _image!.path, maxSize: 1080, quality: 85),
+                    );
+
+                    if (!context.mounted) return;
+
+                    // Kein Fallback auf die Originaldatei: die trägt noch
+                    // GPS/Kameradaten. Lieber den Post abbrechen als den
+                    // Standort des Users hochladen.
+                    if (cleanPath == null) {
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Bild konnte nicht verarbeitet werden'),
+                        ),
+                      );
+
+                      return;
+                    }
 
                     imageUrl = await PostApiService.uploadPostImage(
-                      fileToUpload,
+                      File(cleanPath),
                     );
 
                     if (!context.mounted) return;
@@ -844,29 +861,6 @@ class _CreatePostState extends State<CreatePost> {
       ),
     );
   }
-}
-
-/// Läuft in einem separaten Isolate (kein Zugriff auf `this`/State).
-/// Bekommt nur den Pfad, dekodiert/skaliert/kodiert das Bild und schreibt
-/// es als neue Datei. Gibt den Pfad der komprimierten Datei zurück – oder
-/// null, wenn das Bild nicht dekodiert werden konnte.
-Future<String?> _compressImage(String path) async {
-  final bytes = await File(path).readAsBytes();
-  final decoded = img.decodeImage(bytes);
-  if (decoded == null) return null;
-
-  final resized = (decoded.width > 1080 || decoded.height > 1080)
-      ? img.copyResize(
-          decoded,
-          width: decoded.width >= decoded.height ? 1080 : null,
-          height: decoded.height > decoded.width ? 1080 : null,
-        )
-      : decoded;
-
-  final fixed = img.encodeJpg(resized, quality: 85);
-  final newPath = '$path.compressed.jpg';
-  await File(newPath).writeAsBytes(fixed);
-  return newPath;
 }
 
 class _DashedBorderPainter extends CustomPainter {

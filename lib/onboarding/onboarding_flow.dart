@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
+import '../image_sanitizer.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -183,7 +185,31 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     try {
       String imageUrl = "";
       if (_finalImageFile != null) {
-        imageUrl = await UserApiService.uploadUserImage(_finalImageFile!) ?? "";
+        // Metadaten loeschen + verkleinern (Hintergrund-Isolate).
+        final cleanPath = await compute(
+          sanitizeImageFile,
+          (path: _finalImageFile!.path, maxSize: 1024, quality: 85),
+        );
+
+        if (!mounted) return;
+
+        // Kein Fallback auf die Originaldatei — die traegt noch GPS/Kameradaten.
+        // Aber auch kein Abbruch: das Konto existiert an dieser Stelle schon,
+        // der User muss hier rauskommen. Also ohne Bild weiter (best-effort,
+        // siehe oben), nachtragen kann er es im Profil.
+        if (cleanPath == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Dein Profilbild konnte nicht verarbeitet werden — du kannst '
+                'es später im Profil nachtragen.',
+              ),
+            ),
+          );
+        } else {
+          imageUrl =
+              await UserApiService.uploadUserImage(File(cleanPath)) ?? "";
+        }
       }
 
       await UserApiService.addUserDetails(

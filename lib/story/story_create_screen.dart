@@ -10,6 +10,7 @@ import 'package:pro_image_editor/pro_image_editor.dart';
 
 import '../app_colors.dart';
 import '../app_loading.dart';
+import '../image_sanitizer.dart';
 import '../local_data/database.dart';
 import 'story.dart';
 import 'story_editor_configs.dart';
@@ -103,13 +104,23 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
     if (!mounted) return;
     setState(() => _processing = false);
 
+    // Kein Fallback auf die Originaldatei: die traegt noch GPS/Kameradaten.
+    if (formatted == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bild konnte nicht verarbeitet werden')),
+      );
+      return;
+    }
+
     // 2. Direkt in den ranked-Editor.
     _openEditor(formatted);
   }
 
-  Future<File> _toStoryFormat(File source) async {
+  Future<File?> _toStoryFormat(File source) async {
     final bytes = await source.readAsBytes();
     final outBytes = await compute(_formatToStoryBytes, bytes);
+    if (outBytes == null) return null;
+
     final out = File(
       '${Directory.systemTemp.path}/story_fmt_'
       '${DateTime.now().millisecondsSinceEpoch}.jpg',
@@ -720,9 +731,20 @@ const int _storyHeight = 1920;
 /// - Vordergrund: ganzes Bild "contain" (komplett sichtbar), zentriert.
 /// - Hintergrund: dasselbe Bild "cover" + Weichzeichner, füllt den Rest.
 /// Gibt die fertigen JPG-Bytes zurück.
-Uint8List _formatToStoryBytes(Uint8List sourceBytes) {
-  final decoded = img.decodeImage(sourceBytes);
-  if (decoded == null) return sourceBytes;
+Uint8List? _formatToStoryBytes(Uint8List sourceBytes) {
+  // decodeImageSafely statt img.decodeImage: eine abgeschnittene Datei
+  // (Prozesstod waehrend der Kamera) laesst die Decoder werfen, und hier
+  // faengt niemand — der Fehler kaeme aus dem compute-Isolate zurueck.
+  final raw = decodeImageSafely(sourceBytes);
+  if (raw == null) return null;
+
+  // Metadaten runter, BEVOR wir mit den Pixeln arbeiten: copyResize und
+  // compositeImage klonen die EXIF-Daten des Originals sonst bis in die
+  // fertige Leinwand — und der Encoder schreibt sie wieder ins JPG.
+  // Die Drehung ist zu diesem Zeitpunkt schon eingebacken (der JPEG-Decoder
+  // erledigt das selbst), `width`/`height` stimmen also mit dem ueberein,
+  // was man spaeter sieht.
+  final decoded = stripMetadata(raw);
 
   const targetRatio = _storyWidth / _storyHeight; // 0.5625
   final srcRatio = decoded.width / decoded.height;
