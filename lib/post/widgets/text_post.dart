@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+// Praefix noetig: beide Pakete exportieren Consumer (und Provider). Diese
+// Datei braucht weiterhin das alte Paket fuer PostProvider und AppDatabase,
+// deshalb steht an jeder Riverpod-Stelle sichtbar rp. davor.
+import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'dart:ui';
 import '../../app_colors.dart';
 import '../../local_data/database.dart';
@@ -111,16 +115,9 @@ class _TextPostState extends State<TextPost>
   }
 
 
-  Future<void> _fetchData(BuildContext context) async {
-    final provider = Provider.of<CommentProvider>(context, listen: false);
-    provider.setLoading(true);
-    final comments = await PostApiService.getComments(widget.post_id);
-    provider.setComments(comments);
-  }
-
+  // _fetchData() ist ersatzlos entfallen: das ref.watch() weiter unten stoesst
+  // den Ladevorgang selbst an, sobald das Sheet zum ersten Mal baut.
   void showCommentSection(BuildContext context) async {
-    _fetchData(context);
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -159,30 +156,44 @@ class _TextPostState extends State<TextPost>
 
               // Kommentar-Liste
               Expanded(
-                child: Consumer<CommentProvider>(
-                  builder: (context, provider, child) {
-                    if (provider.isLoading) {
-                      return Center(
+                child: rp.Consumer(
+                  // Dieses Consumer-Widget holt sich sein eigenes ref. Deshalb
+                  // muss _TextPostState NICHT auf ConsumerStatefulWidget
+                  // umgebaut werden — der Rest der Datei bleibt unberuehrt.
+                  builder: (context, ref, child) {
+                    // Erster Build -> Riverpod startet den Fetch. Jeder weitere
+                    // Build waehrend das Sheet offen ist trifft den Cache.
+                    return ref.watch(commentsProvider(widget.post_id)).when(
+                      loading: () => Center(
                         child: CircularProgressIndicator(color: AppColors.primary),
-                      );
-                    }
-                    if (provider.comments.isEmpty) {
-                      return Center(
+                      ),
+                      // Neu: vorher gab es diesen Fall im UI gar nicht.
+                      error: (error, _) => Center(
                         child: Text(
-                          "Be the first to pulse!",
+                          "Kommentare konnten nicht geladen werden",
                           style: TextStyle(color: AppColors.onSurfaceVariant),
                         ),
-                      );
-                    }
-                    return ListView(
-                      padding: const EdgeInsets.only(bottom: 20),
-                      children: provider.comments.map((commentData) {
-                        return Comment(
-                          commentId: commentData['id'],
-                          comment: commentData['comment'],
-                          username: commentData['username'] ?? "Anonymous",
+                      ),
+                      data: (comments) {
+                        if (comments.isEmpty) {
+                          return Center(
+                            child: Text(
+                              "Be the first to pulse!",
+                              style: TextStyle(color: AppColors.onSurfaceVariant),
+                            ),
+                          );
+                        }
+                        return ListView(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          children: comments.map((commentData) {
+                            return Comment(
+                              commentId: commentData['id'],
+                              comment: commentData['comment'],
+                              username: commentData['username'] ?? "Anonymous",
+                            );
+                          }).toList(),
                         );
-                      }).toList(),
+                      },
                     );
                   },
                 ),
@@ -228,22 +239,32 @@ class _TextPostState extends State<TextPost>
                           colors: [AppColors.primary, AppColors.primaryContainer],
                         ),
                       ),
-                      child: IconButton(
-                        onPressed: () async {
-                          if (commentController.text.trim().isEmpty) return;
-                          final success = await PostApiService.postComment(
-                            widget.post_id,
-                            commentController.text,
-                          );
-                          if (success) {
+                      // Eigener Consumer nur fuer den Button: der braucht ein
+                      // ref zum Neuladen, soll aber nicht bei jeder Aenderung
+                      // der Kommentarliste mit-rebuilden.
+                      child: rp.Consumer(
+                        builder: (context, ref, child) => IconButton(
+                          onPressed: () async {
+                            if (commentController.text.trim().isEmpty) return;
+                            final success = await PostApiService.postComment(
+                              widget.post_id,
+                              commentController.text,
+                            );
+                            if (!success) return;
                             commentController.clear();
-                            _fetchData(context);
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.send,
-                          color: Colors.white,
-                          size: 20,
+                            // Das Sheet kann waehrend des await zugegangen sein
+                            // — dann ist dieses ref tot und invalidate wuerfe.
+                            if (!context.mounted) return;
+                            // Wirft den gecachten Stand weg. Das watch oben
+                            // merkt das und laedt von selbst neu; genau das,
+                            // was vorher der zweite _fetchData()-Aufruf tat.
+                            ref.invalidate(commentsProvider(widget.post_id));
+                          },
+                          icon: const Icon(
+                            Icons.send,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ),

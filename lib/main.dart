@@ -10,8 +10,11 @@ import 'post/create_post.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
+// Nur ProviderScope holen: flutter_riverpod exportiert ebenfalls Namen wie
+// Provider und Consumer: ein voller Import wuerde hier mit dem
+// provider-Paket kollidieren.
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'post/post_provider.dart';
-import 'post/comment_provider.dart';
 import 'story/story.dart';
 import 'story/story_create_screen.dart';
 import 'app_colors.dart';
@@ -39,24 +42,35 @@ Future<void> main() async {
   final db = AppDatabase();
 
   runApp(
-    // Diese beiden ueberleben die ganze App-Laufzeit unabhaengig vom Login:
-    // ThemeProvider ist eine Geraete-Einstellung, die DB-Instanz wird beim
-    // Logout separat per clearDatabase() geleert statt neu erzeugt.
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: themeProvider),
-        Provider.value(value: db),
-      ],
-      child: const SessionScope(child: MyApp()),
+    // ProviderScope ist die Wurzel der Riverpod-Welt: hier liegt der Speicher
+    // fuer alle Riverpod-Provider. Er muss ueber allem stehen, was sie liest.
+    // Solange kein Widget Riverpod nutzt, tut er schlicht nichts: deshalb ist
+    // dieser Schritt fuer die laufende App ein No-Op.
+    ProviderScope(
+      // Diese beiden ueberleben die ganze App-Laufzeit unabhaengig vom Login:
+      // ThemeProvider ist eine Geraete-Einstellung, die DB-Instanz wird beim
+      // Logout separat per clearDatabase() geleert statt neu erzeugt.
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider.value(value: themeProvider),
+          Provider.value(value: db),
+        ],
+        child: const SessionScope(child: MyApp()),
+      ),
     ),
   );
 }
 
 // Haelt die Provider, die an einen eingeloggten User gebunden sind. Bei
 // startNewSession() aendert sich der Key des inneren MultiProvider -> Flutter
-// disposed den kompletten Subtree (alle 6 ChangeNotifier-Instanzen samt
+// disposed den kompletten Subtree (alle 5 ChangeNotifier-Instanzen samt
 // ihrer Felder) und baut ihn mit frischen Instanzen neu auf. So bleiben beim
 // naechsten Login keine Werte des vorherigen Users im RAM haengen.
+//
+// Die Kommentare stehen bewusst NICHT mehr hier: die liegen inzwischen in
+// Riverpod (post/comment_provider.dart) und raeumen sich per autoDispose
+// selbst weg, sobald das Kommentar-Sheet zugeht. Beim Logout ist also
+// ohnehin nichts mehr da, was ein naechster User sehen koennte.
 class SessionScope extends StatefulWidget {
   const SessionScope({super.key, required this.child});
 
@@ -78,7 +92,6 @@ class SessionScopeState extends State<SessionScope> {
       providers: [
         ChangeNotifierProvider(create: (_) => RankingProvider()),
         ChangeNotifierProvider(create: (_) => PostProvider()),
-        ChangeNotifierProvider(create: (_) => CommentProvider()),
         ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => MessengerController()),
@@ -199,9 +212,9 @@ class _MyHomePageState extends State<MyHomePage> {
         await context.read<MessengerController>().shutdown();
         await db.clearDatabase();
         if (mounted) {
-          // Wirft RankingProvider/PostProvider/CommentProvider/StoryProvider/
-          // ProfileProvider/MessengerController weg und erzeugt sie neu, damit
-          // der naechste User nicht die Werte des vorherigen sieht.
+          // Wirft RankingProvider/PostProvider/StoryProvider/ProfileProvider/
+          // MessengerController weg und erzeugt sie neu, damit der naechste
+          // User nicht die Werte des vorherigen sieht.
           context.findAncestorStateOfType<SessionScopeState>()?.startNewSession();
           setState(() => loggedIn = false);
         }

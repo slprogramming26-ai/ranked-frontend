@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-// Verwaltet NUR die Feed-Posts (Kommentare leben im CommentProvider).
+// Verwaltet NUR die Feed-Posts (Kommentare leben in comment_provider.dart,
+// das inzwischen auf Riverpod laeuft).
 // Wichtig fuer die Performance: Der Feed abonniert diesen Provider im build —
 // jede notifyListeners()-Glocke hier MUSS also feed-relevant sein.
 class PostProvider extends ChangeNotifier {
