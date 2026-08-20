@@ -18,6 +18,7 @@ import '../post_api_service.dart';
 import 'comment.dart';
 import 'feed_image.dart';
 import 'share_sheet.dart';
+import '../impression_tracker.dart';
 
 class TextPost extends StatefulWidget {
   TextPost({
@@ -74,7 +75,6 @@ class _TextPostState extends State<TextPost>
     );
   }
 
-
   @override
   void dispose() {
     commentController.dispose();
@@ -85,6 +85,7 @@ class _TextPostState extends State<TextPost>
   // Liken mit optimistischem Update: Erst lokal anzeigen, dann ans Backend.
   // Schlägt der Request fehl, machen wir das Update rückgängig.
   Future<void> _like() async {
+    context.read<ImpressionTracker>().markEngaged(widget.post_id, ImpressionEngagement.voted);
     final provider = Provider.of<PostProvider>(context, listen: false);
     provider.setLike(widget.post_id, true);
     final success = await PostApiService.createVote(widget.post_id, 1);
@@ -114,10 +115,18 @@ class _TextPostState extends State<TextPost>
     if (!widget.isLiked) _like();
   }
 
-
   // _fetchData() ist ersatzlos entfallen: das ref.watch() weiter unten stoesst
   // den Ladevorgang selbst an, sobald das Sheet zum ersten Mal baut.
   void showCommentSection(BuildContext context) async {
+    // VOR dem Push: der Push schliesst ueber didPushNext das Route-Gate, und
+    // setGate(open: false) loest einen flush() aus. Steht markEngaged davor,
+    // faehrt opened_comments mit genau diesem Flush raus statt erst bis zu
+    // 10 s spaeter — verlaesst der User aus dem Sheet heraus die App, ist das
+    // Flag dann schon draussen.
+    context.read<ImpressionTracker>().markEngaged(
+      widget.post_id,
+      ImpressionEngagement.openedComments,
+    );
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -163,38 +172,47 @@ class _TextPostState extends State<TextPost>
                   builder: (context, ref, child) {
                     // Erster Build -> Riverpod startet den Fetch. Jeder weitere
                     // Build waehrend das Sheet offen ist trifft den Cache.
-                    return ref.watch(commentsProvider(widget.post_id)).when(
-                      loading: () => Center(
-                        child: CircularProgressIndicator(color: AppColors.primary),
-                      ),
-                      // Neu: vorher gab es diesen Fall im UI gar nicht.
-                      error: (error, _) => Center(
-                        child: Text(
-                          "Kommentare konnten nicht geladen werden",
-                          style: TextStyle(color: AppColors.onSurfaceVariant),
-                        ),
-                      ),
-                      data: (comments) {
-                        if (comments.isEmpty) {
-                          return Center(
-                            child: Text(
-                              "Be the first to pulse!",
-                              style: TextStyle(color: AppColors.onSurfaceVariant),
+                    return ref
+                        .watch(commentsProvider(widget.post_id))
+                        .when(
+                          loading: () => Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primary,
                             ),
-                          );
-                        }
-                        return ListView(
-                          padding: const EdgeInsets.only(bottom: 20),
-                          children: comments.map((commentData) {
-                            return Comment(
-                              commentId: commentData['id'],
-                              comment: commentData['comment'],
-                              username: commentData['username'] ?? "Anonymous",
+                          ),
+                          // Neu: vorher gab es diesen Fall im UI gar nicht.
+                          error: (error, _) => Center(
+                            child: Text(
+                              "Kommentare konnten nicht geladen werden",
+                              style: TextStyle(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          data: (comments) {
+                            if (comments.isEmpty) {
+                              return Center(
+                                child: Text(
+                                  "Be the first to pulse!",
+                                  style: TextStyle(
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              );
+                            }
+                            return ListView(
+                              padding: const EdgeInsets.only(bottom: 20),
+                              children: comments.map((commentData) {
+                                return Comment(
+                                  commentId: commentData['id'],
+                                  comment: commentData['comment'],
+                                  username:
+                                      commentData['username'] ?? "Anonymous",
+                                );
+                              }).toList(),
                             );
-                          }).toList(),
+                          },
                         );
-                      },
-                    );
                   },
                 ),
               ),
@@ -216,10 +234,13 @@ class _TextPostState extends State<TextPost>
                         decoration: InputDecoration(
                           hintText: "Write a comment...",
                           hintStyle: TextStyle(
-                            color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
+                            color: AppColors.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
                           ),
                           filled: true,
-                          fillColor: AppColors.surfaceContainerHighest.withValues(alpha: 0.3),
+                          fillColor: AppColors.surfaceContainerHighest
+                              .withValues(alpha: 0.3),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(25),
                             borderSide: BorderSide.none,
@@ -236,7 +257,10 @@ class _TextPostState extends State<TextPost>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [AppColors.primary, AppColors.primaryContainer],
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primaryContainer,
+                          ],
                         ),
                       ),
                       // Eigener Consumer nur fuer den Button: der braucht ein
@@ -345,7 +369,10 @@ class _TextPostState extends State<TextPost>
           size: 110,
           color: Colors.white.withValues(alpha: 0.9),
           shadows: [
-            Shadow(color: AppColors.primary.withValues(alpha: 0.6), blurRadius: 30),
+            Shadow(
+              color: AppColors.primary.withValues(alpha: 0.6),
+              blurRadius: 30,
+            ),
           ],
         ),
       ),
@@ -400,7 +427,10 @@ class _TextPostState extends State<TextPost>
               decoration: BoxDecoration(
                 color: AppColors.tertiaryContainer,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.surfaceContainerLow, width: 2),
+                border: Border.all(
+                  color: AppColors.surfaceContainerLow,
+                  width: 2,
+                ),
               ),
               child: const Text(
                 "#1",
@@ -480,7 +510,9 @@ class _TextPostState extends State<TextPost>
               padding: EdgeInsets.symmetric(vertical: 8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24.0),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.05)),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.05),
+                ),
               ),
               child: Column(
                 mainAxisSize:
@@ -510,7 +542,9 @@ class _TextPostState extends State<TextPost>
                       color: AppColors.primary,
                       isBold: true,
                       onTap: () async {
-                        final success = await PostApiService.deletePost(widget.post_id);
+                        final success = await PostApiService.deletePost(
+                          widget.post_id,
+                        );
                         Navigator.pop(context);
                       },
                     ),
@@ -663,6 +697,12 @@ class _TextPostState extends State<TextPost>
 
   // Schickt den Report ans Backend und gibt Feedback per Snackbar.
   Future<void> _sendReport(String reason) async {
+    // Vor dem await und ohne Status-Pruefung: melden WOLLEN ist das Signal.
+    // Ob das Backend 201 oder 409 ("hast du schon") antwortet, aendert an der
+    // Absicht des Users nichts.
+    context
+        .read<ImpressionTracker>()
+        .markEngaged(widget.post_id, ImpressionEngagement.reported);
     // Messenger vor dem await greifen — danach koennte der context weg sein.
     final messenger = ScaffoldMessenger.of(context);
     final status = await UserApiService.report(widget.post_id, "post", reason);
@@ -744,10 +784,7 @@ class _TextPostState extends State<TextPost>
           const Spacer(),
           IconButton(
             onPressed: () => _showShareSheet(context),
-            icon: Icon(
-              Icons.share_outlined,
-              color: AppColors.onSurfaceVariant,
-            ),
+            icon: Icon(Icons.share_outlined, color: AppColors.onSurfaceVariant),
           ),
         ],
       ),
@@ -759,6 +796,11 @@ class _TextPostState extends State<TextPost>
   // Der Post wird als In-App-Link "ranked://post/<id>" verschickt. Optik und
   // Bestaetigung uebernimmt ShareSheet (Avatar-Grid + Bounce-Overlay).
   void _showShareSheet(BuildContext context) {
+    context.read<ImpressionTracker>().markEngaged(
+      widget.post_id,
+      ImpressionEngagement.shared,
+    );
+
     final db = context.read<AppDatabase>();
     final controller = context.read<MessengerController>();
     final postLink = 'ranked://post/${widget.post_id}';
@@ -770,11 +812,8 @@ class _TextPostState extends State<TextPost>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      builder: (sheetContext) => ShareSheet(
-        db: db,
-        controller: controller,
-        link: postLink,
-      ),
+      builder: (sheetContext) =>
+          ShareSheet(db: db, controller: controller, link: postLink),
     );
   }
 

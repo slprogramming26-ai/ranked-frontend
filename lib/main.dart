@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ranked/messenger/messenger.dart';
+import 'package:ranked/post/impression_tracker.dart';
 import 'package:ranked/ranking/ranking.dart';
 import 'post/posts_feed.dart';
 import 'profile.dart';
@@ -27,6 +29,7 @@ import 'login_screen.dart';
 import 'floating_nav.dart';
 import 'splash_screen.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:ranked/route_observer.dart';
 
 Future<void> main() async {
   // Haelt den nativen OS-Splash fest, bis Flutter seinen ersten Frame fertig
@@ -95,6 +98,10 @@ class SessionScopeState extends State<SessionScope> {
         ChangeNotifierProvider(create: (_) => StoryProvider()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => MessengerController()),
+        Provider(
+          create: (_) => ImpressionTracker(),
+          dispose: (_, tracker) => tracker.dispose(),
+        ),
       ],
       child: widget.child,
     );
@@ -144,6 +151,7 @@ class MyApp extends StatelessWidget {
                   : Brightness.light,
             ),
           ),
+          navigatorObservers: [routeObserver],
           home: const MyHomePage(title: 'Flutter Demo Home Page'),
         );
       },
@@ -190,8 +198,10 @@ class _MyHomePageState extends State<MyHomePage> {
     () => Profile(),
     () => SearchPage(),
   ];
-  late final List<Widget?> _screens =
-      List<Widget?>.filled(_screenBuilders.length, null);
+  late final List<Widget?> _screens = List<Widget?>.filled(
+    _screenBuilders.length,
+    null,
+  );
 
   @override
   void initState() {
@@ -215,7 +225,9 @@ class _MyHomePageState extends State<MyHomePage> {
           // Wirft RankingProvider/PostProvider/StoryProvider/ProfileProvider/
           // MessengerController weg und erzeugt sie neu, damit der naechste
           // User nicht die Werte des vorherigen sieht.
-          context.findAncestorStateOfType<SessionScopeState>()?.startNewSession();
+          context
+              .findAncestorStateOfType<SessionScopeState>()
+              ?.startNewSession();
           setState(() => loggedIn = false);
         }
       }
@@ -262,8 +274,10 @@ class _MyHomePageState extends State<MyHomePage> {
     // Android-only: "Hat der letzte Prozess ein Kamerabild angefordert,
     // das nie ankam?" Wirft nie - alle Ausgaenge kommen als Daten zurueck.
     // Auf iOS ist die Antwort immer isEmpty.
-    final lost = await ImagePicker().retrieveLostData();
-    final lostFile = lost.file;
+    final lost = defaultTargetPlatform == TargetPlatform.android
+        ? await ImagePicker().retrieveLostData()
+        : null;
+    final lostFile = lost?.file;
     final draft = await db.getPostDraft();
 
     if (lostFile != null) {
@@ -419,7 +433,10 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         bottomNavigationBar: FloatingNavBar(
           currentIndex: _currentIndex,
-          onTabSelected: (i) => setState(() => _currentIndex = i),
+          onTabSelected: (i) {
+            context.read<ImpressionTracker>().setGate(ImpressionGate.tab ,open: i == 0);
+            setState(() => _currentIndex = i);
+          },
         ),
       );
     }
@@ -429,5 +446,4 @@ class _MyHomePageState extends State<MyHomePage> {
       onLoginSuccess: _onLoginSuccess,
     );
   }
-
 }

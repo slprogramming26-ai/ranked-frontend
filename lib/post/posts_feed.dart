@@ -14,6 +14,10 @@ import '../user_api_service.dart';
 import 'package:ranked/story/story_create_screen.dart';
 import 'package:ranked/story/story_viewer.dart';
 import 'package:ranked/story/story.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+import 'impression_tracker.dart';
+import 'widgets/impression_wrapper.dart';
+import 'package:ranked/route_observer.dart';
 
 class PostsFeed extends StatefulWidget {
   const PostsFeed({super.key});
@@ -22,7 +26,7 @@ class PostsFeed extends StatefulWidget {
   State<PostsFeed> createState() => _PostsFeedState();
 }
 
-class _PostsFeedState extends State<PostsFeed> {
+class _PostsFeedState extends State<PostsFeed> with RouteAware{
   final ScrollController _scrollController = ScrollController();
   final int _limit = 10;
   bool _isFetchingMore = false;
@@ -40,9 +44,16 @@ class _PostsFeedState extends State<PostsFeed> {
   // -> Empty-State mit "Ort waehlen"-Button statt leerem Feed.
   bool _noLocation = false;
 
+  late ImpressionTracker _tracker;
+
+  // app geschlossen?
+  late AppLifecycleListener _lifecycleListener;
+
   @override
   void initState() {
     super.initState();
+    VisibilityDetectorController.instance.updateInterval =
+    const Duration(milliseconds: 300);
     WidgetsBinding.instance.addPostFrameCallback((_) => _fetchData());
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
@@ -50,7 +61,44 @@ class _PostsFeedState extends State<PostsFeed> {
         _fetchMoreData();
       }
     });
+    _lifecycleListener = AppLifecycleListener(
+      // App verschwindet vom Schirm -> Stopuhren einfrieren, sonst zaehlt die
+      // ganze Nacht auf dem Sperrbildschirm als Dwell.
+      onHide: () => _tracker.setGate(ImpressionGate.lifecycle, open: false),
+      onPause: () => _tracker.setGate(ImpressionGate.lifecycle, open: false),
+      onShow: () => _tracker.setGate(ImpressionGate.lifecycle, open: true),
+    );
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // In dispose() ist context.read<>() nicht mehr erlaubt — hier merken.
+    _tracker = context.read<ImpressionTracker>();
+    // Anmelden an der Route, IN der der Feed liegt: die Home-Route. Ueber die
+    // legen sich Suche, StoryViewer und das Kommentar-Sheet.
+    // Mehrfaches subscribe ist harmlos, _listeners ist ein Set.
+    final route = ModalRoute.of<void>(context);
+    if (route != null) routeObserver.subscribe(this, route);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _lifecycleListener.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+
+  // Etwas hat sich ueber den Feed gelegt...
+  @override
+  void didPushNext() => _tracker.setGate(ImpressionGate.route, open: false);
+
+  // ...und ist wieder weg.
+  @override
+  void didPopNext() => _tracker.setGate(ImpressionGate.route, open: true);
+
 
   // Umschalten "Fuer dich" <-> "Lokal": Provider tauscht Liste+Modus atomar,
   // hier wird nur der Paging-/Animations-State des Widgets zurueckgesetzt.
@@ -112,6 +160,7 @@ class _PostsFeedState extends State<PostsFeed> {
   Future<void> _fetchData() async {
     final provider = Provider.of<PostProvider>(context, listen: false);
     final storyProvider = Provider.of<StoryProvider>(context, listen: false);
+    final tracker = Provider.of<ImpressionTracker>(context, listen: false);
     final bool wantLocal = provider.isLocalFeed;
     if (provider.posts.isEmpty) provider.setLoading(true);
     // Ohne das hier blieb isLoading beim StoryProvider fuer immer false ->
@@ -134,6 +183,12 @@ class _PostsFeedState extends State<PostsFeed> {
       // wenn der Feed vorher schon ausgeschoepft war).
       _hasMore = posts.length == _limit;
       if (mounted && _noLocation) setState(() => _noLocation = false);
+
+      // Neue Liste = neue Feed-Session: alten Stand rausschicken, Map leeren,
+      // neue UUID. Bewusst hier und nicht am Methodenanfang — so fallen
+      // Sessionwechsel und Listenwechsel zusammen, und ein fehlgeschlagener
+      // Fetch laesst die laufende Session unangetastet.
+      tracker.startFeedSession(isLocal: wantLocal);
 
       provider.setPosts(posts);
       storyProvider.setStories(stories);
@@ -262,25 +317,30 @@ class _PostsFeedState extends State<PostsFeed> {
             // ohnehin einzeln -> sofort einblenden, ohne Wartezeit.
             final int delay = isNew && index <= _limit ? (index - 1) * 70 : 0;
 
-            return FeedEntrance(
-              key: ValueKey(postId),
-              animate: isNew,
-              delayMs: delay,
-              child: TextPost(
-                title: postData['post']['title'],
-                content: postData['post']['content'],
-                owner_username: postData['post']['owner']['username'].toString(),
-                created_at: DateTime.parse(postData['post']['created_at']),
-                likes: postData['votes'],
-                post_id: postData['post']['id'],
-                imageUrl: postData['post']['image_url'],
-                profilePictureUrl:
-                    postData['post']['owner']['profile_picture_url'].toString(),
-                timeDifference: getTimeAgo(postData['post']['created_at']),
-                flag: postData['post']['flag'],
-                locationName: postData['post']['location']?['name'],
-                isMine: postData['is_mine'] ?? false,
-                isLiked: postData['is_liked'] ?? false,
+            return ImpressionWrapper(
+              key: ValueKey("imp-$postId"),
+              postId: postId,
+              position: index - 1,
+              child: FeedEntrance(
+                key: ValueKey(postId),
+                animate: isNew,
+                delayMs: delay,
+                child: TextPost(
+                  title: postData['post']['title'],
+                  content: postData['post']['content'],
+                  owner_username: postData['post']['owner']['username'].toString(),
+                  created_at: DateTime.parse(postData['post']['created_at']),
+                  likes: postData['votes'],
+                  post_id: postData['post']['id'],
+                  imageUrl: postData['post']['image_url'],
+                  profilePictureUrl:
+                      postData['post']['owner']['profile_picture_url'].toString(),
+                  timeDifference: getTimeAgo(postData['post']['created_at']),
+                  flag: postData['post']['flag'],
+                  locationName: postData['post']['location']?['name'],
+                  isMine: postData['is_mine'] ?? false,
+                  isLiked: postData['is_liked'] ?? false,
+                ),
               ),
             );
           },
