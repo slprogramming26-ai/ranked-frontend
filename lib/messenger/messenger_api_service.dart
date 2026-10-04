@@ -17,6 +17,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:sodium/sodium.dart';
@@ -39,7 +40,7 @@ part 'messenger_api_service.crypto.dart';
 part 'messenger_api_service.send.dart';
 part 'messenger_api_service.sync.dart';
 
-const _baseWsUrl = 'wss://web-production-1bb6f.up.railway.app';
+const _baseWsUrl = 'wss://ranked-ws-gateway-production.up.railway.app';
 const _baseUrl = 'https://web-production-1bb6f.up.railway.app';
 
 class MessengerApiService {
@@ -129,6 +130,28 @@ class MessengerApiService {
       Uri.parse("$_baseUrl/group_chat/leave/$groupChatId"),
     );
     return response.statusCode == 200;
+  }
+
+  // POST /group_chat/{id}/picture — neues Gruppenbild hochladen. Die Datei muss
+  // VORHER durch sanitizeImageFile (EXIF raus), das macht der Aufrufer.
+  // Antwort ist die komplette Gruppen-Info ({group_chat_id, group_name,
+  // profile_picture}), wir brauchen nur die neue URL.
+  // Rueckgabe als Record, weil die UI 403 (nur der Creator darf) anders
+  // anzeigen will als einen normalen Fehler.
+  static Future<({String? url, int statusCode})> uploadGroupChatPicture(
+    int groupChatId,
+    File imageFile,
+  ) async {
+    final response = await ApiClient.uploadFile(
+      Uri.parse("$_baseUrl/group_chat/$groupChatId/picture"),
+      imageFile,
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (url: data['profile_picture'] as String?, statusCode: 200);
+    }
+    debugPrint('Gruppenbild-Upload fehlgeschlagen: ${response.statusCode} – ${response.body}');
+    return (url: null, statusCode: response.statusCode);
   }
 
   // GET /group_chat/{id}/members — aktuelle Mitglieder inkl. Username/Avatar

@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'user_api_service.dart';
 import 'onboarding/onboarding_flow.dart';
 import 'app_colors.dart';
+import 'key_restore_dialogs.dart';
+import 'key_setup.dart';
+import 'token_storage.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -27,6 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     email_editing_controller = TextEditingController();
     password_editing_controller = TextEditingController();
+    // Z.B. "Chat-Schluessel auf anderem Geraet zurueckgesetzt" nach einem
+    // Logout, den der Nutzer nicht selbst ausgeloest hat.
+    _errorMessage = KeySetup.takeLogoutNotice();
   }
 
   @override
@@ -42,21 +48,93 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
+    // Einmal festhalten: exakt diese Bytes verpacken/entpacken das Backup.
+    final password = password_editing_controller.text;
     final success = await UserApiService.login(
       email_editing_controller.text.trim(),
-      password_editing_controller.text,
+      password,
     );
-
-    if (success == true) {
-      if (!mounted) return;
-      widget.onLoginSuccess();
-    } else {
+    if (!success) {
       setState(() {
         _errorMessage = 'Ungültige E-Mail oder Passwort';
+        _isLoading = false;
       });
+      return;
     }
 
-    setState(() => _isLoading = false);
+    // E2EE-Keys VOR dem Messenger-Start sicherstellen (sonst gaebe es kein
+    // Keypair). Nur hier liegt das Passwort fuers Backup vor.
+    // try: ApiClient wirft bei Netzfehlern -> sonst haengt der Spinner und
+    // die Tokens blieben gespeichert.
+    int? userId;
+    try {
+      userId = (await UserApiService.getCurrentUser())['id'] as int?;
+    } catch (_) {}
+    final result = userId == null
+        ? KeySetupResult.error()
+        : await _resolveKeySetup(
+            await KeySetup.afterLogin(userId, password),
+            userId,
+            password,
+          );
+    if (!mounted) return;
+
+    if (result?.status == KeySetupStatus.ready) {
+      widget.onLoginSuccess();
+      return;
+    }
+    // Ohne Keys nicht in die App: Tokens wieder loeschen, sonst wuerde der
+    // naechste App-Start per Session-Restore trotzdem einloggen.
+    await TokenStorage.clearAll();
+    if (!mounted) return;
+    setState(() {
+      _errorMessage = result == null
+          ? 'Anmeldung abgebrochen.'
+          : 'Verbindung zum Server fehlgeschlagen. Bitte versuche es nochmal.';
+      _isLoading = false;
+    });
+  }
+
+  // Fuehrt durch die seltenen Dialog-Faelle, bis ready oder error rauskommt.
+  // null = der Nutzer hat abgebrochen.
+  Future<KeySetupResult?> _resolveKeySetup(
+    KeySetupResult result,
+    int userId,
+    String password,
+  ) async {
+    var wrongAttempt = false;
+    while (true) {
+      // Jede Runde folgt auf ein await -> Screen evtl. schon weg.
+      if (!mounted) return null;
+      switch (result.status) {
+        case KeySetupStatus.ready:
+        case KeySetupStatus.error:
+          return result;
+        case KeySetupStatus.needsPassword:
+          final choice = await showBackupPasswordDialog(
+            context,
+            wrongAttempt: wrongAttempt,
+          );
+          if (choice == null || !mounted) return null;
+          if (choice.isReset) {
+            // Abbruch der Bestaetigung -> zurueck zum Passwort-Dialog.
+            if (!await showResetChatsDialog(context)) continue;
+            result = await KeySetup.startFresh(userId, password);
+          } else {
+            result = await KeySetup.retryWithPassword(
+              userId,
+              result.backup!,
+              choice.password!,
+              password,
+            );
+            // Kommt wieder needsPassword, war das eingegebene falsch.
+            wrongAttempt = true;
+          }
+        case KeySetupStatus.noRecovery:
+          if (!await showResetChatsDialog(context)) return null;
+          result = await KeySetup.startFresh(userId, password);
+      }
+    }
   }
 
   @override

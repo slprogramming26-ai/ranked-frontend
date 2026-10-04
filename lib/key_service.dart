@@ -1,9 +1,16 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sodium/sodium.dart';
+// pwhash (Argon2) gibt es nur in der Sumo-API. Nativ ist das dieselbe
+// libsodium — kein Build-Unterschied, nur ein anderer Einstiegspunkt.
+import 'package:sodium/sodium_sumo.dart'
+    show SodiumSumo, SodiumSumoInit, CryptoPwhashAlgorithm;
 
 import 'api_client.dart';
+import 'key_backup.dart';
 
 // Ergebnis eines Rekey-Versuchs (POST /keys/group/{id}/rekey).
 // conflict = 409 (Mitgliederliste passt nicht ODER gleichzeitiges Rekey)
@@ -49,6 +56,9 @@ class KeyService {
 
   // Stellt sicher dass ein Keypair für [userId] existiert.
   // Generiert einen neuen falls noch keiner vorhanden ist.
+  // ACHTUNG: Nur aus KeySetup aufrufen (Login/Registrierung), NACHDEM geklaert
+  // ist, dass es kein Backup gibt — sonst ueberschreibt der neue Pubkey den
+  // alten und die Chat-History ist unlesbar.
   static Future<(String, SecureKey)> ensureKeypair(String userId) async {
     final storedPriv = await _storage.read(key: _privStorageKey(userId));
     final storedPub = await _storage.read(key: _pubStorageKey(userId));
@@ -84,6 +94,32 @@ class KeyService {
     return _secretKeyCache[userId] = sodium.secureCopy(base64.decode(stored));
   }
 
+  // Liegt fuer diesen User schon ein Keypair auf dem Geraet? (Ueberlebt Logout.)
+  static Future<bool> hasLocalKeypair(String userId) async {
+    final priv = await _storage.read(key: _privStorageKey(userId));
+    final pub = await _storage.read(key: _pubStorageKey(userId));
+    return priv != null && pub != null;
+  }
+
+  // Nur lesen, nie erzeugen — null wenn kein lokales Keypair.
+  static Future<String?> loadLocalPublicKey(String userId) =>
+      _storage.read(key: _pubStorageKey(userId));
+
+  // Schreibt ein wiederhergestelltes Keypair (aus dem Backup) unter dieselben
+  // Storage-Keys wie ensureKeypair und waermt den Cache vor.
+  static Future<void> storeKeypair(
+    String userId,
+    SecureKey privKey,
+    String pubKeyB64,
+  ) async {
+    await _storage.write(
+      key: _privStorageKey(userId),
+      value: base64.encode(privKey.extractBytes()),
+    );
+    await _storage.write(key: _pubStorageKey(userId), value: pubKeyB64);
+    _secretKeyCache[userId] = privKey;
+  }
+
   static Future<void> deleteKeypair(String userId) async {
     _secretKeyCache.remove(userId);
     await _storage.delete(key: _privStorageKey(userId));
@@ -100,6 +136,26 @@ class KeyService {
     return response.statusCode == 200 || response.statusCode == 201;
   }
   
+  // Eigener Pubkey auf dem Server = die aktuell gueltige Schluessel-
+  // Generation ("Epoch"). Anders als fetchPartnerPublicKey trennt das
+  // 404 (ok, noch keiner da -> publicKey null) von Fehlern (ok false),
+  // denn nur auf eine ECHTE Antwort duerfen wir Keys loeschen/hochladen.
+  static Future<({bool ok, String? publicKey})> fetchOwnPublicKey(
+    int userId,
+  ) async {
+    try {
+      final response = await ApiClient.get(Uri.parse('$_baseUrl/keys/$userId'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        return (ok: true, publicKey: data['public_key'] as String);
+      }
+      if (response.statusCode == 404) return (ok: true, publicKey: null);
+      return (ok: false, publicKey: null);
+    } catch (_) {
+      return (ok: false, publicKey: null);
+    }
+  }
+
   // Holt den Public Key eines anderen Nutzers vom Server.
   // Gibt null zurück wenn kein Key vorhanden (404 → noch kein E2EE-Gerät).
   static Future<String?> fetchPartnerPublicKey(int userId) async {
@@ -111,6 +167,229 @@ class KeyService {
     return null;
   }
 
+
+  //  Key-Backup: Keypair mit einem Passwort verschluesseln
+
+  // Obergrenze fuer den memlimit aus einem Backup vom Server. Ohne Deckel
+  // koennte ein kaputter/boeswilliger Server z.B. 2 GB schicken -> OOM-Crash
+  // beim Restore. Wir selbst schreiben 64 MiB (memLimitInteractive).
+  static const _maxBackupMemLimit = 256 * 1024 * 1024;
+
+  // Argon2id(password, salt) -> 32-Byte-KEK. Das ist der einzige teure Teil
+  // (~1 s, 64 MiB) und laeuft deshalb im Isolate, sonst friert die UI ein.
+  // runIsolated kann einen SecureKey sicher zurueckgeben (native Kopie),
+  // secretBox danach ist schnell und laeuft wieder im Main-Isolate.
+  // Passwort unveraendert als UTF-8 (kein trim!) — wrap und unwrap muessen
+  // exakt dieselben Bytes bekommen.
+  static Future<SecureKey> _deriveKek(
+    SodiumSumo sodium,
+    String password,
+    Uint8List salt,
+    int opsLimit,
+    int memLimit,
+  ) {
+    return sodium.runIsolated((_, _) async {
+      // Eigene Instanz: das Sodium-Objekt vom Aufrufer lebt im Main-Isolate.
+      final isoSodium = await SodiumSumoInit.init();
+      return isoSodium.crypto.pwhash(
+        outLen: isoSodium.crypto.secretBox.keyBytes,
+        password: password.toCharArray(),
+        salt: salt,
+        opsLimit: opsLimit,
+        memLimit: memLimit,
+        alg: CryptoPwhashAlgorithm.argon2id13,
+      );
+    });
+  }
+
+  // Verpackt das eigene Keypair (priv 32 + pub 32 Bytes) passwortgeschuetzt:
+  // KEK aus Passwort -> secretBox. Reine Funktion, kein Netzwerk/Storage.
+  static Future<KeyBackup> wrapKeyBackup({
+    required String password,
+    required BackupSecretType secretType,
+    required SecureKey privKey,
+    required String pubKeyB64,
+  }) async {
+    final sodium = await SodiumSumoInit.init();
+    final pwhash = sodium.crypto.pwhash;
+    final secretBox = sodium.crypto.secretBox;
+
+    // Salt bei JEDEM wrap neu: gleiches Passwort -> trotzdem anderer KEK.
+    final salt = sodium.randombytes.buf(pwhash.saltBytes);
+    final opsLimit = pwhash.opsLimitInteractive;
+    final memLimit = pwhash.memLimitInteractive;
+    final kek = await _deriveKek(sodium, password, salt, opsLimit, memLimit);
+
+    final plaintext = Uint8List.fromList([
+      ...privKey.extractBytes(),
+      ...base64.decode(pubKeyB64),
+    ]);
+    final nonce = sodium.randombytes.buf(secretBox.nonceBytes);
+    try {
+      final ciphertext = secretBox.easy(
+        message: plaintext,
+        nonce: nonce,
+        key: kek,
+      );
+      return KeyBackup(
+        secretType: secretType,
+        salt: base64.encode(salt),
+        nonce: base64.encode(nonce),
+        ciphertext: base64.encode(ciphertext),
+        opslimit: opsLimit,
+        memlimit: memLimit,
+      );
+    } finally {
+      // Klartext-Private-Key und KEK nicht laenger im Speicher halten als noetig.
+      plaintext.fillRange(0, plaintext.length, 0);
+      kek.dispose();
+    }
+  }
+
+  // Gegenstueck zu wrapKeyBackup. Reine Funktion, kein Netzwerk/Storage —
+  // was mit den Keys passiert (speichern, Cache), entscheidet der Aufrufer.
+  static Future<UnwrapResult> unwrapKeyBackup({
+    required String password,
+    required KeyBackup backup,
+  }) async {
+    final sodium = await SodiumSumoInit.init();
+    final pwhash = sodium.crypto.pwhash;
+    final secretBox = sodium.crypto.secretBox;
+    final box = sodium.crypto.box;
+
+    // 1) Decoden + Laengen pruefen, BEVOR wir eine Sekunde Argon2 verbrennen.
+    final Uint8List salt, nonce, ciphertext;
+    try {
+      salt = base64.decode(backup.salt);
+      nonce = base64.decode(backup.nonce);
+      ciphertext = base64.decode(backup.ciphertext);
+    } on FormatException {
+      return UnwrapResult.corrupt();
+    }
+    final plainLength = box.secretKeyBytes + box.publicKeyBytes;
+    if (salt.length != pwhash.saltBytes ||
+        nonce.length != secretBox.nonceBytes ||
+        ciphertext.length != plainLength + secretBox.macBytes) {
+      return UnwrapResult.corrupt();
+    }
+
+    // 2) Parameter vom Server deckeln (siehe _maxBackupMemLimit).
+    if (backup.opslimit < pwhash.opsLimitMin ||
+        backup.opslimit > pwhash.opsLimitSensitive ||
+        backup.memlimit < pwhash.memLimitMin ||
+        backup.memlimit > _maxBackupMemLimit) {
+      return UnwrapResult.corrupt();
+    }
+
+    // 3) KEK mit den GESPEICHERTEN Parametern, nicht den aktuellen
+    //    Konstanten — sonst waeren alte Backups nach einer Erhoehung unlesbar.
+    final kek = await _deriveKek(
+      sodium,
+      password,
+      salt,
+      backup.opslimit,
+      backup.memlimit,
+    );
+
+    // 4) Entschluesseln. Falsches Passwort -> falscher KEK -> MAC passt nicht
+    //    -> Sodium wirft. (Manipulierter Blob sieht genauso aus, der MAC kann
+    //    beides nicht unterscheiden.)
+    final Uint8List plaintext;
+    try {
+      plaintext = secretBox.openEasy(
+        cipherText: ciphertext,
+        nonce: nonce,
+        key: kek,
+      );
+    } on SodiumException {
+      return UnwrapResult.wrongPassword();
+    } finally {
+      kek.dispose();
+    }
+
+    try {
+      // 5) Aufteilen. sublistView = Sicht ohne Kopie, damit das fillRange
+      //    unten wirklich alle Klartext-Bytes erwischt.
+      //    ACHTUNG: Beide Views zeigen nach dem finally nur noch Nullen!
+      //    Nichts davon roh zurueckgeben — privKey wird per secureCopy
+      //    kopiert, pubKey vor dem finally zu Base64 encodiert.
+      final privKey = sodium.secureCopy(
+        Uint8List.sublistView(plaintext, 0, box.secretKeyBytes),
+      );
+      final pubKey = Uint8List.sublistView(plaintext, box.secretKeyBytes);
+
+      // 6) Gehoeren die beiden Keys zusammen?
+      if (!_keypairMatches(sodium, privKey, pubKey)) {
+        privKey.dispose();
+        return UnwrapResult.corrupt();
+      }
+      return UnwrapResult.success(privKey, base64.encode(pubKey));
+    } finally {
+      plaintext.fillRange(0, plaintext.length, 0);
+    }
+  }
+
+  // Selbsttest: Zufallswert an pubKey versiegeln, mit privKey oeffnen.
+  // Klappt das nicht, stammt der Blob nicht von einem echten Keypair.
+  static bool _keypairMatches(
+    SodiumSumo sodium,
+    SecureKey privKey,
+    Uint8List pubKey,
+  ) {
+    final box = sodium.crypto.box;
+    final probe = sodium.randombytes.buf(16);
+    try {
+      final opened = box.sealOpen(
+        cipherText: box.seal(message: probe, publicKey: pubKey),
+        publicKey: pubKey,
+        secretKey: privKey,
+      );
+      return listEquals(opened, probe);
+    } on SodiumException {
+      return false;
+    }
+  }
+
+  //  Key-Backup: REST-Endpoints (/keys/backup)
+
+  // PUT /keys/backup — Upsert, Backend antwortet immer 200 (nie 201).
+  // false bei Netzfehler/422/5xx; der Aufrufer darf dann spaeter erneut
+  // versuchen, das Keypair lokal ist davon nicht betroffen.
+  static Future<bool> uploadBackup(KeyBackup backup) async {
+    try {
+      final response = await ApiClient.put(
+        Uri.parse('$_baseUrl/keys/backup'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(backup.toJson()),
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // GET /keys/backup — nur das eigene Backup.
+  // Nur ein echtes 404 heisst "kein Backup". Alles Unerwartete (auch Netz-
+  // Exceptions, die ApiClient durchreicht, oder ein Body, der nicht parst)
+  // wird zu error — im Zweifel lieber Restore abbrechen als neues Keypair.
+  static Future<FetchBackupResult> fetchBackup() async {
+    try {
+      final response = await ApiClient.get(Uri.parse('$_baseUrl/keys/backup'));
+      switch (response.statusCode) {
+        case 200:
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          return FetchBackupResult.found(KeyBackup.fromJson(data));
+        case 404:
+          return FetchBackupResult.none();
+        case 429:
+          return FetchBackupResult.rateLimited();
+        default:
+          return FetchBackupResult.error();
+      }
+    } catch (_) {
+      return FetchBackupResult.error();
+    }
+  }
 
   //  Gruppen-E2EE: lokale Speicherung der Epochen-Schlüssel
 

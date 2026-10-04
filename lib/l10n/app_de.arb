@@ -1,0 +1,8 @@
+{
+  "@@locale": "de",
+
+  "appTitle": "ranked",
+  "@appTitle": {
+    "description": "App-Name im Task-Switcher"
+  }
+}

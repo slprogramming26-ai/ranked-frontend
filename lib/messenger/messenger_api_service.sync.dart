@@ -122,6 +122,41 @@ extension MessengerSync on MessengerApiService {
         );
   }
 
+  // Discovery-Variante von _ensureGroupOpenChat: die Daten kommen hier von
+  // /group_chat/my, der Server ist also die Wahrheit -> bestehende Eintraege
+  // werden angeglichen (z.B. neues Gruppenbild, das ein anderes Mitglied
+  // hochgeladen hat).
+  // Bewusst getrennt von _ensureGroupOpenChat: der WS-Pfad ruft das nur mit
+  // der ID auf, dort heisst null "unbekannt" — hier heisst null "kein Bild".
+  Future<void> _upsertGroupFromServer(
+    ({int id, String? name, String? avatarUrl}) g,
+  ) async {
+    final existing =
+        await (_db.select(_db.openChats)..where(
+              (t) => t.id.equals(g.id) & t.isGroupChat.equals(true),
+            ))
+            .getSingleOrNull();
+    if (existing == null) {
+      await _ensureGroupOpenChat(g.id, name: g.name, avatarUrl: g.avatarUrl);
+      return;
+    }
+
+    final name = g.name ?? 'Gruppe ${g.id}';
+    // Nur schreiben, wenn sich wirklich was geaendert hat: jedes write feuert
+    // die watch()-Streams und damit einen Rebuild der Chatliste.
+    if (existing.username == name && existing.avatarUrl == g.avatarUrl) return;
+
+    await (_db.update(_db.openChats)..where(
+          (t) => t.id.equals(g.id) & t.isGroupChat.equals(true),
+        ))
+        .write(
+          OpenChatsCompanion(
+            username: Value(name),
+            avatarUrl: Value(g.avatarUrl),
+          ),
+        );
+  }
+
   // Holt fuer ALLE bekannten Chats das nach (DMs + jede Gruppe), ausgehend vom
   // jeweils gespeicherten SyncMarker. Wird beim (Re)connect aufgerufen.
   Future<void> _syncAll() async {
@@ -135,7 +170,7 @@ extension MessengerSync on MessengerApiService {
     // dagegen direkt aus dem globalen /messages/-Endpoint.
     final myGroups = await MessengerApiService.fetchMyGroups();
     for (final g in myGroups) {
-      await _ensureGroupOpenChat(g.id, name: g.name, avatarUrl: g.avatarUrl);
+      await _upsertGroupFromServer(g);
     }
 
     final groups = await (_db.select(

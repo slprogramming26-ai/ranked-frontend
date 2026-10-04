@@ -14,6 +14,7 @@ import 'steps/age_step.dart';
 import 'steps/credentials_step.dart';
 import 'steps/vibe_step.dart';
 import 'steps/welcome_step.dart';
+import 'package:ranked/key_setup.dart';
 
 class OnboardingFlow extends StatefulWidget {
   const OnboardingFlow({super.key});
@@ -182,6 +183,17 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         .where((e) => e.value)
         .map((e) => e.key)
         .toList();
+
+    try {
+      // E2EE: Nur hier (und beim Login) liegt das Passwort fürs Backup vor.
+      final userId = (await UserApiService.getCurrentUser())['id'] as int?;
+      if (userId != null) {
+        await KeySetup.afterRegistration(userId, _passwordController.text);
+      }
+    } catch (e) {
+      debugPrint('[E2EE] Key-Setup nach Registrierung fehlgeschlagen: $e');
+    }
+
     try {
       String imageUrl = "";
       if (_finalImageFile != null) {
@@ -270,6 +282,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 messages: [
                   'Creating your account...',
                   'Signing you in...',
+                  'Securing your chats...',
                   'Uploading your photo...',
                   'Almost there...',
                 ],

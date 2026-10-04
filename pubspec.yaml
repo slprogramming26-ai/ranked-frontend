@@ -30,6 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Material/Cupertino-Texte (Buttons, DatePicker…) in DE/EN.
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.8
   google_fonts: ^8.1.0
   http: ^1.6.0
@@ -87,6 +90,8 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  # gen-l10n laeuft bei jedem build/run (siehe l10n.yaml).
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

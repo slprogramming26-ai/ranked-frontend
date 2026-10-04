@@ -7,12 +7,18 @@
 //             schon mit) + "Gruppe verlassen"
 // =============================================================================
 
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide Column;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../app_colors.dart';
+import '../image_sanitizer.dart';
+import '../local_data/database.dart';
 import '../net_image.dart';
 import '../post/widgets/share_sheet.dart';
 import '../profile.dart';
@@ -161,11 +167,101 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
   late final Future<List<({int id, String username, String? avatarUrl})>>
   _membersFuture;
 
+  // Eigene Kopie der Avatar-URL: widget.conversation ist final, nach einem
+  // Upload soll das Sheet das neue Bild aber sofort zeigen.
+  late String? _avatarUrl = widget.conversation.avatarUrl;
+  bool _uploadingPicture = false;
+
   @override
   void initState() {
     super.initState();
     _membersFuture = MessengerApiService.fetchGroupMembers(
       widget.conversation.groupChatId,
+    );
+  }
+
+  Future<void> _changeGroupPicture() async {
+    if (_uploadingPicture) return;
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Picker skaliert nativ runter (Backend lehnt >20 MP ab, siehe
+    // about_me_step.dart). Den Rest macht sanitizeImageFile.
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+
+    setState(() => _uploadingPicture = true);
+
+    // 1) EXIF/GPS raus im Hintergrund-Isolate. Kein Fallback aufs Original.
+    final cleanPath = await compute(
+      sanitizeImageFile,
+      (path: picked.path, maxSize: 1024, quality: 85),
+    );
+    if (!mounted) return;
+    if (cleanPath == null) {
+      setState(() => _uploadingPicture = false);
+      _showSnack(messenger, 'Bild konnte nicht verarbeitet werden.');
+      return;
+    }
+
+    // 2) Hochladen.
+    final groupId = widget.conversation.groupChatId;
+    final result = await MessengerApiService.uploadGroupChatPicture(
+      groupId,
+      File(cleanPath),
+    );
+    if (!mounted) return;
+
+    final url = result.url;
+    if (url == null) {
+      setState(() => _uploadingPicture = false);
+      _showSnack(
+        messenger,
+        result.statusCode == 403
+            ? 'Nur der Ersteller der Gruppe kann das Bild ändern.'
+            : 'Upload fehlgeschlagen. Versuch es erneut.',
+      );
+      return;
+    }
+
+    // 3) Lokal in Drift speichern -> Chatliste (watchAllContacts) zieht
+    // automatisch nach. Nur avatarUrl anfassen, der Rest bleibt.
+    final db = widget.conversation.db;
+    await (db.update(db.openChats)..where(
+          (t) => t.id.equals(groupId) & t.isGroupChat.equals(true),
+        ))
+        .write(OpenChatsCompanion(avatarUrl: Value(url)));
+    if (!mounted) return;
+
+    setState(() {
+      _avatarUrl = url;
+      _uploadingPicture = false;
+    });
+    _showSnack(messenger, 'Gruppenbild aktualisiert.', error: false);
+  }
+
+  void _showSnack(
+    ScaffoldMessengerState messenger,
+    String text, {
+    bool error = true,
+  }) {
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: error ? AppColors.primary : AppColors.onSurface,
+        content: Text(
+          text,
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 
@@ -298,10 +394,56 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
             children: [
               const _DragHandle(),
               const SizedBox(height: 16),
-              _BigAvatar(
-                name: widget.conversation.title,
-                avatarUrl: widget.conversation.avatarUrl,
-                isGroup: true,
+              // Tap -> neues Gruppenbild. Kamera-Badge zeigt, dass es geht;
+              // waehrend des Uploads liegt ein Spinner ueber dem Avatar.
+              GestureDetector(
+                onTap: _changeGroupPicture,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    _BigAvatar(
+                      name: widget.conversation.title,
+                      avatarUrl: _avatarUrl,
+                      isGroup: true,
+                    ),
+                    if (_uploadingPicture)
+                      Container(
+                        width: 84,
+                        height: 84,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.35),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.all(28),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primary,
+                          border: Border.all(
+                            color: AppColors.surface,
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_rounded,
+                          size: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 12),
               Text(

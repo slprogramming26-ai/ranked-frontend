@@ -22,23 +22,27 @@ extension MessengerSend on MessengerApiService {
       return;
     }
 
-    // Eigenen Secret Key laden und verschlüsseln
+    // Eigenen Secret Key laden. Fehlt er, wird NICHT gesendet — frueher gab
+    // es hier einen Klartext-Fallback, der die Nachricht unverschluesselt
+    // ueber den Server geschickt haette. Seit Keys nur noch beim Login
+    // entstehen (KeySetup), ist "kein eigener Key" ein realer Zustand.
     final mySecretKey = await KeyService.getSecretKey(_myUserId.toString());
-    String wireMessage = message; // Fallback Klartext falls eigener Key fehlt
-    if (mySecretKey != null) {
-      final sodium = await SodiumInit.init();
-      final nonce = sodium.randombytes.buf(sodium.crypto.box.nonceBytes);
-      final cipher = sodium.crypto.box.easy(
-        message: Uint8List.fromList(utf8.encode(message)),
-        nonce: nonce,
-        publicKey: base64.decode(partnerPubKeyB64),
-        secretKey: mySecretKey,
-      );
-      final combined = Uint8List(nonce.length + cipher.length)
-        ..setAll(0, nonce)
-        ..setAll(nonce.length, cipher);
-      wireMessage = 'v1:${base64.encode(combined)}';
+    if (mySecretKey == null) {
+      debugPrint('[E2EE] Eigener Key fehlt — Versand blockiert');
+      return;
     }
+    final sodium = await SodiumInit.init();
+    final nonce = sodium.randombytes.buf(sodium.crypto.box.nonceBytes);
+    final cipher = sodium.crypto.box.easy(
+      message: Uint8List.fromList(utf8.encode(message)),
+      nonce: nonce,
+      publicKey: base64.decode(partnerPubKeyB64),
+      secretKey: mySecretKey,
+    );
+    final combined = Uint8List(nonce.length + cipher.length)
+      ..setAll(0, nonce)
+      ..setAll(nonce.length, cipher);
+    final wireMessage = 'v1:${base64.encode(combined)}';
 
     _channel?.sink.add(
       jsonEncode({

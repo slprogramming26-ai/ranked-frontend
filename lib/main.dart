@@ -30,6 +30,8 @@ import 'floating_nav.dart';
 import 'splash_screen.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:ranked/route_observer.dart';
+import 'package:ranked/l10n/app_localizations.dart';
+import 'package:ranked/l10n/l10n.dart';
 
 Future<void> main() async {
   // Haelt den nativen OS-Splash fest, bis Flutter seinen ersten Frame fertig
@@ -120,7 +122,15 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, _) {
         AppColors.isDark = themeProvider.isDark;
         return MaterialApp(
-          title: 'Flutter Demo',
+          // onGenerateTitle statt title: der Titel kommt aus den ARBs und
+          // braucht dafuer einen context UNTER den Localizations.
+          onGenerateTitle: (context) => context.l10n.appTitle,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          // VORERST fest auf Deutsch: der Rest der App ist noch hartkodiert,
+          // sonst waeren auf englischen Geraeten nur die migrierten Teile
+          // englisch. Wird spaeter durch den LocaleProvider ersetzt.
+          locale: const Locale('de'),
           theme: ThemeData(
             useMaterial3: true,
             brightness: themeProvider.isDark

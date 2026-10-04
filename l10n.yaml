@@ -1,0 +1,7 @@
+# gen-l10n: erzeugt lib/l10n/app_localizations*.dart aus den ARB-Dateien.
+# Deutsch ist die Quelle (Template): neue Keys IMMER zuerst in app_de.arb.
+arb-dir: lib/l10n
+template-arb-file: app_de.arb
+output-localization-file: app_localizations.dart
+# Ohne das waere AppLocalizations.of(context) nullable -> ueberall '!' noetig.
+nullable-getter: false

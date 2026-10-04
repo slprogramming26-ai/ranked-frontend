@@ -16,7 +16,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ranked/local_data/database.dart';
 import 'messenger_api_service.dart';
+import '../api_client.dart';
 import '../key_service.dart';
+import '../key_setup.dart';
 
 class MessengerController extends ChangeNotifier with WidgetsBindingObserver {
   MessengerApiService? _service;
@@ -48,14 +50,43 @@ class MessengerController extends ChangeNotifier with WidgetsBindingObserver {
     // Lebenszeit, unabhaengig von spaeteren (Re)connects.
     _subscription = _service!.incoming.listen(_handleEvent);
     _service!.connect().then((_) => notifyListeners());
-    // E2EE: Keypair sicherstellen + hochladen, parallel zu connect
-    KeyService.ensureKeypair(userId.toString()).then((result) async {
-      final (pubKey, _) = result;
-      await KeyService.uploadPublicKey(pubKey);
-    }).catchError((_) {
-      debugPrint('[E2EE] Keypair/Upload fehlgeschlagen');
+    // E2EE: lokalen Pubkey mit dem Server abgleichen, parallel zu connect
+    _checkOwnPublicKey(userId).catchError((_) {
+      debugPrint('[E2EE] Pubkey-Abgleich fehlgeschlagen');
     });
     notifyListeners();
+  }
+
+  // Erzeugt NIE ein Keypair — das macht nur KeySetup beim Login (hier, z.B.
+  // beim Session-Restore, gibt es kein Passwort fuer das Backup).
+  // Der Server-Pubkey ist die aktuelle Schluessel-Generation:
+  //   404       -> noch keiner da, unseren hochladen
+  //   gleich    -> alles aktuell
+  //   anders    -> auf einem anderen Geraet wurde "Chats zuruecksetzen"
+  //                gewaehlt, unser Key ist veraltet. NICHT hochladen (das waere
+  //                das alte Ping-Pong), sondern lokal loeschen + ausloggen;
+  //                beim naechsten Login holt KeySetup den neuen aus dem Backup.
+  //   Fehler    -> nichts tun, beim naechsten Start wieder pruefen.
+  Future<void> _checkOwnPublicKey(int userId) async {
+    final uid = userId.toString();
+    final localPub = await KeyService.loadLocalPublicKey(uid);
+    if (localPub == null) {
+      debugPrint('[E2EE] Kein lokales Keypair — entsteht nur beim Login');
+      return;
+    }
+    final server = await KeyService.fetchOwnPublicKey(userId);
+    if (!server.ok) return;
+    if (server.publicKey == null) {
+      await KeyService.uploadPublicKey(localPub);
+    } else if (server.publicKey != localPub) {
+      debugPrint('[E2EE] Lokaler Key veraltet -> Keypair loeschen + Logout');
+      await KeyService.deleteKeypair(uid);
+      KeySetup.setLogoutNotice(
+        'Deine Chat-Schlüssel wurden auf einem anderen Gerät zurückgesetzt. '
+        'Bitte melde dich neu an.',
+      );
+      await ApiClient.logout();
+    }
   }
 
   // Flutter ruft das bei jedem Wechsel des App-Zustands auf. Uns interessiert
