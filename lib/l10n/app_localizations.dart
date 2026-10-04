@@ -103,6 +103,132 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'ranked'**
   String get appTitle;
+
+  /// Melde-Grund: Spam
+  ///
+  /// In de, this message translates to:
+  /// **'Spam'**
+  String get reportReasonSpam;
+
+  /// Melde-Grund: Belästigung
+  ///
+  /// In de, this message translates to:
+  /// **'Belästigung oder Mobbing'**
+  String get reportReasonHarassment;
+
+  /// Melde-Grund: unangemessener Inhalt
+  ///
+  /// In de, this message translates to:
+  /// **'Unangemessener Inhalt'**
+  String get reportReasonInappropriate;
+
+  /// Melde-Grund: Falschinformation
+  ///
+  /// In de, this message translates to:
+  /// **'Falschinformation'**
+  String get reportReasonMisinformation;
+
+  /// Melde-Grund: Sonstiges
+  ///
+  /// In de, this message translates to:
+  /// **'Sonstiges'**
+  String get reportReasonOther;
+
+  /// Titel des Melde-Sheets für einen Post
+  ///
+  /// In de, this message translates to:
+  /// **'Post melden'**
+  String get reportTitlePost;
+
+  /// Titel des Melde-Sheets für eine Story
+  ///
+  /// In de, this message translates to:
+  /// **'Story melden'**
+  String get reportTitleStory;
+
+  /// Titel des Melde-Sheets für einen Kommentar
+  ///
+  /// In de, this message translates to:
+  /// **'Kommentar melden'**
+  String get reportTitleComment;
+
+  /// Titel des Melde-Sheets für ein Profil
+  ///
+  /// In de, this message translates to:
+  /// **'Profil melden'**
+  String get reportTitleUser;
+
+  /// Snackbar nach erfolgreichem Melden eines Posts
+  ///
+  /// In de, this message translates to:
+  /// **'Danke! Der Post wird dir nicht mehr angezeigt.'**
+  String get reportSuccessPost;
+
+  /// Snackbar nach erfolgreichem Melden einer Story
+  ///
+  /// In de, this message translates to:
+  /// **'Danke! Die Story wird dir nicht mehr angezeigt.'**
+  String get reportSuccessStory;
+
+  /// Snackbar nach erfolgreichem Melden eines Kommentars
+  ///
+  /// In de, this message translates to:
+  /// **'Danke! Der Kommentar wird dir nicht mehr angezeigt.'**
+  String get reportSuccessComment;
+
+  /// Snackbar nach erfolgreichem Melden eines Profils
+  ///
+  /// In de, this message translates to:
+  /// **'Danke! Wir schauen uns das an.'**
+  String get reportSuccessUser;
+
+  /// Snackbar bei 409: Post schon gemeldet
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast diesen Post bereits gemeldet.'**
+  String get reportAlreadyPost;
+
+  /// Snackbar bei 409: Story schon gemeldet
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast diese Story bereits gemeldet.'**
+  String get reportAlreadyStory;
+
+  /// Snackbar bei 409: Kommentar schon gemeldet
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast diesen Kommentar bereits gemeldet.'**
+  String get reportAlreadyComment;
+
+  /// Snackbar bei 409: Profil schon gemeldet
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast dieses Profil bereits gemeldet.'**
+  String get reportAlreadyUser;
+
+  /// Platzhalter im Details-Feld des Melde-Sheets
+  ///
+  /// In de, this message translates to:
+  /// **'Was ist passiert? (optional)'**
+  String get reportDetailsHint;
+
+  /// Button im Melde-Sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Senden'**
+  String get reportSend;
+
+  /// Snackbar bei Netzwerk-/Serverfehler beim Melden
+  ///
+  /// In de, this message translates to:
+  /// **'Melden fehlgeschlagen. Versuch es später erneut.'**
+  String get reportFailed;
+
+  /// Snackbar, wenn das Loeschen des eigenen Posts scheitert
+  ///
+  /// In de, this message translates to:
+  /// **'Löschen fehlgeschlagen. Versuch es später erneut.'**
+  String get postDeleteFailed;
 }
 
 class _AppLocalizationsDelegate

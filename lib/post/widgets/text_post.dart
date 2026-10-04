@@ -8,13 +8,16 @@ import 'package:provider/provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'dart:ui';
 import '../../app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../local_data/database.dart';
 import '../../net_image.dart';
 import '../../messenger/messenger_controller.dart';
-import '../../user_api_service.dart';
+import '../../moderation/report_sheet.dart';
+import '../../moderation/report_target.dart';
 import '../post_provider.dart';
 import '../comment_provider.dart';
 import '../post_api_service.dart';
+import 'collapse_out.dart';
 import 'comment.dart';
 import 'feed_image.dart';
 import 'share_sheet.dart';
@@ -65,9 +68,19 @@ class _TextPostState extends State<TextPost>
   // Steuert die "Burst"-Animation beim Doppeltipp auf den Post.
   late AnimationController _burstController;
 
+  // true = der Post klappt gerade weg (gemeldet oder geloescht). Am Ende
+  // der Animation fliegt er per hidePost wirklich aus dem Feed.
+  bool _hiding = false;
+
+  // Schon in initState gegriffen: hidePost kann aus CollapseOut.dispose
+  // kommen, wenn der context schon tot ist (User scrollt waehrend der
+  // Animation weg).
+  late final PostProvider _postProvider;
+
   @override
   void initState() {
     super.initState();
+    _postProvider = context.read<PostProvider>();
     commentController = TextEditingController();
     _burstController = AnimationController(
       vsync: this,
@@ -200,10 +213,23 @@ class _TextPostState extends State<TextPost>
                                 ),
                               );
                             }
+                            // Notifier JETZT greifen, nicht erst im Callback:
+                            // onHidden kann laufen, nachdem das Sheet zu ist,
+                            // und ein ref von einem entsorgten Consumer wirft.
+                            // Der Notifier selbst lebt per cacheFor weiter.
+                            final notifier = ref.read(
+                              commentsProvider(widget.post_id).notifier,
+                            );
                             return ListView(
                               padding: const EdgeInsets.only(bottom: 20),
                               children: comments.map((commentData) {
                                 return Comment(
+                                  // Key = id: sonst erbt nach dem Entfernen
+                                  // der NAECHSTE Kommentar den eingeklappten
+                                  // State und wird unsichtbar.
+                                  key: ValueKey(commentData['id']),
+                                  onHidden: () =>
+                                      notifier.hide(commentData['id']),
                                   commentId: commentData['id'],
                                   comment: commentData['comment'],
                                   username:
@@ -306,7 +332,13 @@ class _TextPostState extends State<TextPost>
   Widget build(BuildContext context) {
     // Hier kommt das restliche UI aus meiner vorherigen Antwort rein (Container, Card, Hype Button etc.)
     // WICHTIG: Beim Kommentar-Button einfach showCommentSection(context) aufrufen!
-    return _buildPostCard(context); // Wrapper für das Design von eben
+    // id lokal festhalten: der Callback kann nach dispose laufen.
+    final id = widget.post_id;
+    return CollapseOut(
+      collapsed: _hiding,
+      onCollapsed: () => _postProvider.hidePost(id),
+      child: _buildPostCard(context),
+    );
   }
 
   // Das ist der visuelle Teil von eben, nur sauber verpackt:
@@ -541,11 +573,9 @@ class _TextPostState extends State<TextPost>
                       text: 'Delete Post',
                       color: AppColors.primary,
                       isBold: true,
-                      onTap: () async {
-                        final success = await PostApiService.deletePost(
-                          widget.post_id,
-                        );
-                        Navigator.pop(context);
+                      onTap: () {
+                        Navigator.pop(context); // Mini-Menue sofort zu
+                        _deletePost();
                       },
                     ),
                   ] else ...[
@@ -557,7 +587,7 @@ class _TextPostState extends State<TextPost>
                       isBold: true,
                       onTap: () {
                         Navigator.pop(context); // Mini-Menue schliessen
-                        showReportSheet(context); // Grund-Sheet oeffnen
+                        _reportPost();
                       },
                     ),
                   ],
@@ -606,118 +636,37 @@ class _TextPostState extends State<TextPost>
     );
   }
 
-  // Grund-Sheet: zeigt die festen Melde-Gruende. Tap auf einen Grund
-  // schliesst das Sheet und schickt den Report ab.
-  void showReportSheet(BuildContext context) {
-    const reasons = [
-      'Spam',
-      'Belästigung oder Mobbing',
-      'Unangemessener Inhalt',
-      'Falschinformation',
-      'Sonstiges',
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.3),
-      builder: (sheetContext) {
-        return Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle-Bar
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Text(
-                  "Post melden",
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-              ),
-              ...reasons.map(
-                (reason) => Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.pop(sheetContext); // Sheet zu
-                      _sendReport(reason);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 16,
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              reason,
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.onSurface,
-                              ),
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Etwas Luft nach unten (Gestenleiste / Safe Area).
-              SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
-            ],
-          ),
-        );
-      },
+  // Melden: das gemeinsame Sheet aus lib/moderation. true kommt sofort nach
+  // "Senden" (gesendet wird im Hintergrund), also klappt der Post direkt weg.
+  Future<void> _reportPost() async {
+    // Vor dem await greifen, danach kann der context weg sein.
+    final tracker = context.read<ImpressionTracker>();
+    final id = widget.post_id;
+    final reported = await showReportSheet(
+      context,
+      target: ReportTarget.post,
+      id: id,
     );
+    if (!reported) return;
+    tracker.markEngaged(id, ImpressionEngagement.reported);
+    // Weggescrollt, waehrend das Sheet offen war: ohne Animation entfernen.
+    if (!mounted) return _postProvider.hidePost(id);
+    setState(() => _hiding = true);
   }
 
-  // Schickt den Report ans Backend und gibt Feedback per Snackbar.
-  Future<void> _sendReport(String reason) async {
-    // Vor dem await und ohne Status-Pruefung: melden WOLLEN ist das Signal.
-    // Ob das Backend 201 oder 409 ("hast du schon") antwortet, aendert an der
-    // Absicht des Users nichts.
-    context
-        .read<ImpressionTracker>()
-        .markEngaged(widget.post_id, ImpressionEngagement.reported);
-    // Messenger vor dem await greifen — danach koennte der context weg sein.
+  // Loeschen: erst nach Server-OK wegklappen (anders als Melden). Ein
+  // geloeschter Post, der wieder auftaucht, waere schlimmer als kurz warten.
+  Future<void> _deletePost() async {
     final messenger = ScaffoldMessenger.of(context);
-    final status = await UserApiService.report(widget.post_id, "post", reason);
-
-    final String message;
-    if (status == 201) {
-      message = "Danke! Wir schauen uns das an.";
-    } else if (status == 409) {
-      message = "Du hast diesen Post bereits gemeldet.";
-    } else {
-      message = "Melden fehlgeschlagen. Versuch es später erneut.";
+    final failedText = context.l10n.postDeleteFailed;
+    final id = widget.post_id;
+    final success = await PostApiService.deletePost(id);
+    if (!success) {
+      messenger.showSnackBar(SnackBar(content: Text(failedText)));
+      return;
     }
-
-    if (!mounted) return;
-    messenger.showSnackBar(SnackBar(content: Text(message)));
+    if (!mounted) return _postProvider.hidePost(id);
+    setState(() => _hiding = true);
   }
 
   Widget _avatarFallback(String name) => Container(

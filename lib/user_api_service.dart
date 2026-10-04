@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'token_storage.dart';
 import 'api_client.dart';
+import 'moderation/report_reason.dart';
+import 'moderation/report_target.dart';
 
 class UserApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
@@ -193,11 +195,20 @@ class UserApiService {
 
   // Gibt den HTTP-Status zurueck, damit der Aufrufer 201 (ok) von
   // 409 (schon gemeldet) und echten Fehlern unterscheiden kann.
-  static Future<int> report(int postId, String type, String reason) async  {
-    final response = await ApiClient.post(Uri.parse('$baseUrl/report/$type/$postId'),
+  static Future<int> report(
+    ReportTarget target,
+    int id,
+    ReportReason reason, {
+    String? details,
+  }) async {
+    final trimmed = details?.trim();
+    final response = await ApiClient.post(
+      Uri.parse('$baseUrl/report/${target.apiValue}/$id'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'reason': reason,
+        'reason': reason.apiValue,
+        // Backend will 1-500 Zeichen: leerer String waere 422 -> dann weglassen.
+        if (trimmed != null && trimmed.isNotEmpty) 'details': trimmed,
       }),
     );
     return response.statusCode;

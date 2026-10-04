@@ -1,5 +1,31 @@
 {
   "@@locale": "en",
 
-  "appTitle": "ranked"
+  "appTitle": "ranked",
+
+  "reportReasonSpam": "Spam",
+  "reportReasonHarassment": "Harassment or bullying",
+  "reportReasonInappropriate": "Inappropriate content",
+  "reportReasonMisinformation": "Misinformation",
+  "reportReasonOther": "Other",
+
+  "reportTitlePost": "Report post",
+  "reportTitleStory": "Report story",
+  "reportTitleComment": "Report comment",
+  "reportTitleUser": "Report profile",
+
+  "reportSuccessPost": "Thanks! You won't see this post anymore.",
+  "reportSuccessStory": "Thanks! You won't see this story anymore.",
+  "reportSuccessComment": "Thanks! You won't see this comment anymore.",
+  "reportSuccessUser": "Thanks! We'll look into it.",
+
+  "reportAlreadyPost": "You already reported this post.",
+  "reportAlreadyStory": "You already reported this story.",
+  "reportAlreadyComment": "You already reported this comment.",
+  "reportAlreadyUser": "You already reported this profile.",
+
+  "reportDetailsHint": "What happened? (optional)",
+  "reportSend": "Send",
+  "reportFailed": "Report failed. Please try again later.",
+  "postDeleteFailed": "Couldn't delete the post. Please try again later."
 }

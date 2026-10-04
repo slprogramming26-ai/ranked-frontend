@@ -4,5 +4,94 @@
   "appTitle": "ranked",
   "@appTitle": {
     "description": "App-Name im Task-Switcher"
+  },
+
+  "reportReasonSpam": "Spam",
+  "@reportReasonSpam": {
+    "description": "Melde-Grund: Spam"
+  },
+  "reportReasonHarassment": "Belästigung oder Mobbing",
+  "@reportReasonHarassment": {
+    "description": "Melde-Grund: Belästigung"
+  },
+  "reportReasonInappropriate": "Unangemessener Inhalt",
+  "@reportReasonInappropriate": {
+    "description": "Melde-Grund: unangemessener Inhalt"
+  },
+  "reportReasonMisinformation": "Falschinformation",
+  "@reportReasonMisinformation": {
+    "description": "Melde-Grund: Falschinformation"
+  },
+  "reportReasonOther": "Sonstiges",
+  "@reportReasonOther": {
+    "description": "Melde-Grund: Sonstiges"
+  },
+
+  "reportTitlePost": "Post melden",
+  "@reportTitlePost": {
+    "description": "Titel des Melde-Sheets für einen Post"
+  },
+  "reportTitleStory": "Story melden",
+  "@reportTitleStory": {
+    "description": "Titel des Melde-Sheets für eine Story"
+  },
+  "reportTitleComment": "Kommentar melden",
+  "@reportTitleComment": {
+    "description": "Titel des Melde-Sheets für einen Kommentar"
+  },
+  "reportTitleUser": "Profil melden",
+  "@reportTitleUser": {
+    "description": "Titel des Melde-Sheets für ein Profil"
+  },
+
+  "reportSuccessPost": "Danke! Der Post wird dir nicht mehr angezeigt.",
+  "@reportSuccessPost": {
+    "description": "Snackbar nach erfolgreichem Melden eines Posts"
+  },
+  "reportSuccessStory": "Danke! Die Story wird dir nicht mehr angezeigt.",
+  "@reportSuccessStory": {
+    "description": "Snackbar nach erfolgreichem Melden einer Story"
+  },
+  "reportSuccessComment": "Danke! Der Kommentar wird dir nicht mehr angezeigt.",
+  "@reportSuccessComment": {
+    "description": "Snackbar nach erfolgreichem Melden eines Kommentars"
+  },
+  "reportSuccessUser": "Danke! Wir schauen uns das an.",
+  "@reportSuccessUser": {
+    "description": "Snackbar nach erfolgreichem Melden eines Profils"
+  },
+
+  "reportAlreadyPost": "Du hast diesen Post bereits gemeldet.",
+  "@reportAlreadyPost": {
+    "description": "Snackbar bei 409: Post schon gemeldet"
+  },
+  "reportAlreadyStory": "Du hast diese Story bereits gemeldet.",
+  "@reportAlreadyStory": {
+    "description": "Snackbar bei 409: Story schon gemeldet"
+  },
+  "reportAlreadyComment": "Du hast diesen Kommentar bereits gemeldet.",
+  "@reportAlreadyComment": {
+    "description": "Snackbar bei 409: Kommentar schon gemeldet"
+  },
+  "reportAlreadyUser": "Du hast dieses Profil bereits gemeldet.",
+  "@reportAlreadyUser": {
+    "description": "Snackbar bei 409: Profil schon gemeldet"
+  },
+
+  "reportDetailsHint": "Was ist passiert? (optional)",
+  "@reportDetailsHint": {
+    "description": "Platzhalter im Details-Feld des Melde-Sheets"
+  },
+  "reportSend": "Senden",
+  "@reportSend": {
+    "description": "Button im Melde-Sheet"
+  },
+  "reportFailed": "Melden fehlgeschlagen. Versuch es später erneut.",
+  "@reportFailed": {
+    "description": "Snackbar bei Netzwerk-/Serverfehler beim Melden"
+  },
+  "postDeleteFailed": "Löschen fehlgeschlagen. Versuch es später erneut.",
+  "@postDeleteFailed": {
+    "description": "Snackbar, wenn das Loeschen des eigenen Posts scheitert"
   }
 }

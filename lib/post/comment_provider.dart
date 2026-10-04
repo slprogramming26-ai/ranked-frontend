@@ -55,8 +55,41 @@ import 'post_api_service.dart';
 /// wiederkommt, bekommt frische Daten. Der Wert ist bewusst grosszuegiger als
 /// die gefuehlte "ausversehen geschlossen"-Sekunde — der haeufige Fall ist
 /// zwei Posts weiterscrollen und zurueck, und das dauert laenger.
-final commentsProvider =
-    FutureProvider.autoDispose.family<List<Map<String, dynamic>>, int>((ref, postId) {
-  ref.cacheFor(const Duration(seconds: 45));
-  return PostApiService.getComments(postId);
-});
+///
+/// Ein Notifier statt FutureProvider, weil wir die Liste jetzt auch lokal
+///AENDERN muessen (gemeldeten Kommentar ausblenden). Ein FutureProvider kann
+///  nur laden, ein Notifier hat zusaetzlich eigene Methoden
+
+class CommentsNotifier extends AsyncNotifier<List<Map<String, dynamic>>> {
+  CommentsNotifier(this.postId);
+
+  final int postId;
+
+  // Lokal ausgeblendete Kommentare. Ueberlebt invalidate (Riverpod ruft dann
+  // nur build() neu auf demselben Objekt auf), stirbt erst mit autoDispose.
+  // Schuetzt davor, dass ein Neuladen den Kommentar zurueckholt, bevor der
+  // Report im Hintergrund beim Server angekommen ist.
+  final Set<int> _hiddenIds = {};
+
+  @override
+  Future<List<Map<String, dynamic>>> build() async {
+    ref.cacheFor(const Duration(seconds: 45));
+    final comments = await PostApiService.getComments(postId);
+    return comments.where((c) => !_hiddenIds.contains(c['id'])).toList();
+  }
+
+  // Gemeldeten Kommentar lokal rausnehmen, OHNE neu zu laden.
+  void hide(int commentId) {
+    _hiddenIds.add(commentId);
+    final current = state.value;
+    if (current == null) return; // laedt noch / Fehler: build() filtert dann
+    // NEUE Liste: Riverpod merkt nur ein neues Objekt (wie notifyListeners).
+    state = AsyncData(current.where((c) => c['id'] != commentId).toList());
+  }
+}
+
+  final commentsProvider = AsyncNotifierProvider.autoDispose
+      .family<CommentsNotifier, List<Map<String, dynamic>>, int>(
+        CommentsNotifier.new,
+      );
+
