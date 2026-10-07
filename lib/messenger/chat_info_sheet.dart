@@ -17,6 +17,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../app_colors.dart';
+import '../confirm_dialog.dart';
 import '../image_sanitizer.dart';
 import '../local_data/database.dart';
 import '../net_image.dart';
@@ -26,6 +27,7 @@ import '../user_api_service.dart';
 import 'conversation.dart';
 import 'messenger_api_service.dart';
 import 'messenger_controller.dart';
+import 'package:ranked/l10n/l10n.dart';
 
 /// Einstiegspunkt: entscheidet anhand des Conversation-Typs, welches Sheet
 /// gezeigt wird. Wird vom ChatScreen-Header aufgerufen.
@@ -68,15 +70,15 @@ class _DmInfoSheet extends StatelessWidget {
     // darf context nicht mehr benutzt werden (Sheet könnte weggewischt sein).
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
+    final l10n = context.l10n;
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => _ConfirmDialog(
+      builder: (_) => ConfirmDialog(
         icon: Icons.block_rounded,
-        title: '${conversation.title} blockieren?',
-        message: 'Ihr könnt einander keine Nachrichten mehr schreiben. '
-            'Du kannst die Blockierung später wieder aufheben.',
-        confirmLabel: 'Blockieren',
+        title: l10n.chatInfoBlockTitle(conversation.title),
+        message: l10n.chatInfoBlockMessage,
+        confirmLabel: l10n.chatInfoBlock,
       ),
     );
     if (confirmed != true) return;
@@ -90,8 +92,8 @@ class _DmInfoSheet extends StatelessWidget {
         backgroundColor: ok ? AppColors.onSurface : AppColors.primary,
         content: Text(
           ok
-              ? '${conversation.title} wurde blockiert.'
-              : 'Blockieren fehlgeschlagen. Versuch es erneut.',
+              ? l10n.profileBlocked(conversation.title)
+              : l10n.profileBlockFailed,
           style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
@@ -133,13 +135,13 @@ class _DmInfoSheet extends StatelessWidget {
             const SizedBox(height: 20),
             _ActionTile(
               icon: Icons.person_rounded,
-              label: 'Profil öffnen',
+              label: context.l10n.chatInfoOpenProfile,
               onTap: () => _openProfile(context),
             ),
             const SizedBox(height: 8),
             _ActionTile(
               icon: Icons.block_rounded,
-              label: 'Blockieren',
+              label: context.l10n.chatInfoBlock,
               onTap: () => _confirmBlock(context),
             ),
           ],
@@ -335,12 +337,11 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => _ConfirmDialog(
+      builder: (_) => ConfirmDialog(
         icon: Icons.logout_rounded,
-        title: '${widget.conversation.title} verlassen?',
-        message: 'Du bekommst keine neuen Nachrichten mehr aus dieser Gruppe. '
-            'Mit einer Einladung kannst du jederzeit wieder beitreten.',
-        confirmLabel: 'Verlassen',
+        title: context.l10n.chatInfoLeaveTitle(widget.conversation.title),
+        message: context.l10n.chatInfoLeaveMessage,
+        confirmLabel: context.l10n.chatInfoLeave,
       ),
     );
     if (confirmed != true) return;
@@ -463,7 +464,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Mitglieder',
+                  context.l10n.chatInfoMembers,
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -477,13 +478,13 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
               const SizedBox(height: 12),
               _ActionTile(
                 icon: Icons.person_add_rounded,
-                label: 'Einladen',
+                label: context.l10n.chatInfoInvite,
                 onTap: _showInviteCode,
               ),
               const SizedBox(height: 8),
               _ActionTile(
                 icon: Icons.logout_rounded,
-                label: 'Gruppe verlassen',
+                label: context.l10n.chatInfoLeaveGroup,
                 onTap: _confirmLeave,
               ),
             ],
@@ -520,7 +521,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
             child: Text(
-              'Mitglieder konnten nicht geladen werden.',
+              context.l10n.chatInfoMembersLoadFailed,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 color: AppColors.onSurfaceVariant,
@@ -595,7 +596,7 @@ class _MemberTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  'Du',
+                  context.l10n.chatInfoYou,
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -651,7 +652,7 @@ class _EncryptedBadge extends StatelessWidget {
         ),
         const SizedBox(width: 4),
         Text(
-          'Ende-zu-Ende verschlüsselt',
+          context.l10n.chatEncrypted,
           style: GoogleFonts.inter(
             fontSize: 11.5,
             fontWeight: FontWeight.w500,
@@ -850,7 +851,7 @@ class _InviteCodeDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Einladungs-Code',
+              context.l10n.messengerInviteCodeHint,
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 17,
@@ -883,8 +884,7 @@ class _InviteCodeDialog extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              'Nur für begrenzte Zeit gültig. Wer den Code eingibt, '
-              'tritt der Gruppe bei.',
+              context.l10n.chatInfoInviteCodeNote,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 13,
@@ -910,7 +910,7 @@ class _InviteCodeDialog extends StatelessWidget {
                 icon: const Icon(Icons.send_rounded,
                     size: 18, color: Colors.white),
                 label: Text(
-                  'Im Chat teilen',
+                  context.l10n.chatInfoShareInChat,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -933,7 +933,7 @@ class _InviteCodeDialog extends StatelessWidget {
                 icon: Icon(Icons.copy_rounded,
                     size: 18, color: AppColors.primary),
                 label: Text(
-                  'Code kopieren',
+                  context.l10n.chatInfoCopyCode,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -941,112 +941,6 @@ class _InviteCodeDialog extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Bestätigungs-Dialog für folgenreiche Aktionen (Blockieren, Gruppe
-/// verlassen). Gibt true/false über Navigator.pop zurück.
-class _ConfirmDialog extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String message;
-  final String confirmLabel;
-
-  const _ConfirmDialog({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.confirmLabel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 28),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: AppColors.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                height: 1.4,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 22),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      'Abbrechen',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(
-                      confirmLabel,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ],
         ),

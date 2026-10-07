@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -20,10 +18,10 @@ class ReportSelection {
 
 /// Oeffnet das Melde-Sheet fuer [target] mit der [id].
 ///
-/// Gibt `true` zurueck, sobald der User auf "Senden" getippt hat, und zwar
-/// direkt nach dem Schliessen, NICHT erst nach der Server-Antwort. So kann der
-/// Aufrufer sofort reagieren (Story weiterlaufen lassen, Post ausblenden).
-/// Gesendet wird im Hintergrund, die Snackbar kommt, wenn der Server antwortet.
+/// Gibt `true` zurueck, wenn der Server die Meldung angenommen hat (201) oder
+/// sie schon kannte (409). Nur dann soll der Aufrufer den Inhalt ausblenden.
+/// Bei Abbruch oder Fehler (400 eigener Inhalt, kein Netz ...) kommt `false`.
+/// Waehrend gesendet wird, bleibt das Sheet offen und zeigt einen Spinner.
 Future<bool> showReportSheet(
   BuildContext context, {
   required ReportTarget target,
@@ -34,22 +32,29 @@ Future<bool> showReportSheet(
   final messenger = ScaffoldMessenger.of(context);
   final l10n = context.l10n;
 
-  final selection = await showModalBottomSheet<ReportSelection>(
+  // Der Request lebt HIER und nicht im Sheet-State: wischt der User das
+  // Sheet waehrend des Sendens weg, ist der State tot, die Antwort aber nicht.
+  Future<bool>? sending;
+
+  final result = await showModalBottomSheet<bool>(
     context: context,
     // Ohne das schiebt sich das Sheet nicht ueber die Tastatur.
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.3),
-    builder: (_) => _ReportSheet(title: _title(l10n, target)),
+    builder: (_) => _ReportSheet(
+      title: _title(l10n, target),
+      onSend: (selection) =>
+          sending = _send(messenger, l10n, target, id, selection),
+    ),
   );
-  if (selection == null) return false; // weggewischt / abgebrochen
-
-  // Absichtlich nicht abwarten: der Aufrufer soll nicht auf das Netz warten.
-  unawaited(_send(messenger, l10n, target, id, selection));
-  return true;
+  if (result != null) return result;
+  // null = weggewischt. Lief da schon ein Request, zaehlt dessen Ergebnis.
+  return sending ?? Future.value(false);
 }
 
-Future<void> _send(
+// Sendet die Meldung, zeigt die Snackbar und sagt, ob der Inhalt weg darf.
+Future<bool> _send(
   ScaffoldMessengerState messenger,
   AppLocalizations l10n,
   ReportTarget target,
@@ -74,6 +79,8 @@ Future<void> _send(
     _ => l10n.reportFailed,
   };
   messenger.showSnackBar(SnackBar(content: Text(message)));
+  // 409 zaehlt wie Erfolg: gemeldet ist gemeldet.
+  return status == 201 || status == 409;
 }
 
 // Je ein switch pro Textart, ohne default: ein neues ReportTarget ohne Texte
@@ -102,9 +109,12 @@ String _already(AppLocalizations l10n, ReportTarget target) => switch (target) {
 // Zwei Stufen in EINEM Sheet: erst die Grund-Liste, nach dem Tippen auf einen
 // Grund die Details-Ansicht. _selected entscheidet, welche zu sehen ist.
 class _ReportSheet extends StatefulWidget {
-  const _ReportSheet({required this.title});
+  const _ReportSheet({required this.title, required this.onSend});
 
   final String title;
+
+  // Startet den Request (in showReportSheet) und liefert, ob er geklappt hat.
+  final Future<bool> Function(ReportSelection selection) onSend;
 
   @override
   State<_ReportSheet> createState() => _ReportSheetState();
@@ -117,6 +127,9 @@ class _ReportSheetState extends State<_ReportSheet> {
 
   ReportReason? _selected;
   final _details = TextEditingController();
+
+  // true, solange der Request laeuft: Spinner im Button, Zurueck gesperrt.
+  bool _sending = false;
 
   @override
   void initState() {
@@ -135,12 +148,27 @@ class _ReportSheetState extends State<_ReportSheet> {
   // aber 5. 500 Grapheme koennen also > 500 Code-Points sein -> 422.
   bool get _tooLong => _details.text.trim().runes.length > _maxDetails;
 
-  void _submit() {
-    Navigator.pop(context, ReportSelection(_selected!, _details.text));
+  Future<void> _submit() async {
+    setState(() => _sending = true);
+    final ok = await widget.onSend(ReportSelection(_selected!, _details.text));
+    // Weggewischt waehrend des Sendens: showReportSheet holt sich das
+    // Ergebnis dann selbst aus dem laufenden Request.
+    if (!mounted) return;
+    // Auch bei Fehler schliessen: die Snackbar erklaert, was los war.
+    Navigator.pop(context, ok);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Zurueck-Taste waehrend des Sendens sperren. Wegwischen per Drag geht
+    // trotzdem, das faengt showReportSheet ab.
+    return PopScope(
+      canPop: !_sending,
+      child: _buildSheet(context),
+    );
+  }
+
+  Widget _buildSheet(BuildContext context) {
     return Padding(
       // Tastatur-Hoehe: schiebt das Sheet nach oben, wenn die Tastatur aufgeht.
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -263,12 +291,13 @@ class _ReportSheetState extends State<_ReportSheet> {
       children: [
         _header(
           text: _selected!.label(l10n),
-          onBack: () => setState(() => _selected = null),
+          onBack: _sending ? null : () => setState(() => _selected = null),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: TextField(
             controller: _details,
+            enabled: !_sending,
             maxLength: _maxDetails,
             minLines: 3,
             maxLines: 6,
@@ -294,21 +323,33 @@ class _ReportSheetState extends State<_ReportSheet> {
             width: double.infinity,
             height: 52,
             child: FilledButton(
-              onPressed: _tooLong ? null : _submit,
+              // Waehrend des Sendens kein zweiter Tap (doppelte Meldung).
+              onPressed: _tooLong || _sending ? null : _submit,
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
+                // Beim Senden die Farbe behalten, nur der Spinner zeigt es an.
+                disabledBackgroundColor: _sending ? AppColors.primary : null,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: Text(
-                l10n.reportSend,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              child: _sending
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      l10n.reportSend,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
             ),
           ),
         ),

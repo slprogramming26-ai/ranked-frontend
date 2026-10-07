@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
 
 // Zustandslos: Auswahl-Map und Toggle-Callback kommen vom OnboardingFlow,
@@ -23,16 +24,15 @@ class VibeStep extends StatelessWidget {
         children: [
           const SizedBox(height: 20),
           Text(
-            "What's Your Vibe?",
+            context.l10n.onboardingVibeTitle,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 32,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "Pick up to 2 Pulse Factors that define your daily rhythm — "
-            "or none at all. Share only what you want to share.",
+          Text(
+            context.l10n.onboardingVibeSubtitle,
           ),
           const SizedBox(height: 30),
           Expanded(

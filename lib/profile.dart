@@ -2,11 +2,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:ranked/moderation/report_sheet.dart';
+import 'package:ranked/moderation/report_target.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
 import 'net_image.dart';
 import 'ranking/ranking_api_service.dart';
 import 'settings_screen.dart';
+import 'l10n/l10n.dart';
+import 'confirm_dialog.dart';
 
 
 class ProfileProvider extends ChangeNotifier {
@@ -105,6 +109,53 @@ class _ProfileState extends State<Profile> {
         _followLoading = false;
         if (success) _isFollowing = !_isFollowing;
       });
+    }
+  }
+
+  // ⋮-Menü im fremden Profil: Melden oder Blockieren.
+  // Das Sheet liefert nur die Wahl zurueck; die eigentliche Logik laeuft
+  // danach hier mit dem Profil-context (der Sheet-context ist nach dem pop tot).
+  Future<void> _onMore() async {
+    if (_isOwn) return;
+    final id = widget.targetUserId!;
+    final name = _foreignData['username']?.toString() ?? '';
+
+    // VOR dem ersten await greifen: nach dem Blockieren ist das Profil zu,
+    // die Snackbar muss trotzdem noch kommen.
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    final l10n = context.l10n;
+
+    final action = await showModalBottomSheet<_ProfileAction>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      builder: (_) => const _ProfileMenuSheet(),
+    );
+    if (!mounted || action == null) return; // weggewischt
+
+    switch (action) {
+      case _ProfileAction.report:
+        // Profil bleibt offen; Snackbar macht showReportSheet selbst.
+        await showReportSheet(context, target: ReportTarget.user, id: id);
+
+      case _ProfileAction.block:
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (_) => ConfirmDialog(
+            icon: Icons.block_rounded,
+            title: l10n.chatInfoBlockTitle(name),
+            message: l10n.chatInfoBlockMessage,
+            confirmLabel: l10n.chatInfoBlock,
+          ),
+        );
+        if (confirmed != true) return;
+
+        final ok = await UserApiService.blockUser(id);
+        if (ok && nav.canPop()) nav.pop(); // Profil zu
+        messenger.showSnackBar(SnackBar(
+          content: Text(ok ? l10n.profileBlocked(name) : l10n.profileBlockFailed),
+        ));
     }
   }
 
@@ -339,7 +390,7 @@ class _ProfileState extends State<Profile> {
                         const SizedBox(height: 20),
                         if (activity.isEmpty)
                           Text(
-                            'Noch keine Aktivität — sobald dich jemand bewertet, steht es hier.',
+                            context.l10n.profileNoActivity,
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               color: AppColors.onSurfaceVariant,
@@ -372,6 +423,7 @@ class _ProfileState extends State<Profile> {
             onSettings: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
+            onMore: _onMore,
           ),
         ],
       ),
@@ -414,9 +466,9 @@ class _ProfileState extends State<Profile> {
   String _activityTitle(Map<String, dynamic> a) {
     switch (a['type']) {
       case 'rated':
-        return 'Du wurdest bewertet';
+        return context.l10n.profileActivityRated;
       default:
-        return 'Neue Aktivität';
+        return context.l10n.profileActivityDefault;
     }
   }
 
@@ -424,7 +476,7 @@ class _ProfileState extends State<Profile> {
     final payload = (a['payload'] as num?)?.toInt() ?? 0;
     switch (a['type']) {
       case 'rated':
-        return '+$payload Punkte von der Community erhalten';
+        return context.l10n.profileActivityRatedSubtitle(payload);
       default:
         return '';
     }
@@ -587,8 +639,8 @@ class _LeagueProgress extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             next == null
-                ? 'Höchste Liga erreicht'
-                : 'Noch $xpForNext XP bis $next',
+                ? context.l10n.profileLeagueMaxReached
+                : context.l10n.profileLeagueProgress(xpForNext, next),
             style: GoogleFonts.inter(
               fontSize: 11,
               color: AppColors.onSurfaceVariant,
@@ -600,17 +652,104 @@ class _LeagueProgress extends StatelessWidget {
   }
 }
 
+// ── ⋮-Menü (fremdes Profil) ──────────────────────────────────────────────────
+// Enum statt String ('report'/'block'): Tippfehler werden zum Compile-Fehler,
+// und der switch in _onMore braucht kein default.
+enum _ProfileAction { report, block }
+
+// Gleicher Look wie das Melde-Sheet (Griff oben, 32er Radius, Zeilen mit
+// InkWell). Gibt die Wahl per Navigator.pop zurueck, sonst nichts.
+class _ProfileMenuSheet extends StatelessWidget {
+  const _ProfileMenuSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            _row(
+              context,
+              icon: Icons.flag_outlined,
+              label: context.l10n.profileMenuReport,
+              color: AppColors.onSurface,
+              action: _ProfileAction.report,
+            ),
+            _row(
+              context,
+              icon: Icons.block_rounded,
+              label: context.l10n.chatInfoBlock,
+              color: AppColors.primary, // destruktiv hervorgehoben
+              action: _ProfileAction.block,
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required _ProfileAction action,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pop(context, action),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ── Top App Bar ───────────────────────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
   final String username;
   final String? avatarUrl;
   final bool isOwn;
   final VoidCallback? onSettings;
+  final VoidCallback? onMore;
   const _TopBar({
     required this.username,
     this.avatarUrl,
     required this.isOwn,
     this.onSettings,
+    this.onMore,
   });
 
   @override
@@ -657,7 +796,7 @@ class _TopBar extends StatelessWidget {
             ),
           ),
 
-          // Rechts: Settings (eigen) oder Platzhalter (fremd)
+          // Rechts: Settings (eigen) oder ⋮-Menü (fremd)
           if (isOwn)
             GestureDetector(
               onTap: onSettings,
@@ -665,7 +804,11 @@ class _TopBar extends StatelessWidget {
                   color: AppColors.primary, size: 24),
             )
           else
-            const SizedBox(width: 24),
+            GestureDetector(
+              onTap: onMore,
+              child: Icon(Icons.more_vert_rounded,
+                  color: AppColors.primary, size: 24),
+            ),
         ],
       ),
     );
@@ -786,7 +929,7 @@ class _FollowButton extends StatelessWidget {
                 ),
               )
             : Text(
-                isFollowing ? 'Following' : 'Follow',
+                isFollowing ? context.l10n.profileFollowing : context.l10n.profileFollow,
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,

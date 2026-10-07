@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../app_colors.dart';
 import '../profile.dart';
+import 'package:ranked/l10n/l10n.dart';
 import 'ranking_provider.dart';
 import 'ranking_pages.dart';
 import 'ranking_widgets.dart';
@@ -157,7 +158,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
-                                    'DEINE STATS',
+                                    context.l10n.rankingStatsHeader,
                                     style: GoogleFonts.plusJakartaSans(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w900,
@@ -177,7 +178,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                       fgColor: AppColors.tertiary,
                                       icon: Icons.bolt_rounded,
                                       value: '$myPoints',
-                                      label: 'PUNKTE HEUTE',
+                                      label: context.l10n.rankingPointsToday,
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -189,7 +190,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                       value: streak == 1
                                           ? '1 Tag'
                                           : '$streak Tage',
-                                      label: 'DEIN STREAK',
+                                      label: context.l10n.rankingStreakLabel,
                                     ),
                                   ),
                                 ],

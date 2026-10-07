@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../app_colors.dart';
+import '../l10n/l10n.dart';
 import '../moderation/report_sheet.dart';
 import '../moderation/report_target.dart';
 import '../net_image.dart';
@@ -141,7 +142,7 @@ class _StoryViewerState extends State<StoryViewer>
     } else {
       _progress.forward();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Story konnte nicht gelöscht werden')),
+        SnackBar(content: Text(context.l10n.storyDeleteFailedSnackbar)),
       );
     }
   }
@@ -316,7 +317,7 @@ class _StoryViewerState extends State<StoryViewer>
             children: [
               Flexible(
                 child: Text(
-                  isMine ? 'Deine Story' : username,
+                  isMine ? context.l10n.storyYourStory : username,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.plusJakartaSans(
@@ -372,7 +373,7 @@ class _StoryViewerState extends State<StoryViewer>
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
               title: Text(
-                'Story löschen',
+                context.l10n.storyDeleteTitle,
                 style: GoogleFonts.plusJakartaSans(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -386,7 +387,7 @@ class _StoryViewerState extends State<StoryViewer>
             ListTile(
               leading: const Icon(Icons.close, color: Colors.white70),
               title: Text(
-                'Abbrechen',
+                context.l10n.storyDeleteCancel,
                 style: GoogleFonts.plusJakartaSans(color: Colors.white70),
               ),
               onTap: () {
@@ -405,8 +406,8 @@ class _StoryViewerState extends State<StoryViewer>
     });
   }
 
-  // Melden: gemeinsames Sheet aus lib/moderation. true kommt sofort nach
-  // "Senden" (gesendet wird im Hintergrund), der Viewer springt direkt weiter.
+  // Melden: gemeinsames Sheet aus lib/moderation. true kommt erst nach
+  // Server-OK (201/409), dann springt der Viewer weiter. Sonst laeuft sie weiter.
   Future<void> _report() async {
     _progress.stop();
     final storyId = _currentStory['id'] as int;

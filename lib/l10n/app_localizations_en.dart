@@ -73,6 +73,871 @@ class AppLocalizationsEn extends AppLocalizations {
   String get reportFailed => 'Report failed. Please try again later.';
 
   @override
+  String get commentDeleteTitle => 'Delete comment?';
+
+  @override
+  String get commentDeleteMessage => 'The comment will be removed permanently.';
+
+  @override
+  String get commentDeleteConfirm => 'Delete';
+
+  @override
+  String get commentDeleteFailed =>
+      'Couldn\'t delete the comment. Please try again later.';
+
+  @override
+  String get profileMenuReport => 'Report';
+
+  @override
+  String profileBlocked(String name) {
+    return '$name has been blocked.';
+  }
+
+  @override
+  String get profileBlockFailed => 'Blocking failed. Please try again.';
+
+  @override
   String get postDeleteFailed =>
       'Couldn\'t delete the post. Please try again later.';
+
+  @override
+  String get messengerGroupCreateFailed => 'Failed to create the group.';
+
+  @override
+  String get messengerJoinFailed => 'Couldn\'t join. Is the code still valid?';
+
+  @override
+  String get messengerJoinGroupTitle => 'Join group';
+
+  @override
+  String get messengerJoinGroupSubtitle => 'Join with an invite code';
+
+  @override
+  String get messengerInviteCodeHint => 'Invite code';
+
+  @override
+  String get messengerCancel => 'Cancel';
+
+  @override
+  String get messengerJoin => 'Join';
+
+  @override
+  String get messengerNewConversation => 'New conversation';
+
+  @override
+  String get messengerStartChat => 'Start chat';
+
+  @override
+  String get messengerStartChatSubtitle => 'Search for a user by name';
+
+  @override
+  String get messengerCreateGroup => 'Create group';
+
+  @override
+  String get messengerCreateGroupSubtitle => 'Set up a new group';
+
+  @override
+  String get messengerContactsTitle => 'Contacts';
+
+  @override
+  String get messengerRequests => 'Requests';
+
+  @override
+  String get messengerGroupChat => 'Group chat';
+
+  @override
+  String get messengerDirectMessage => 'Direct message';
+
+  @override
+  String get messengerEmptyTitle => 'No conversations';
+
+  @override
+  String get messengerEmptyHint =>
+      'Tap the pencil icon\nto start a chat or a group.';
+
+  @override
+  String get messengerSearchUsernameHint => 'Search username';
+
+  @override
+  String get messengerMinChars => 'Enter at least 2 characters';
+
+  @override
+  String get messengerSomethingWrong => 'Something went wrong.';
+
+  @override
+  String get messengerNoUsersFound => 'No users found';
+
+  @override
+  String get chatRequestsWantsToWrite => 'Wants to message you';
+
+  @override
+  String get chatRequestsEmptyTitle => 'All caught up';
+
+  @override
+  String get chatRequestsEmptyHint => 'No open chat requests.';
+
+  @override
+  String get chatEncrypted => 'End-to-end encrypted';
+
+  @override
+  String get chatPostUnavailable => 'Post unavailable';
+
+  @override
+  String get chatUnknownUser => 'Unknown';
+
+  @override
+  String get chatGroupInvite => 'Group invite';
+
+  @override
+  String chatInviteCode(int code) {
+    return 'Code $code';
+  }
+
+  @override
+  String get chatJoined => 'Joined';
+
+  @override
+  String get chatMessageHint => 'Message…';
+
+  @override
+  String get chatAcceptToReply => 'Accept the request to be able to reply.';
+
+  @override
+  String get chatDecline => 'Decline';
+
+  @override
+  String get chatAccept => 'Accept';
+
+  @override
+  String get chatDeclineDialogTitle => 'Decline request?';
+
+  @override
+  String chatDeclineDialogBody(String username) {
+    return 'The chat will be removed from your list. Unless you block them, $username can send you a new request.';
+  }
+
+  @override
+  String get chatDeclineAndBlock => 'Decline & block';
+
+  @override
+  String get chatDeclined => 'Request declined.';
+
+  @override
+  String chatDeclinedAndBlocked(String name) {
+    return 'Request declined and $name blocked.';
+  }
+
+  @override
+  String get chatDeclinedBlockFailed =>
+      'Request declined, but blocking failed.';
+
+  @override
+  String get chatEmptyTitle => 'Say hi! 👋';
+
+  @override
+  String get chatEmptyHint =>
+      'No messages yet.\nSend the first one and break the ice.';
+
+  @override
+  String chatInfoBlockTitle(String name) {
+    return 'Block $name?';
+  }
+
+  @override
+  String get chatInfoBlockMessage =>
+      'You won\'t be able to message each other anymore. You can unblock them later.';
+
+  @override
+  String get chatInfoBlock => 'Block';
+
+  @override
+  String get chatInfoOpenProfile => 'Open profile';
+
+  @override
+  String chatInfoLeaveTitle(String name) {
+    return 'Leave $name?';
+  }
+
+  @override
+  String get chatInfoLeaveMessage =>
+      'You won\'t receive new messages from this group anymore. You can rejoin anytime with an invite.';
+
+  @override
+  String get chatInfoLeave => 'Leave';
+
+  @override
+  String get chatInfoMembers => 'Members';
+
+  @override
+  String get chatInfoInvite => 'Invite';
+
+  @override
+  String get chatInfoLeaveGroup => 'Leave group';
+
+  @override
+  String get chatInfoMembersLoadFailed => 'Couldn\'t load members.';
+
+  @override
+  String get chatInfoYou => 'You';
+
+  @override
+  String get chatInfoInviteCodeNote =>
+      'Only valid for a limited time. Anyone who enters the code joins the group.';
+
+  @override
+  String get chatInfoShareInChat => 'Share in chat';
+
+  @override
+  String get chatInfoCopyCode => 'Copy code';
+
+  @override
+  String get onboardingWelcomeTitle => 'Welcome to\nthe Pulse';
+
+  @override
+  String get onboardingWelcomeSubtitle =>
+      'The world\'s first editorial social feed where your energy matters.';
+
+  @override
+  String get onboardingWelcomePostTitle => 'Post your life';
+
+  @override
+  String get onboardingWelcomePostSub =>
+      'Share your daily Pulse. Authentic and raw.';
+
+  @override
+  String get onboardingWelcomeRankTitle => 'Get Ranked';
+
+  @override
+  String get onboardingWelcomeRankSub =>
+      'The community evaluates your creativity.';
+
+  @override
+  String get onboardingWelcomeEarnTitle => 'Earn and customize';
+
+  @override
+  String get onboardingWelcomeEarnSub =>
+      'Rank others to earn coins. Unlock exclusive avatar items and \"Freundebuch\" skins';
+
+  @override
+  String get onboardingVibeTitle => 'What\'s Your Vibe?';
+
+  @override
+  String get onboardingVibeSubtitle =>
+      'Pick up to 2 Pulse Factors that define your daily rhythm — or none at all. Share only what you want to share.';
+
+  @override
+  String get onboardingAboutMeTitle => 'The Digital Pulse';
+
+  @override
+  String get onboardingAboutMeSubtitle =>
+      'Let others feel your energy. This is your curated scrapbook entry.';
+
+  @override
+  String get onboardingAboutMeStoryLabel => 'YOUR STORY';
+
+  @override
+  String get onboardingAboutMeBioHint =>
+      'Share your story, your goals, or what makes you unique...';
+
+  @override
+  String get onboardingAgeTitle => 'One Last Check';
+
+  @override
+  String get onboardingAgeSubtitle =>
+      'How old are you? We only check this once — your age is never stored.';
+
+  @override
+  String get onboardingAgeWarning =>
+      'Ranked is 16+. We\'d love to see you again in a few years!';
+
+  @override
+  String get onboardingCredentialsTitle => 'Join the';
+
+  @override
+  String get onboardingCredentialsSubtitle =>
+      'Last step — pick your login and your profile goes live.';
+
+  @override
+  String get onboardingCredentialsEmailHint => 'Email Address';
+
+  @override
+  String get onboardingCredentialsUsernameHint => 'username';
+
+  @override
+  String get onboardingCredentialsPasswordHint => 'Password';
+
+  @override
+  String get onboardingCredentialsLegal =>
+      'By signing up, you agree to our Community Guidelines';
+
+  @override
+  String get onboardingNextButton => 'Next';
+
+  @override
+  String get onboardingCreateButton => 'Create Account';
+
+  @override
+  String onboardingStepProgress(int current, int total) {
+    return 'Step $current of $total';
+  }
+
+  @override
+  String get onboardingLoadingSetup => 'Setting up your account';
+
+  @override
+  String get onboardingLoadingCreating => 'Creating your account...';
+
+  @override
+  String get onboardingLoadingSigning => 'Signing you in...';
+
+  @override
+  String get onboardingLoadingSecuring => 'Securing your chats...';
+
+  @override
+  String get onboardingLoadingUploading => 'Uploading your photo...';
+
+  @override
+  String get onboardingLoadingAlmost => 'Almost there...';
+
+  @override
+  String get onboardingImageProcessError =>
+      'Your profile picture could not be processed — you can update it in your profile later.';
+
+  @override
+  String get onboardingLoginFailedAuto =>
+      'Your account was created, but automatic login failed. Please sign in on the login screen.';
+
+  @override
+  String get loginWelcome => 'Welcome back';
+
+  @override
+  String get loginSubtitle => 'The pulse is waiting for you.';
+
+  @override
+  String get loginEmailLabel => 'Email Address';
+
+  @override
+  String get loginPasswordLabel => 'Password';
+
+  @override
+  String get loginForgotPassword => 'Forgot password?';
+
+  @override
+  String get loginButton => 'Login to Feed';
+
+  @override
+  String get loginDivider => 'OR CONTINUE WITH';
+
+  @override
+  String get loginGoogle => 'Google';
+
+  @override
+  String get loginApple => 'Apple';
+
+  @override
+  String get loginNoAccount => 'New to Ranked?';
+
+  @override
+  String get loginSignUp => 'Sign Up';
+
+  @override
+  String get loginInvalidCredentials => 'Invalid email or password';
+
+  @override
+  String get loginAborted => 'Login cancelled.';
+
+  @override
+  String get loginServerError =>
+      'Connection to server failed. Please try again.';
+
+  @override
+  String get postCommentSectionTitle => 'Comments';
+
+  @override
+  String get postCommentsLoadError => 'Failed to load comments';
+
+  @override
+  String get postBeFirstToPulse => 'Be the first to pulse!';
+
+  @override
+  String get postCommentHint => 'Write a comment...';
+
+  @override
+  String get postEditButton => 'Edit Post';
+
+  @override
+  String get postDeleteButton => 'Delete Post';
+
+  @override
+  String get postReportButton => 'Report Post';
+
+  @override
+  String get shareMessengerNotReady =>
+      'Messenger not ready — please wait a moment and try again.';
+
+  @override
+  String get shareSheetTitle => 'Share';
+
+  @override
+  String get shareNoChats => 'No chats to share with yet.';
+
+  @override
+  String get shareCopyLink => 'Copy link';
+
+  @override
+  String get shareLinkCopied => 'Link copied';
+
+  @override
+  String shareSentTo(String username) {
+    return 'Sent to $username!';
+  }
+
+  @override
+  String get feedLocationSaveError => 'Failed to save location';
+
+  @override
+  String get feedForYou => 'For You';
+
+  @override
+  String get feedLocal => 'Local';
+
+  @override
+  String get feedNoLocationTitle => 'No location set';
+
+  @override
+  String get feedNoPostsTitle => 'Nothing here yet';
+
+  @override
+  String get feedChooseLocationHint =>
+      'Choose your location to see posts in your area.';
+
+  @override
+  String get feedNoPostsHint =>
+      'Nothing has been posted at your location yet — be the first!';
+
+  @override
+  String get feedChooseLocation => 'Choose location';
+
+  @override
+  String get storyRowYourPulse => 'Your Pulse';
+
+  @override
+  String get createPostTitle => 'Create Post';
+
+  @override
+  String get locationPickerTitle => 'Choose location';
+
+  @override
+  String get locationSearchHint => 'Search city…';
+
+  @override
+  String get locationSearchStartHint => 'Type to search your city';
+
+  @override
+  String get locationNotFound => 'No location found — try a different spelling';
+
+  @override
+  String get rankingOptinTitle => 'JOIN THE\nRANKING';
+
+  @override
+  String get rankingOptinDescription =>
+      'Enable ranking and let the community rate you daily — Productivity, Creativity & Engagement.';
+
+  @override
+  String get rankingOptinButton => 'ACTIVATE';
+
+  @override
+  String get rankingStatsHeader => 'YOUR STATS';
+
+  @override
+  String get rankingPointsToday => 'POINTS TODAY';
+
+  @override
+  String get rankingStreakLabel => 'YOUR STREAK';
+
+  @override
+  String get rankingEvaluatingLabel => 'YOU\'RE RATING';
+
+  @override
+  String get rankingYourBadge => 'YOU';
+
+  @override
+  String get rankingNoPointsHeadline => 'No points yet today';
+
+  @override
+  String get rankingNoPointsSubline => 'Post to get rated';
+
+  @override
+  String get rankingLeadingHeadline => 'You\'re leading today!';
+
+  @override
+  String get rankingLeadingSubline => 'Defend your position';
+
+  @override
+  String rankingMyRank(int rank) {
+    return 'Rank #$rank';
+  }
+
+  @override
+  String get rankingEmptyLeaderboard => 'No rankings yet today';
+
+  @override
+  String get rankingAlreadyRankedButton => 'ALREADY RATED TODAY';
+
+  @override
+  String get rankingGetPartnerButton => 'GET YOUR RANKED PARTNER';
+
+  @override
+  String get rankingNoParticipants =>
+      'No participants available to rate right now.';
+
+  @override
+  String get rankingSwipeLike => 'LIKE';
+
+  @override
+  String get rankingSwipeNope => 'NOPE';
+
+  @override
+  String get rankingResultLabel => 'POINTS AWARDED';
+
+  @override
+  String get rankingResultDone => 'DONE';
+
+  @override
+  String get rankingAlreadyVotedHeadline => 'ALREADY\nVOTED';
+
+  @override
+  String get rankingErrorHeadline => 'ERROR';
+
+  @override
+  String get rankingAlreadyVotedMessage =>
+      'You\'ve already voted today.\nYou can vote again tomorrow!';
+
+  @override
+  String get rankingErrorMessage =>
+      'Something went wrong. Please try again later.';
+
+  @override
+  String get rankingBackButton => 'BACK';
+
+  @override
+  String get profileNoActivity =>
+      'No activity yet – once someone rates you, it will show up here.';
+
+  @override
+  String get profileActivityRated => 'You were rated';
+
+  @override
+  String get profileActivityDefault => 'New activity';
+
+  @override
+  String profileActivityRatedSubtitle(int points) {
+    return 'Received +$points points from the community';
+  }
+
+  @override
+  String get profileLeagueMaxReached => 'Highest league reached';
+
+  @override
+  String profileLeagueProgress(int xp, String next) {
+    return 'Still $xp XP until $next';
+  }
+
+  @override
+  String get profileFollow => 'Follow';
+
+  @override
+  String get profileFollowing => 'Following';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsSectionAppearance => 'APPEARANCE';
+
+  @override
+  String get settingsDarkMode => 'Dark Mode';
+
+  @override
+  String get settingsDarkModeSubtitle => 'Dark appearance';
+
+  @override
+  String get settingsSectionProfile => 'PROFILE';
+
+  @override
+  String get settingsLocation => 'Location';
+
+  @override
+  String get settingsLocationLoading => 'Loading…';
+
+  @override
+  String get settingsLocationNotSet => 'No location set';
+
+  @override
+  String get settingsRemoveLocation => 'Remove location';
+
+  @override
+  String get settingsLocationFailed => 'Failed to save location.';
+
+  @override
+  String get settingsClearLocationTitle => 'Remove location?';
+
+  @override
+  String get settingsClearLocationMessage =>
+      'Without a location, you won\'t be able to use the local feed until you select a location again.';
+
+  @override
+  String get settingsClearLocationButton => 'Remove';
+
+  @override
+  String get settingsClearLocationError =>
+      'Failed to remove. Please try again.';
+
+  @override
+  String get settingsSectionPrivacy => 'PRIVACY';
+
+  @override
+  String get settingsBlockedAccounts => 'Blocked accounts';
+
+  @override
+  String get settingsBlockedAccountsSubtitle => 'View and remove blocks';
+
+  @override
+  String get blockedTitle => 'Blocked accounts';
+
+  @override
+  String get blockedEmpty => 'You haven\'t blocked anyone.';
+
+  @override
+  String get blockedLoadFailed => 'Couldn\'t load the list.';
+
+  @override
+  String get blockedRetry => 'Try again';
+
+  @override
+  String blockedSince(String date) {
+    return 'Blocked on $date';
+  }
+
+  @override
+  String get blockedUnblock => 'Unblock';
+
+  @override
+  String blockedUnblockTitle(String name) {
+    return 'Unblock $name?';
+  }
+
+  @override
+  String blockedUnblockMessage(String name) {
+    return '$name will be able to message you and see your content again.';
+  }
+
+  @override
+  String blockedUnblocked(String name) {
+    return '$name is no longer blocked.';
+  }
+
+  @override
+  String get blockedUnblockFailed => 'Couldn\'t unblock. Please try again.';
+
+  @override
+  String get settingsSectionLegal => 'LEGAL';
+
+  @override
+  String get settingsPrivacy => 'Privacy (GDPR)';
+
+  @override
+  String get settingsPrivacySubtitle => 'How we handle your data';
+
+  @override
+  String get settingsSectionAccount => 'ACCOUNT';
+
+  @override
+  String get settingsLogout => 'Log out';
+
+  @override
+  String get settingsDeleteAccount => 'Delete account';
+
+  @override
+  String get settingsLogoutTitle => 'Log out?';
+
+  @override
+  String get settingsLogoutMessage =>
+      'You will be logged out from this device.';
+
+  @override
+  String get settingsDeleteAccountTitle => 'Delete account?';
+
+  @override
+  String get settingsDeleteAccountMessage =>
+      'Your account, all posts, votes and comments will be permanently deleted. This cannot be undone.';
+
+  @override
+  String get settingsDeleteAccountButton => 'Delete permanently';
+
+  @override
+  String get settingsDeleteFailed => 'Deletion failed. Please try again later.';
+
+  @override
+  String get settingsCancelButton => 'Cancel';
+
+  @override
+  String get settingsDsgvoTitle => 'Privacy';
+
+  @override
+  String get searchClearHistoryTitle => 'Clear search history?';
+
+  @override
+  String get searchClearHistoryMessage =>
+      'This will remove all recent searches from this device.';
+
+  @override
+  String get searchCancelButton => 'Cancel';
+
+  @override
+  String get searchClearButton => 'Clear';
+
+  @override
+  String get searchPlaceholder => 'Search users';
+
+  @override
+  String get searchNoUsersFound => 'No users found';
+
+  @override
+  String get searchMinCharacters => 'Type at least 2 characters';
+
+  @override
+  String get searchHistoryRecent => 'Recent';
+
+  @override
+  String get searchHistoryEmpty => 'No recent searches';
+
+  @override
+  String get searchHistoryEmptyMessage =>
+      'Start exploring – your last searches\nwill show up here.';
+
+  @override
+  String get keyRestoreTitle => 'Restore chats';
+
+  @override
+  String get keyRestoreMessage =>
+      'Your chats were backed up with a different password. Enter your previous password to restore them.';
+
+  @override
+  String get keyRestorePasswordLabel => 'Previous password';
+
+  @override
+  String get keyRestoreWrongPassword => 'Password doesn\'t match. Try again.';
+
+  @override
+  String get keyRestoreButton => 'Restore';
+
+  @override
+  String get keyRestoreCancelButton => 'Cancel';
+
+  @override
+  String get keyRestoreForgotPassword => 'Forgot password? Reset chats';
+
+  @override
+  String get keyRestoreResetTitle => 'Reset chats?';
+
+  @override
+  String get keyRestoreResetMessage =>
+      'This cannot be undone. Please read what happens:';
+
+  @override
+  String get keyRestoreResetConsequence1 =>
+      'Your previous messages will no longer be readable on any device.';
+
+  @override
+  String get keyRestoreResetConsequence2 =>
+      'Other signed-in devices will be logged out.';
+
+  @override
+  String get keyRestoreResetConsequence3 => 'New chats will work normally.';
+
+  @override
+  String get keyRestoreResetButton => 'Reset chats';
+
+  @override
+  String get appDraftRestoreTitle => 'Restore draft?';
+
+  @override
+  String get appDraftRestoreMessage => 'You have an unfinished post.';
+
+  @override
+  String get appDraftDiscardButton => 'Discard';
+
+  @override
+  String get appDraftRestoreButton => 'Restore';
+
+  @override
+  String get storyDeleteFailedSnackbar => 'Failed to delete story';
+
+  @override
+  String get storyYourStory => 'Your story';
+
+  @override
+  String get storyDeleteTitle => 'Delete story';
+
+  @override
+  String get storyDeleteCancel => 'Cancel';
+
+  @override
+  String get storyProcessingError => 'Image could not be processed';
+
+  @override
+  String get storyUploadError => 'Upload failed';
+
+  @override
+  String get storyCreateTitle => 'New story';
+
+  @override
+  String get storyShareMoment => 'Share your moment';
+
+  @override
+  String get storyCreateDescription =>
+      'Create a story for your followers in seconds.';
+
+  @override
+  String get storyVisibleTime => 'Visible for 24H';
+
+  @override
+  String get storySourceGallery => 'Gallery';
+
+  @override
+  String get storySourceGallerySubtitle => 'Choose image';
+
+  @override
+  String get storySourceCamera => 'Camera';
+
+  @override
+  String get storySourceCameraSubtitle => 'Take photo';
+
+  @override
+  String get storyUploadingButton => 'Sharing...';
+
+  @override
+  String get storyShareButton => 'Share story';
+
+  @override
+  String get suspendedTitle => 'Account suspended';
+
+  @override
+  String suspendedUntil(String date) {
+    return 'Your account is suspended until $date.';
+  }
+
+  @override
+  String get suspendedPermanent =>
+      'Your account has been permanently suspended.';
+
+  @override
+  String get suspendedReasonLabel => 'REASON';
+
+  @override
+  String get suspendedHint => 'After that, you can log in as usual again.';
+
+  @override
+  String get suspendedBack => 'Back to login';
 }

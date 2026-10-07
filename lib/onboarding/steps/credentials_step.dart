@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
 
 class CredentialsStep extends StatefulWidget {
@@ -80,7 +81,7 @@ class _CredentialsStepState extends State<CredentialsStep> {
                 letterSpacing: -0.5,
               ),
               children: [
-                const TextSpan(text: 'Join the '),
+                TextSpan(text: '${context.l10n.onboardingCredentialsTitle} '),
                 TextSpan(
                   text: 'Pulse',
                   style: TextStyle(
@@ -93,7 +94,7 @@ class _CredentialsStepState extends State<CredentialsStep> {
           ),
           const SizedBox(height: 6),
           Text(
-            "Last step — pick your login and your profile goes live.",
+            context.l10n.onboardingCredentialsSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -106,7 +107,7 @@ class _CredentialsStepState extends State<CredentialsStep> {
 
           _buildTextField(
             controller: widget.emailController,
-            hint: 'Email Address',
+            hint: context.l10n.onboardingCredentialsEmailHint,
             icon: Icons.mail_outline,
             keyboardType: TextInputType.emailAddress,
           ),
@@ -114,14 +115,14 @@ class _CredentialsStepState extends State<CredentialsStep> {
 
           _buildTextField(
             controller: widget.usernameController,
-            hint: 'username',
+            hint: context.l10n.onboardingCredentialsUsernameHint,
             prefixText: '@',
           ),
           const SizedBox(height: 12),
 
           _buildTextField(
             controller: widget.passwordController,
-            hint: 'Password',
+            hint: context.l10n.onboardingCredentialsPasswordHint,
             icon: Icons.lock_outline,
             obscure: _obscurePassword,
             suffix: IconButton(
@@ -173,7 +174,7 @@ class _CredentialsStepState extends State<CredentialsStep> {
           const SizedBox(height: 20),
 
           Text(
-            'By signing up, you agree to our Community Guidelines',
+            context.l10n.onboardingCredentialsLegal,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 10,

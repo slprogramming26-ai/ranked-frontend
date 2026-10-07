@@ -13,6 +13,7 @@ import 'chat_screen.dart';
 import '../app_colors.dart';
 import '../net_image.dart';
 import '../user_api_service.dart';
+import 'package:ranked/l10n/l10n.dart';
 
 class MessengerHomescreen extends StatefulWidget {
   const MessengerHomescreen({super.key});
@@ -103,7 +104,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
     if (!mounted) return;
     Navigator.pop(context);
     if (newGroupId == null) {
-      _snack('Fehler beim Erstellen der Gruppe.');
+      _snack(context.l10n.messengerGroupCreateFailed);
       return;
     }
     final db = context.read<AppDatabase>();
@@ -130,7 +131,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
     if (!mounted) return;
     Navigator.pop(context);
     if (groupId == null) {
-      _snack('Beitritt fehlgeschlagen. Ist der Code noch gültig?');
+      _snack(context.l10n.messengerJoinFailed);
       return;
     }
     final db = context.read<AppDatabase>();
@@ -175,7 +176,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
         backgroundColor: AppColors.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Gruppe beitreten',
+          ctx.l10n.messengerJoinGroupTitle,
           style: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w800,
             color: AppColors.onSurface,
@@ -187,7 +188,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
           keyboardType: TextInputType.number,
           style: GoogleFonts.inter(color: AppColors.onSurface),
           decoration: InputDecoration(
-            hintText: 'Einladungs-Code',
+            hintText: ctx.l10n.messengerInviteCodeHint,
             hintStyle: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
             filled: true,
             fillColor: AppColors.surface.withValues(alpha: 0.6),
@@ -201,7 +202,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              'Abbrechen',
+              ctx.l10n.messengerCancel,
               style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
             ),
           ),
@@ -211,7 +212,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
               if (parsed != null) Navigator.pop(ctx, parsed);
             },
             child: Text(
-              'Beitreten',
+              ctx.l10n.messengerJoin,
               style: GoogleFonts.inter(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w800,
@@ -252,7 +253,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: Text(
-                  'Neue Konversation',
+                  ctx.l10n.messengerNewConversation,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -263,22 +264,22 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
               const SizedBox(height: 14),
               _ActionTile(
                 icon: Icons.person_add_alt_1_rounded,
-                label: 'Chat starten',
-                subtitle: 'User per Name suchen',
+                label: ctx.l10n.messengerStartChat,
+                subtitle: ctx.l10n.messengerStartChatSubtitle,
                 onTap: () => Navigator.pop(ctx, 'new_chat'),
               ),
               const SizedBox(height: 8),
               _ActionTile(
                 icon: Icons.group_add_rounded,
-                label: 'Gruppe erstellen',
-                subtitle: 'Neue Gruppe anlegen',
+                label: ctx.l10n.messengerCreateGroup,
+                subtitle: ctx.l10n.messengerCreateGroupSubtitle,
                 onTap: () => Navigator.pop(ctx, 'create_group'),
               ),
               const SizedBox(height: 8),
               _ActionTile(
                 icon: Icons.meeting_room_rounded,
-                label: 'Gruppe beitreten',
-                subtitle: 'Mit Einladungs-Code einsteigen',
+                label: ctx.l10n.messengerJoinGroupTitle,
+                subtitle: ctx.l10n.messengerJoinGroupSubtitle,
                 onTap: () => Navigator.pop(ctx, 'join_group'),
               ),
             ],
@@ -307,7 +308,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Kontakte',
+          context.l10n.messengerContactsTitle,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -322,7 +323,7 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
               child: IconButton(
                 icon: Icon(Icons.edit_rounded, color: AppColors.primary),
                 onPressed: _showActionSheet,
-                tooltip: 'Neue Konversation',
+                tooltip: context.l10n.messengerNewConversation,
               ),
             ),
           ),
@@ -449,7 +450,7 @@ class _RequestsRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Anfragen',
+                      context.l10n.messengerRequests,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -511,7 +512,9 @@ class _ChatTile extends StatelessWidget {
     final isGroup = contact.isGroupChat;
     final raw = contact.username;
     final displayName = isGroup ? raw : '@$raw';
-    final subtitle = isGroup ? 'Gruppenchat' : 'Direktnachricht';
+    final subtitle = isGroup
+        ? context.l10n.messengerGroupChat
+        : context.l10n.messengerDirectMessage;
 
     return Material(
       color: AppColors.surfaceContainerHigh.withValues(alpha: 0.5),
@@ -729,7 +732,7 @@ class _EmptyChats extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Keine Konversationen',
+            context.l10n.messengerEmptyTitle,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -738,7 +741,7 @@ class _EmptyChats extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Tipp auf das Stift-Symbol,\num einen Chat oder eine Gruppe zu starten.',
+            context.l10n.messengerEmptyHint,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 13,
@@ -867,7 +870,7 @@ class _NewChatSearchPageState extends State<_NewChatSearchPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Chat starten',
+          context.l10n.messengerStartChat,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -907,7 +910,7 @@ class _NewChatSearchPageState extends State<_NewChatSearchPage> {
                           color: AppColors.onSurface,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Username suchen',
+                          hintText: context.l10n.messengerSearchUsernameHint,
                           hintStyle: GoogleFonts.inter(
                             fontSize: 14,
                             color: AppColors.onSurfaceVariant,
@@ -942,24 +945,24 @@ class _NewChatSearchPageState extends State<_NewChatSearchPage> {
 
   Widget _buildBody() {
     if (_query.length < _minQueryLength) {
-      return const _HintTile(
+      return _HintTile(
         icon: Icons.keyboard_alt_outlined,
-        text: 'Mindestens 2 Zeichen eingeben',
+        text: context.l10n.messengerMinChars,
       );
     }
     if (_loading) return const _LoadingTile();
     if (_error) {
-      return const _HintTile(
+      return _HintTile(
         icon: Icons.error_outline,
-        text: 'Etwas ist schiefgelaufen.',
+        text: context.l10n.messengerSomethingWrong,
       );
     }
     final results = _results;
     if (results == null) return const _LoadingTile();
     if (results.isEmpty) {
-      return const _HintTile(
+      return _HintTile(
         icon: Icons.person_off_outlined,
-        text: 'Keine User gefunden',
+        text: context.l10n.messengerNoUsersFound,
       );
     }
     return ListView.separated(

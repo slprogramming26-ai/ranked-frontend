@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
+import 'l10n/l10n.dart';
 
 // Ergebnis des Passwort-Dialogs: entweder ein Passwort zum erneuten Versuchen
 // oder der Wunsch, die Chats zurueckzusetzen. null (Dialog weg) = Abbruch.
@@ -69,14 +70,11 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
           iconColor: Colors.white,
         ),
         const SizedBox(height: 20),
-        const _DialogTitle('Chats wiederherstellen'),
+        _DialogTitle(context.l10n.keyRestoreTitle),
         const SizedBox(height: 10),
-        const _DialogBody(
-          'Deine Chats wurden mit einem anderen Passwort gesichert. '
-          'Gib dein vorheriges Passwort ein, um sie wiederherzustellen.',
-        ),
+        _DialogBody(context.l10n.keyRestoreMessage),
         const SizedBox(height: 28),
-        const _FieldLabel('Vorheriges Passwort'),
+        _FieldLabel(context.l10n.keyRestorePasswordLabel),
         TextField(
           controller: _controller,
           obscureText: _obscure,
@@ -131,12 +129,12 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
           Padding(
             padding: const EdgeInsets.only(left: 4, top: 8),
             child: Row(
-              children: const [
-                Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
-                SizedBox(width: 6),
+              children: [
+                const Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
+                const SizedBox(width: 6),
                 Text(
-                  'Das Passwort passt nicht. Versuch es nochmal.',
-                  style: TextStyle(
+                  context.l10n.keyRestoreWrongPassword,
+                  style: const TextStyle(
                     color: Colors.redAccent,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -147,12 +145,12 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
           ),
         const SizedBox(height: 24),
         _GradientButton(
-          label: 'Wiederherstellen',
+          label: context.l10n.keyRestoreButton,
           onPressed: _controller.text.isEmpty ? null : _submit,
         ),
         const SizedBox(height: 4),
         _SecondaryButton(
-          label: 'Abbrechen',
+          label: context.l10n.keyRestoreCancelButton,
           onPressed: () => Navigator.pop(context),
         ),
         const SizedBox(height: 12),
@@ -169,7 +167,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
               color: AppColors.onSurfaceVariant,
             ),
             label: Text(
-              'Passwort vergessen? Chats zurücksetzen',
+              context.l10n.keyRestoreForgotPassword,
               style: TextStyle(
                 color: AppColors.onSurfaceVariant,
                 fontSize: 13,
@@ -200,12 +198,9 @@ Future<bool> showResetChatsDialog(BuildContext context) async {
           iconColor: Colors.redAccent,
         ),
         const SizedBox(height: 20),
-        const _DialogTitle('Chats zurücksetzen?'),
+        _DialogTitle(dialogContext.l10n.keyRestoreResetTitle),
         const SizedBox(height: 10),
-        const _DialogBody(
-          'Das lässt sich nicht rückgängig machen. Bitte lies kurz, '
-          'was passiert:',
-        ),
+        _DialogBody(dialogContext.l10n.keyRestoreResetMessage),
         const SizedBox(height: 20),
         Container(
           padding: const EdgeInsets.all(16),
@@ -213,37 +208,36 @@ Future<bool> showResetChatsDialog(BuildContext context) async {
             color: AppColors.surfaceContainerHighest.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Column(
+          child: Column(
             children: [
               _ConsequenceRow(
                 icon: Icons.lock_outline,
                 color: Colors.redAccent,
-                text: 'Deine bisherigen Nachrichten sind auf allen Geräten '
-                    'nicht mehr lesbar.',
+                text: dialogContext.l10n.keyRestoreResetConsequence1,
               ),
-              SizedBox(height: 14),
+              const SizedBox(height: 14),
               _ConsequenceRow(
                 icon: Icons.devices_outlined,
                 color: Colors.redAccent,
-                text: 'Andere angemeldete Geräte werden abgemeldet.',
+                text: dialogContext.l10n.keyRestoreResetConsequence2,
               ),
-              SizedBox(height: 14),
+              const SizedBox(height: 14),
               _ConsequenceRow(
                 icon: Icons.check_circle_outline,
                 color: Colors.green,
-                text: 'Neue Chats funktionieren ganz normal.',
+                text: dialogContext.l10n.keyRestoreResetConsequence3,
               ),
             ],
           ),
         ),
         const SizedBox(height: 24),
         _DangerButton(
-          label: 'Chats zurücksetzen',
+          label: dialogContext.l10n.keyRestoreResetButton,
           onPressed: () => Navigator.pop(dialogContext, true),
         ),
         const SizedBox(height: 4),
         _SecondaryButton(
-          label: 'Abbrechen',
+          label: dialogContext.l10n.keyRestoreCancelButton,
           onPressed: () => Navigator.pop(dialogContext, false),
         ),
       ],

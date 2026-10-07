@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../app_colors.dart';
+import '../../l10n/l10n.dart';
 import '../../local_data/database.dart';
 import '../../messenger/messenger_controller.dart';
 import '../../net_image.dart';
@@ -67,10 +68,9 @@ class _ShareSheetState extends State<ShareSheet>
     final service = widget.controller.service;
     if (service == null) {
       messenger.showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Messenger nicht bereit — bitte kurz warten und erneut '
-            'versuchen.',
+            context.l10n.shareMessengerNotReady,
           ),
         ),
       );
@@ -125,7 +125,7 @@ class _ShareSheetState extends State<ShareSheet>
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Teilen',
+                      context.l10n.shareSheetTitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 19,
                         fontWeight: FontWeight.w800,
@@ -157,7 +157,7 @@ class _ShareSheetState extends State<ShareSheet>
                       if (contacts.isEmpty) {
                         return Center(
                           child: Text(
-                            'Noch keine Chats zum Teilen.',
+                            context.l10n.shareNoChats,
                             style: TextStyle(
                               color: AppColors.onSurfaceVariant,
                             ),
@@ -225,7 +225,7 @@ class _ShareSheetState extends State<ShareSheet>
               ),
               const SizedBox(width: 12),
               Text(
-                _linkCopied ? 'Link kopiert' : 'Link kopieren',
+                _linkCopied ? context.l10n.shareLinkCopied : context.l10n.shareCopyLink,
                 style: TextStyle(
                   fontSize: 14.5,
                   color: AppColors.onSurface,
@@ -358,7 +358,7 @@ class _ShareSheetState extends State<ShareSheet>
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'An $username gesendet!',
+                    context.l10n.shareSentTo(username),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,

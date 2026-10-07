@@ -4,6 +4,7 @@ import '../profile.dart';
 import '../user_api_service.dart';
 import 'package:provider/provider.dart';
 import '../app_colors.dart';
+import 'package:ranked/l10n/l10n.dart';
 import 'ranking_widgets.dart';
 import 'ranking_leaderboard.dart';
 
@@ -112,7 +113,7 @@ class _RankingHomeState extends State<RankingHome> {
                     ),
                     const SizedBox(height: 32),
                     Text(
-                      'JOIN THE\nRANKING',
+                      context.l10n.rankingOptinTitle,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 40,
@@ -124,7 +125,7 @@ class _RankingHomeState extends State<RankingHome> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Aktiviere das Ranking und lass dich täglich von der Community bewerten — Productivity, Creativity & Engagement.',
+                      context.l10n.rankingOptinDescription,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 15,
@@ -135,7 +136,7 @@ class _RankingHomeState extends State<RankingHome> {
                     const Spacer(),
                     // Activate Button
                     GradientButton(
-                      label: 'AKTIVIEREN',
+                      label: context.l10n.rankingOptinButton,
                       isLoading: _isLoading,
                       onPressed: () async {
                         setState(() => _isLoading = true);

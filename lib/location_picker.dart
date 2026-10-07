@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
+import 'l10n/l10n.dart';
 import 'user_api_service.dart';
 
 /// Oeffnet den Location-Picker als Bottom-Sheet und liefert den gewaehlten
@@ -109,7 +110,7 @@ class _LocationPickerState extends State<LocationPicker> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Ort wählen',
+                  context.l10n.locationPickerTitle,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 19,
                     fontWeight: FontWeight.w800,
@@ -137,7 +138,7 @@ class _LocationPickerState extends State<LocationPicker> {
         textInputAction: TextInputAction.search,
         style: TextStyle(color: AppColors.onSurface, fontSize: 15),
         decoration: InputDecoration(
-          hintText: 'Stadt suchen …',
+          hintText: context.l10n.locationSearchHint,
           hintStyle: TextStyle(color: AppColors.onSurfaceVariant),
           prefixIcon: Icon(
             Icons.search_rounded,
@@ -163,13 +164,13 @@ class _LocationPickerState extends State<LocationPicker> {
     if (!_hasSearched) {
       return _buildHint(
         Icons.travel_explore_rounded,
-        'Tippe, um deine Stadt zu suchen',
+        context.l10n.locationSearchStartHint,
       );
     }
     if (_results.isEmpty) {
       return _buildHint(
         Icons.location_off_rounded,
-        'Keinen Ort gefunden — probier eine andere Schreibweise',
+        context.l10n.locationNotFound,
       );
     }
     return ListView.builder(

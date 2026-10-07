@@ -17,6 +17,7 @@ import '../net_image.dart';
 import 'chat_screen.dart';
 import 'conversation.dart';
 import 'messenger_controller.dart';
+import 'package:ranked/l10n/l10n.dart';
 
 class ChatRequestsPage extends StatelessWidget {
   const ChatRequestsPage({super.key});
@@ -60,7 +61,7 @@ class ChatRequestsPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Anfragen',
+          context.l10n.messengerRequests,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -163,7 +164,7 @@ class _RequestTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      'Möchte dir schreiben',
+                      context.l10n.chatRequestsWantsToWrite,
                       style: GoogleFonts.inter(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
@@ -231,7 +232,7 @@ class _EmptyRequests extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Alles erledigt',
+            context.l10n.chatRequestsEmptyTitle,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -240,7 +241,7 @@ class _EmptyRequests extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Keine offenen Chat-Anfragen.',
+            context.l10n.chatRequestsEmptyHint,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 13,

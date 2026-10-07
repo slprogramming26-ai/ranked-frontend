@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../app_colors.dart';
 import '../net_image.dart';
 import '../profile.dart';
+import 'package:ranked/l10n/l10n.dart';
 import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
 import 'ranking_widgets.dart' show GradientButton, PopIn;
@@ -129,7 +130,7 @@ class _RankingPagesState extends State<RankingPages> {
                     size: 56, color: AppColors.outlineVariant),
                 const SizedBox(height: 16),
                 Text(
-                  'Aktuell keine Teilnehmer zum Bewerten verfügbar.',
+                  context.l10n.rankingNoParticipants,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 16,
@@ -299,7 +300,7 @@ class _SessionHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'DU BEWERTEST',
+                    context.l10n.rankingEvaluatingLabel,
                     style: GoogleFonts.inter(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
@@ -537,7 +538,7 @@ class _SwipeCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      isLike ? 'LIKE' : 'NOPE',
+                      isLike ? context.l10n.rankingSwipeLike : context.l10n.rankingSwipeNope,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
@@ -734,7 +735,7 @@ class _SwipeResultScreen extends StatelessWidget {
               PopIn(
                 delayMs: 250,
                 child: Text(
-                  'PUNKTE VERGEBEN',
+                  context.l10n.rankingResultLabel,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.inter(
                     fontSize: 12,
@@ -825,7 +826,7 @@ class _SwipeResultScreen extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 40),
                   child: GradientButton(
-                    label: 'FERTIG',
+                    label: context.l10n.rankingResultDone,
                     isLoading: false,
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -896,10 +897,10 @@ class _SwipeErrorScreen extends StatelessWidget {
     final iconBg = alreadyVoted
         ? AppColors.tertiaryContainer
         : AppColors.secondaryFixed;
-    final headline = alreadyVoted ? 'BEREITS\nGEWERTET' : 'FEHLER';
+    final headline = alreadyVoted ? context.l10n.rankingAlreadyVotedHeadline : context.l10n.rankingErrorHeadline;
     final subtitle = alreadyVoted
-        ? 'Du hast heute schon abgestimmt.\nMorgen bist du wieder dran!'
-        : (detail ?? 'Etwas ist schiefgelaufen. Versuch es später nochmal.');
+        ? context.l10n.rankingAlreadyVotedMessage
+        : (detail ?? context.l10n.rankingErrorMessage);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -944,7 +945,7 @@ class _SwipeErrorScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 40),
                 child: GradientButton(
-                  label: 'ZURÜCK',
+                  label: context.l10n.rankingBackButton,
                   isLoading: false,
                   onPressed: () => Navigator.pop(context),
                 ),

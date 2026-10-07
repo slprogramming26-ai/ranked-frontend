@@ -6,8 +6,10 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/main.dart';
+import 'package:ranked/l10n/l10n.dart';
 import '../app_colors.dart';
 import '../app_loading.dart';
+import '../login_result.dart';
 import '../user_api_service.dart';
 import 'steps/about_me_step.dart';
 import 'steps/age_step.dart';
@@ -161,16 +163,15 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       return;
     }
 
-    final loggedIn = await UserApiService.login(
+    // Frisches Konto kann nicht gesperrt sein -> alles ausser Ok ist Fehler.
+    final result = await UserApiService.login(
       email,
       _passwordController.text,
     );
-    if (!loggedIn) {
+    if (result is! LoginOk) {
       if (!mounted) return;
       setState(() {
-        _credentialsError =
-            'Dein Konto wurde erstellt, aber der automatische Login hat nicht '
-            'geklappt. Bitte melde dich auf der Login-Seite an.';
+        _credentialsError = context.l10n.onboardingLoginFailedAuto;
         _isSubmitting = false;
       });
       return;
@@ -211,11 +212,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         // siehe oben), nachtragen kann er es im Profil.
         if (cleanPath == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Dein Profilbild konnte nicht verarbeitet werden — du kannst '
-                'es später im Profil nachtragen.',
-              ),
+            SnackBar(
+              content: Text(context.l10n.onboardingImageProcessError),
             ),
           );
         } else {
@@ -277,14 +275,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             // der drei Ladevorgaenge in der App, daher wie Post-Upload und
             // Story-Editor ein blockierendes Overlay statt nur Button-Spinner.
             if (_isSubmitting)
-              const AppLoadingOverlay(
-                title: 'Setting up your account',
+              AppLoadingOverlay(
+                title: context.l10n.onboardingLoadingSetup,
                 messages: [
-                  'Creating your account...',
-                  'Signing you in...',
-                  'Securing your chats...',
-                  'Uploading your photo...',
-                  'Almost there...',
+                  context.l10n.onboardingLoadingCreating,
+                  context.l10n.onboardingLoadingSigning,
+                  context.l10n.onboardingLoadingSecuring,
+                  context.l10n.onboardingLoadingUploading,
+                  context.l10n.onboardingLoadingAlmost,
                 ],
               ),
           ],
@@ -330,7 +328,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           Row(
             children: [
               Text(
-                'Step ${_currentPage + 1} of ${_pages.length}',
+                context.l10n.onboardingStepProgress(
+                  _currentPage + 1,
+                  _pages.length,
+                ),
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -400,7 +401,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _isLastPage ? 'Create Account' : 'Next',
+                  _isLastPage ? context.l10n.onboardingCreateButton : context.l10n.onboardingNextButton,
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white,
                     fontSize: 18,

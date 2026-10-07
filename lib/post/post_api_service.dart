@@ -111,8 +111,24 @@ class PostApiService {
   }
 
   static Future<bool> deletePost(int id) async {
-    final response = await ApiClient.delete(Uri.parse('$baseUrl/posts/$id'));
-    return response.statusCode == 204;
+    try {
+      final response = await ApiClient.delete(Uri.parse('$baseUrl/posts/$id'));
+      return response.statusCode == 204;
+    } catch (_) {
+      return false; // kein Netz -> Exception statt Statuscode
+    }
+  }
+
+  /// Loescht den eigenen Kommentar. 404 zaehlt wie Erfolg: der Kommentar ist
+  /// schon weg, also ist das Ziel erreicht (gleiche Regel wie bei deleteBlock).
+  static Future<bool> deleteComment(int id) async {
+    try {
+      final response =
+          await ApiClient.delete(Uri.parse('$baseUrl/comment/$id'));
+      return response.statusCode == 204 || response.statusCode == 404;
+    } catch (_) {
+      return false; // kein Netz -> Exception statt Statuscode
+    }
   }
 
 

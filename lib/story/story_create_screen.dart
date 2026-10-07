@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
 import '../app_colors.dart';
+import '../l10n/l10n.dart';
 import '../app_loading.dart';
 import '../image_sanitizer.dart';
 import '../local_data/database.dart';
@@ -107,7 +108,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
     // Kein Fallback auf die Originaldatei: die traegt noch GPS/Kameradaten.
     if (formatted == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Bild konnte nicht verarbeitet werden')),
+        SnackBar(content: Text(context.l10n.storyProcessingError)),
       );
       return;
     }
@@ -165,7 +166,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
 
     if (data == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Story-Upload fehlgeschlagen')),
+        SnackBar(content: Text(context.l10n.storyUploadError)),
       );
       return;
     }
@@ -224,7 +225,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                       Text(
-                        'Neue Story',
+                        context.l10n.storyCreateTitle,
                         style: GoogleFonts.plusJakartaSans(
                           fontWeight: FontWeight.w800,
                           fontSize: 20,
@@ -339,7 +340,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                           ),
                           const SizedBox(height: 24),
                           Text(
-                            'Teile deinen Moment',
+                            context.l10n.storyShareMoment,
                             style: GoogleFonts.plusJakartaSans(
                               fontWeight: FontWeight.w800,
                               fontSize: 24,
@@ -349,7 +350,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Erstelle in Sekunden eine Story für deine Follower.',
+                            context.l10n.storyCreateDescription,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
@@ -379,7 +380,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '24H sichtbar',
+                                  context.l10n.storyVisibleTime,
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
@@ -395,8 +396,8 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                               Expanded(
                                 child: _SourceCard(
                                   icon: Icons.photo_library_rounded,
-                                  label: 'Galerie',
-                                  subtitle: 'Bild wählen',
+                                  label: context.l10n.storySourceGallery,
+                                  subtitle: context.l10n.storySourceGallerySubtitle,
                                   filled: true,
                                   onTap: () => _pick(ImageSource.gallery),
                                 ),
@@ -405,8 +406,8 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                               Expanded(
                                 child: _SourceCard(
                                   icon: Icons.photo_camera_rounded,
-                                  label: 'Kamera',
-                                  subtitle: 'Live aufnehmen',
+                                  label: context.l10n.storySourceCamera,
+                                  subtitle: context.l10n.storySourceCameraSubtitle,
                                   filled: false,
                                   onTap: () => _pick(ImageSource.camera),
                                 ),
@@ -563,7 +564,7 @@ class _StoryCreateScreenState extends State<StoryCreateScreen>
                               ),
                             const SizedBox(width: 10),
                             Text(
-                              _uploading ? 'Wird geteilt...' : 'Story teilen',
+                              _uploading ? context.l10n.storyUploadingButton : context.l10n.storyShareButton,
                               style: GoogleFonts.plusJakartaSans(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 16,

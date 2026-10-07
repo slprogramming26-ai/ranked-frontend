@@ -6,9 +6,11 @@ import 'app_colors.dart';
 import 'api_client.dart';
 import 'key_service.dart';
 import 'location_picker.dart';
+import 'moderation/blocked_accounts_screen.dart';
 import 'profile.dart';
 import 'theme_provider.dart';
 import 'user_api_service.dart';
+import 'l10n/l10n.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -56,15 +58,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (ok) _location = loc;
       _busy = false;
     });
-    if (!ok) _showSnack('Ort konnte nicht gespeichert werden.');
+    if (!ok) _showSnack(context.l10n.settingsLocationFailed);
   }
 
   Future<void> _handleClearLocation() async {
     final confirmed = await _confirm(
-      title: 'Standort entfernen?',
-      message: 'Ohne Standort kannst du den lokalen Feed nicht nutzen, '
-          'bis du wieder einen Ort waehlst.',
-      confirmLabel: 'Entfernen',
+      title: context.l10n.settingsClearLocationTitle,
+      message: context.l10n.settingsClearLocationMessage,
+      confirmLabel: context.l10n.settingsClearLocationButton,
       destructive: false,
     );
     if (confirmed != true || !mounted) return;
@@ -76,15 +77,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (ok) _location = null;
       _busy = false;
     });
-    if (!ok) _showSnack('Entfernen fehlgeschlagen. Bitte erneut versuchen.');
+    if (!ok) _showSnack(context.l10n.settingsClearLocationError);
   }
 
   // ── Logout ────────────────────────────────────────────────────────────────
   Future<void> _handleLogout() async {
     final confirmed = await _confirm(
-      title: 'Abmelden?',
-      message: 'Du wirst von diesem Geraet abgemeldet.',
-      confirmLabel: 'Abmelden',
+      title: context.l10n.settingsLogoutTitle,
+      message: context.l10n.settingsLogoutMessage,
+      confirmLabel: context.l10n.settingsLogout,
       destructive: false,
     );
     if (confirmed != true) return;
@@ -103,11 +104,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Dialog-/Request-Luecken hinweg gebraucht wird.
     final userId = context.read<ProfileProvider>().userdata['id'] as int?;
     final confirmed = await _confirm(
-      title: 'Account loeschen?',
-      message:
-          'Dein Account, alle Posts, Votes und Kommentare werden dauerhaft '
-          'geloescht. Das laesst sich nicht rueckgaengig machen.',
-      confirmLabel: 'Endgueltig loeschen',
+      title: context.l10n.settingsDeleteAccountTitle,
+      message: context.l10n.settingsDeleteAccountMessage,
+      confirmLabel: context.l10n.settingsDeleteAccountButton,
       destructive: true,
     );
     if (confirmed != true) return;
@@ -126,7 +125,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) Navigator.of(context).popUntil((r) => r.isFirst);
     } else {
       setState(() => _busy = false);
-      _showSnack('Loeschen fehlgeschlagen. Bitte spaeter erneut versuchen.');
+      _showSnack(context.l10n.settingsDeleteFailed);
     }
   }
 
@@ -162,7 +161,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
             child: Text(
-              'Abbrechen',
+              context.l10n.settingsCancelButton,
               style: GoogleFonts.inter(
                 fontWeight: FontWeight.w600,
                 color: AppColors.onSurfaceVariant,
@@ -213,7 +212,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(width: 16),
                     Text(
-                      'Settings',
+                      context.l10n.settingsTitle,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
@@ -226,13 +225,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 32),
 
                 // ── Darstellung ──────────────────────────────────────────
-                _SectionLabel('DARSTELLUNG'),
+                _SectionLabel(context.l10n.settingsSectionAppearance),
                 _SettingsCard(
                   children: [
                     _SettingsTile(
                       icon: Icons.dark_mode_outlined,
-                      title: 'Dark Mode',
-                      subtitle: 'Dunkles Erscheinungsbild',
+                      title: context.l10n.settingsDarkMode,
+                      subtitle: context.l10n.settingsDarkModeSubtitle,
                       trailing: Switch(
                         value: theme.isDark,
                         activeColor: AppColors.primary,
@@ -244,23 +243,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
 
                 // ── Profil ───────────────────────────────────────────────
-                _SectionLabel('PROFIL'),
+                _SectionLabel(context.l10n.settingsSectionProfile),
                 _SettingsCard(
                   children: [
                     _SettingsTile(
                       icon: Icons.location_on_outlined,
-                      title: 'Standort',
+                      title: context.l10n.settingsLocation,
                       subtitle: _locationLoading
-                          ? 'Wird geladen …'
+                          ? context.l10n.settingsLocationLoading
                           : (_location?['name'] as String? ??
-                              'Kein Ort gesetzt'),
+                              context.l10n.settingsLocationNotSet),
                       trailing: _location == null
                           ? Icon(Icons.chevron_right,
                               color: AppColors.onSurfaceVariant, size: 22)
                           : IconButton(
                               icon: Icon(Icons.close,
                                   color: AppColors.onSurfaceVariant, size: 20),
-                              tooltip: 'Standort entfernen',
+                              tooltip: context.l10n.settingsRemoveLocation,
                               onPressed: _busy ? null : _handleClearLocation,
                             ),
                       onTap:
@@ -270,14 +269,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 24),
 
+                // ── Privatsphaere ────────────────────────────────────────
+                _SectionLabel(context.l10n.settingsSectionPrivacy),
+                _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.block_rounded,
+                      title: context.l10n.settingsBlockedAccounts,
+                      subtitle: context.l10n.settingsBlockedAccountsSubtitle,
+                      trailing: Icon(Icons.chevron_right,
+                          color: AppColors.onSurfaceVariant, size: 22),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const BlockedAccountsScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
                 // ── Rechtliches ──────────────────────────────────────────
-                _SectionLabel('RECHTLICHES'),
+                _SectionLabel(context.l10n.settingsSectionLegal),
                 _SettingsCard(
                   children: [
                     _SettingsTile(
                       icon: Icons.shield_outlined,
-                      title: 'Datenschutz (DSGVO)',
-                      subtitle: 'Wie wir mit deinen Daten umgehen',
+                      title: context.l10n.settingsPrivacy,
+                      subtitle: context.l10n.settingsPrivacySubtitle,
                       trailing: Icon(Icons.chevron_right,
                           color: AppColors.onSurfaceVariant, size: 22),
                       onTap: () => Navigator.of(context).push(
@@ -289,18 +308,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 24),
 
                 // ── Account ──────────────────────────────────────────────
-                _SectionLabel('ACCOUNT'),
+                _SectionLabel(context.l10n.settingsSectionAccount),
                 _SettingsCard(
                   children: [
                     _SettingsTile(
                       icon: Icons.logout,
-                      title: 'Abmelden',
+                      title: context.l10n.settingsLogout,
                       onTap: _busy ? null : _handleLogout,
                     ),
                     const _TileDivider(),
                     _SettingsTile(
                       icon: Icons.delete_outline,
-                      title: 'Account loeschen',
+                      title: context.l10n.settingsDeleteAccount,
                       destructive: true,
                       onTap: _busy ? null : _handleDelete,
                     ),
@@ -473,7 +492,7 @@ class _DsgvoScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  'Datenschutz',
+                  context.l10n.settingsDsgvoTitle,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,

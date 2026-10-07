@@ -332,16 +332,16 @@ class _MyHomePageState extends State<MyHomePage> {
     final restore = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Entwurf wiederherstellen?'),
-        content: const Text('Du hast einen unfertigen Post.'),
+        title: Text(dialogContext.l10n.appDraftRestoreTitle),
+        content: Text(dialogContext.l10n.appDraftRestoreMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Verwerfen'),
+            child: Text(dialogContext.l10n.appDraftDiscardButton),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Wiederherstellen'),
+            child: Text(dialogContext.l10n.appDraftRestoreButton),
           ),
         ],
       ),

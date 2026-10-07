@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
 
 class WelcomeStep extends StatelessWidget {
@@ -14,7 +15,7 @@ class WelcomeStep extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            "Welcome to\nthe Pulse",
+            context.l10n.onboardingWelcomeTitle,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 48,
               fontWeight: FontWeight.w900,
@@ -23,9 +24,9 @@ class WelcomeStep extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "The world’s first editorial social feed where your energy matters.",
-            style: TextStyle(
+          Text(
+            context.l10n.onboardingWelcomeSubtitle,
+            style: const TextStyle(
               fontSize: 18,
               color: Colors.grey,
               fontWeight: FontWeight.w500,
@@ -34,22 +35,22 @@ class WelcomeStep extends StatelessWidget {
           const SizedBox(height: 40),
           _bentoItem(
             Icons.analytics,
-            "Post your life",
-            "Share your daily Pulse. Authentic and raw.",
+            context.l10n.onboardingWelcomePostTitle,
+            context.l10n.onboardingWelcomePostSub,
             AppColors.primary,
             true,
           ),
           _bentoItem(
             Icons.military_tech,
-            "Get Ranked",
-            "The community evaluates your creativity.",
+            context.l10n.onboardingWelcomeRankTitle,
+            context.l10n.onboardingWelcomeRankSub,
             AppColors.tertiaryContainer,
             false,
           ),
           _bentoItem(
             Icons.insert_emoticon_rounded,
-            'Earn and customize',
-            'Rank others to earn coins. Unlock exclusive avatar items and "Freundebuch" skins',
+            context.l10n.onboardingWelcomeEarnTitle,
+            context.l10n.onboardingWelcomeEarnSub,
             Colors.lightGreen,
             true,
           ),

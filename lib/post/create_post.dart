@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'post_api_service.dart';
 import 'package:flutter/material.dart';
 import '../app_colors.dart';
+import '../l10n/l10n.dart';
 import '../app_loading.dart';
 import '../location_picker.dart';
 import '../profile.dart';
@@ -191,7 +192,7 @@ class _CreatePostState extends State<CreatePost> {
           ),
         ),
         title: Text(
-          'Create Post',
+          context.l10n.createPostTitle,
           style: GoogleFonts.plusJakartaSans(
             fontWeight: FontWeight.w800,
             color: AppColors.primary,

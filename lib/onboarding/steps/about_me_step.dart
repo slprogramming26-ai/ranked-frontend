@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
 
 class AboutMeStep extends StatefulWidget {
@@ -134,7 +135,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
 
           // --- Hero Text ---
           Text(
-            "The Digital Pulse",
+            context.l10n.onboardingAboutMeTitle,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 26,
               fontWeight: FontWeight.w900,
@@ -144,7 +145,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
           ),
           const SizedBox(height: 6),
           Text(
-            "Let others feel your energy. This is your curated scrapbook entry.",
+            context.l10n.onboardingAboutMeSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -159,7 +160,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              "YOUR STORY",
+              context.l10n.onboardingAboutMeStoryLabel,
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
@@ -191,8 +192,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
                 controller: _bioController,
                 maxLines: 6,
                 decoration: InputDecoration(
-                  hintText:
-                      "Share your story, your goals, or what makes you unique...",
+                  hintText: context.l10n.onboardingAboutMeBioHint,
                   hintStyle: TextStyle(
                     color: AppColors.outlineVariant,
                     fontSize: 13,

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:ui';
 import '../app_colors.dart';
 import '../net_image.dart';
+import 'package:ranked/l10n/l10n.dart';
 
 // ─── PopIn: Fade/Slide/Scale-Einblendung mit Verzoegerung ─────────────────────
 // TweenAnimationBuilder kennt kein "delay" — der Trick ist ein Interval als
@@ -470,13 +471,13 @@ class LeaderboardMeCard extends StatelessWidget {
     final String headline;
     final String subline;
     if (!hasPoints) {
-      headline = 'Noch keine Punkte heute';
-      subline = 'Poste, um bewertet zu werden';
+      headline = context.l10n.rankingNoPointsHeadline;
+      subline = context.l10n.rankingNoPointsSubline;
     } else if (isFirst) {
-      headline = 'Du führst heute!';
-      subline = 'Verteidige deinen Platz';
+      headline = context.l10n.rankingLeadingHeadline;
+      subline = context.l10n.rankingLeadingSubline;
     } else {
-      headline = 'Platz #$rank';
+      headline = context.l10n.rankingMyRank(rank);
       subline =
           'Noch $toNext ${toNext == 1 ? 'Punkt' : 'Punkte'} bis zum nächsten Platz';
     }
@@ -516,7 +517,7 @@ class LeaderboardMeCard extends StatelessWidget {
                       size: 22,
                     )
                   : Text(
-                      'DU',
+                      context.l10n.rankingYourBadge,
                       style: GoogleFonts.plusJakartaSans(
                         fontSize: 13,
                         fontWeight: FontWeight.w900,
@@ -768,7 +769,7 @@ class EmptyLeaderboard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Noch keine Rankings heute',
+            context.l10n.rankingEmptyLeaderboard,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -817,8 +818,8 @@ class BottomActionBar extends StatelessWidget {
             opacity: rankedToday ? 0.5 : 1.0,
             child: GradientButton(
               label: rankedToday
-                  ? 'HEUTE SCHON GEWERTET'
-                  : 'GET YOUR RANKED PARTNER',
+                  ? context.l10n.rankingAlreadyRankedButton
+                  : context.l10n.rankingGetPartnerButton,
               isLoading: isLoading,
               onPressed: rankedToday ? null : onPressed,
             ),

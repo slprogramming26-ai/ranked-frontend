@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/search.dart';
+import '../l10n/l10n.dart';
 import 'post_provider.dart';
 import 'post_api_service.dart';
 import 'widgets/story_avatar.dart';
@@ -217,7 +218,7 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
     if (!mounted) return;
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ort konnte nicht gespeichert werden')),
+        SnackBar(content: Text(context.l10n.feedLocationSaveError)),
       );
       return;
     }
@@ -361,8 +362,8 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
         ),
         child: Row(
           children: [
-            _toggleSegment('Für dich', !isLocal, () => _switchFeed(false)),
-            _toggleSegment('Lokal', isLocal, () => _switchFeed(true)),
+            _toggleSegment(context.l10n.feedForYou, !isLocal, () => _switchFeed(false)),
+            _toggleSegment(context.l10n.feedLocal, isLocal, () => _switchFeed(true)),
           ],
         ),
       ),
@@ -421,8 +422,8 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
           const SizedBox(height: 16),
           Text(
             _noLocation
-                ? 'Kein Ort gesetzt'
-                : 'Noch nichts los hier',
+                ? context.l10n.feedNoLocationTitle
+                : context.l10n.feedNoPostsTitle,
             textAlign: TextAlign.center,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 17,
@@ -433,8 +434,8 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
           const SizedBox(height: 8),
           Text(
             _noLocation
-                ? 'Wähle deinen Ort, um Posts aus deiner Umgebung zu sehen.'
-                : 'An deinem Ort wurde noch nichts gepostet — sei die/der Erste!',
+                ? context.l10n.feedChooseLocationHint
+                : context.l10n.feedNoPostsHint,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -457,7 +458,7 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
               ),
               icon: const Icon(Icons.location_on_rounded, size: 18),
               label: Text(
-                'Ort wählen',
+                context.l10n.feedChooseLocation,
                 style: GoogleFonts.plusJakartaSans(
                   fontWeight: FontWeight.w800,
                 ),
@@ -598,7 +599,7 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
         ),
         const SizedBox(height: 8),
         Text(
-          "Your Pulse",
+          context.l10n.storyRowYourPulse,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 10,
             fontWeight: FontWeight.bold,

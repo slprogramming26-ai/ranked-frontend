@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
 
 class AgeStep extends StatefulWidget {
@@ -83,7 +84,7 @@ class _AgeStepState extends State<AgeStep> {
 
           // --- Hero Text ---
           Text(
-            "One Last Check",
+            context.l10n.onboardingAgeTitle,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 26,
               fontWeight: FontWeight.w900,
@@ -93,7 +94,7 @@ class _AgeStepState extends State<AgeStep> {
           ),
           const SizedBox(height: 6),
           Text(
-            "How old are you? We only check this once — your age is never stored.",
+            context.l10n.onboardingAgeSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -161,7 +162,7 @@ class _AgeStepState extends State<AgeStep> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      "Ranked is 16+. We'd love to see you again in a few years!",
+                      context.l10n.onboardingAgeWarning,
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

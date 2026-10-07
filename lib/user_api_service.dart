@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'token_storage.dart';
 import 'api_client.dart';
+import 'login_result.dart';
 import 'moderation/report_reason.dart';
 import 'moderation/report_target.dart';
+import 'moderation/suspension.dart';
 
 class UserApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
@@ -12,25 +14,29 @@ class UserApiService {
 
   // login bleibt roher http-Call: hier gibt es noch keinen Token, und der
   // Body ist form-urlencoded (OAuth2PasswordRequestForm), nicht JSON.
-  static Future<bool> login(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/login'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {
-        'username': email,
-        'password': password,
-      },
-    );
+  static Future<LoginResult> login(String email, String password) async {
+    final http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('$baseUrl/login'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {'username': email, 'password': password},
+      );
+    } catch (_) {
+      return const LoginOffline(); // sonst dreht der Login-Spinner ewig
+    }
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       await TokenStorage.saveRefreshToken(data["refresh_token"]);
       await TokenStorage.saveToken(data['access_token']);
       ApiClient.resetLogoutGuard(); // Riegel fuer kuenftige Zwangs-Logouts oeffnen
-      return true;
-    } else {
-      return false; // Login fehlgeschlagen
+      return const LoginOk();
     }
+    // login geht nicht ueber ApiClient._send -> die Sperre hier selbst pruefen.
+    final suspension = Suspension.fromResponse(response);
+    if (suspension != null) return LoginSuspended(suspension);
+    return const LoginInvalid();
   }
 
   static Future<Map<String, dynamic>> getCurrentUser() async {
@@ -50,10 +56,11 @@ class UserApiService {
   }
 
   static Future<List<Map<String, dynamic>>> getUserByUsername(
-      String username) async {
-    final uri = Uri.parse('$baseUrl/users/search').replace(
-      queryParameters: {'search': username},
-    );
+    String username,
+  ) async {
+    final uri = Uri.parse(
+      '$baseUrl/users/search',
+    ).replace(queryParameters: {'search': username});
     final response = await ApiClient.get(uri);
     if (response.statusCode == 200) {
       final data = jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
@@ -90,9 +97,13 @@ class UserApiService {
     return 'Registrierung fehlgeschlagen (Fehler ${response.statusCode})';
   }
 
-  static Future<Map<String, dynamic>> addUserDetails(String? vibe_factor_1,
-      String? vibe_factor_2, String imageUrl, String bio,
-      {int? locationId}) async {
+  static Future<Map<String, dynamic>> addUserDetails(
+    String? vibe_factor_1,
+    String? vibe_factor_2,
+    String imageUrl,
+    String bio, {
+    int? locationId,
+  }) async {
     final body = <String, dynamic>{
       "profile_picture_url": imageUrl,
       "biography": bio,
@@ -113,13 +124,12 @@ class UserApiService {
   }
 
   static Future<Map<String, dynamic>> setRankingEnabled(
-      bool rankingEnabled) async {
+    bool rankingEnabled,
+  ) async {
     await ApiClient.put(
       Uri.parse('$baseUrl/users/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        "ranking_enabled": rankingEnabled,
-      }),
+      body: jsonEncode({"ranking_enabled": rankingEnabled}),
     );
     return {};
   }
@@ -147,29 +157,56 @@ class UserApiService {
   }
 
   static Future<bool> blockUser(int blockedId) async {
-    final response =
-        await ApiClient.post(Uri.parse('$baseUrl/users/block/$blockedId'));
-    return response.statusCode == 201;
+    try {
+      final response = await ApiClient.post(
+        Uri.parse('$baseUrl/users/block/$blockedId'),
+      );
+      // 409 = schon blockiert -> Ziel erreicht, also auch Erfolg.
+      return response.statusCode == 201 || response.statusCode == 409;
+    } catch (_) {
+      return false; // kein Netz -> Exception statt Statuscode
+    }
   }
 
   static Future<bool> deleteBlock(int blockedId) async {
-    final response =
-        await ApiClient.delete(Uri.parse('$baseUrl/users/block/$blockedId'));
-    return response.statusCode == 200;
+    try {
+      final response = await ApiClient.delete(
+        Uri.parse('$baseUrl/users/block/$blockedId'),
+      );
+      // 404 = keine Blockade (mehr) da oder User weg -> Ziel erreicht.
+      return response.statusCode == 200 || response.statusCode == 404;
+    } catch (_) {
+      return false; // sonst bleibt der Spinner im Aufheben-Button haengen
+    }
   }
-  
+
+  static Future<List<Map<String, dynamic>>?> getBlocks() async {
+    try {
+      final response = await ApiClient.get(
+        Uri.parse('$baseUrl/users/blocked'),
+      );
+      if (response.statusCode == 200) {
+        final data =
+            jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+        return data.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {
+      // kein Netz / kaputtes JSON -> unten null, wie jeder andere Fehler
+    }
+    return null; // Fehler != leere Liste: der Screen zeigt dann "Erneut versuchen"
+  }
+
   static Future<bool> deleteUser() async {
-    final response =
-        await ApiClient.delete(Uri.parse('$baseUrl/users/'));
+    final response = await ApiClient.delete(Uri.parse('$baseUrl/users/'));
     return response.statusCode == 204;
   }
 
   /// Ortssuche fuer den Location-Picker. Liefert max. 20 Orte als
   /// `{id, name}`-Maps, Prefix-Treffer zuerst (macht das Backend).
   static Future<List<Map<String, dynamic>>> getLocations(String search) async {
-    final uri = Uri.parse('$baseUrl/locations/').replace(
-      queryParameters: {'search': search},
-    );
+    final uri = Uri.parse(
+      '$baseUrl/locations/',
+    ).replace(queryParameters: {'search': search});
     final response = await ApiClient.get(uri);
     if (response.statusCode == 200) {
       // bodyBytes + utf8.decode wegen Umlauten in Ortsnamen (z.B. "Muenchen"

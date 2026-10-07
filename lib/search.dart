@@ -7,6 +7,7 @@ import 'net_image.dart';
 import 'profile.dart';
 import 'local_data/database.dart';
 import 'package:provider/provider.dart';
+import 'l10n/l10n.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -39,11 +40,11 @@ class _SearchPageState extends State<SearchPage> {
         backgroundColor: AppColors.surfaceContainerHigh,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          'Clear search history?',
+          context.l10n.searchClearHistoryTitle,
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
         ),
         content: Text(
-          'This will remove all recent searches from this device.',
+          context.l10n.searchClearHistoryMessage,
           style: GoogleFonts.inter(
             color: AppColors.onSurfaceVariant,
             fontSize: 14,
@@ -53,14 +54,14 @@ class _SearchPageState extends State<SearchPage> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
-              'Cancel',
+              context.l10n.searchCancelButton,
               style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
-              'Clear',
+              context.l10n.searchClearButton,
               style: GoogleFonts.inter(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w800,
@@ -115,7 +116,7 @@ class _SearchPageState extends State<SearchPage> {
                 isFullScreen: false,
                 viewBackgroundColor: AppColors.surface,
                 viewElevation: 2,
-                viewHintText: 'Search users',
+                viewHintText: context.l10n.searchPlaceholder,
                 viewLeading: IconButton(
                   icon: Icon(Icons.arrow_back, color: AppColors.primary),
                   onPressed: () => _searchController.closeView(null),
@@ -195,8 +196,8 @@ class _SearchPageState extends State<SearchPage> {
 
   Iterable<Widget> _renderResults(List<Map<String, dynamic>> results) {
     if (results.isEmpty) {
-      return const [
-        _HintTile(icon: Icons.person_off_outlined, text: 'No users found'),
+      return [
+        _HintTile(icon: Icons.person_off_outlined, text: context.l10n.searchNoUsersFound),
       ];
     }
 
@@ -225,8 +226,8 @@ class _SearchPageState extends State<SearchPage> {
   ) async {
     // 1. Zu kurz? Sofort Hinweis zurückgeben
     if (text.length < _minQueryLength) {
-      return const [
-        _HintTile(icon: Icons.search, text: 'Type at least 2 characters'),
+      return [
+        _HintTile(icon: Icons.search, text: context.l10n.searchMinCharacters),
       ];
     }
 
@@ -277,7 +278,7 @@ class _SearchBarStub extends StatelessWidget {
             Icon(Icons.search, color: AppColors.primary, size: 22),
             const SizedBox(width: 12),
             Text(
-              'Search users',
+              context.l10n.searchPlaceholder,
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -453,7 +454,7 @@ class _HistoryHeader extends StatelessWidget {
         ),
         const SizedBox(width: 10),
         Text(
-          'Recent',
+          context.l10n.searchHistoryRecent,
           style: GoogleFonts.plusJakartaSans(
             fontSize: 16,
             fontWeight: FontWeight.w800,
@@ -489,7 +490,7 @@ class _HistoryHeader extends StatelessWidget {
           ),
           icon: const Icon(Icons.delete_outline, size: 16),
           label: Text(
-            'Clear',
+            context.l10n.searchClearButton,
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -688,7 +689,7 @@ class _HistoryEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'No recent searches',
+            context.l10n.searchHistoryEmpty,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -697,7 +698,7 @@ class _HistoryEmpty extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Start exploring – your last searches\nwill show up here.',
+            context.l10n.searchHistoryEmptyMessage,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 13,

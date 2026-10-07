@@ -10,6 +10,7 @@ import '../local_data/database.dart';
 import '../net_image.dart';
 import '../post/post_api_service.dart';
 import '../user_api_service.dart';
+import 'package:ranked/l10n/l10n.dart';
 
 /// Erkennt einen geteilten Post-Link der Form `ranked://post/<id>`.
 ///
@@ -134,7 +135,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Ende-zu-Ende verschlüsselt',
+                          context.l10n.chatEncrypted,
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
@@ -230,6 +231,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final dm = widget.conversation as DmConversation;
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
+    final l10n = context.l10n;
 
     final action = await showDialog<String>(
       context: context,
@@ -237,9 +239,10 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (action == null || !mounted) return;
 
-    if (action == 'block') {
-      await UserApiService.blockUser(dm.peerId);
-    }
+    // Abgelehnt wird auch, wenn das Blockieren scheitert: Die Zeile lokal
+    // zu loeschen klappt immer, die Snackbar sagt dann ehrlich Bescheid.
+    final blocked =
+        action == 'block' ? await UserApiService.blockUser(dm.peerId) : null;
     await (dm.db.delete(dm.db.openChats)
           ..where((t) => t.id.equals(dm.peerId) & t.isGroupChat.equals(false)))
         .go();
@@ -247,11 +250,14 @@ class _ChatScreenState extends State<ChatScreen> {
     messenger.showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.onSurface,
+        backgroundColor:
+            blocked == false ? AppColors.primary : AppColors.onSurface,
         content: Text(
-          action == 'block'
-              ? 'Anfrage abgelehnt und ${dm.title} blockiert.'
-              : 'Anfrage abgelehnt.',
+          switch (blocked) {
+            null => l10n.chatDeclined,
+            true => l10n.chatDeclinedAndBlocked(dm.title),
+            false => l10n.chatDeclinedBlockFailed,
+          },
           style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
@@ -546,7 +552,7 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
         const SizedBox(width: 8),
         Flexible(
           child: Text(
-            'Post nicht verfügbar',
+            context.l10n.chatPostUnavailable,
             style: GoogleFonts.inter(
               fontSize: 13,
               fontWeight: FontWeight.w500,
@@ -561,7 +567,7 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
   Widget _buildPreview(Map<String, dynamic> post) {
     final title = (post['title'] ?? '').toString();
     final owner = post['owner'] as Map<String, dynamic>?;
-    final username = owner?['username']?.toString() ?? 'Unbekannt';
+    final username = owner?['username']?.toString() ?? context.l10n.chatUnknownUser;
     final imageUrl = post['image_url']?.toString();
 
     // Auf der roten eigenen Bubble wäre primary-auf-primary unsichtbar –
@@ -784,7 +790,7 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Gruppeneinladung',
+                        context.l10n.chatGroupInvite,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.inter(
@@ -795,7 +801,7 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Code ${widget.code}',
+                        context.l10n.chatInviteCode(widget.code),
                         style: GoogleFonts.inter(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
@@ -835,8 +841,8 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
                       )
                     : Text(
                         _state == _JoinState.joined
-                            ? 'Beigetreten'
-                            : 'Beitreten',
+                            ? context.l10n.chatJoined
+                            : context.l10n.messengerJoin,
                         style: GoogleFonts.inter(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
@@ -989,7 +995,7 @@ class _Composer extends StatelessWidget {
                       color: AppColors.onSurface,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Nachricht…',
+                      hintText: context.l10n.chatMessageHint,
                       hintStyle: GoogleFonts.inter(
                         fontSize: 14.5,
                         color: AppColors.onSurfaceVariant,
@@ -1066,7 +1072,7 @@ class _RequestBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Nimm die Anfrage an, um antworten zu können.',
+              context.l10n.chatAcceptToReply,
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 12.5,
@@ -1090,7 +1096,7 @@ class _RequestBar extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Ablehnen',
+                      context.l10n.chatDecline,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -1111,7 +1117,7 @@ class _RequestBar extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      'Annehmen',
+                      context.l10n.chatAccept,
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -1160,7 +1166,7 @@ class _DeclineDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Anfrage ablehnen?',
+              context.l10n.chatDeclineDialogTitle,
               textAlign: TextAlign.center,
               style: GoogleFonts.plusJakartaSans(
                 fontSize: 17,
@@ -1170,8 +1176,7 @@ class _DeclineDialog extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Der Chat wird aus deiner Liste entfernt. Ohne Blockieren kann '
-              '$username dir aber erneut eine Anfrage schicken.',
+              context.l10n.chatDeclineDialogBody(username),
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 13,
@@ -1192,7 +1197,7 @@ class _DeclineDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Ablehnen',
+                  context.l10n.chatDecline,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -1213,7 +1218,7 @@ class _DeclineDialog extends StatelessWidget {
                   ),
                 ),
                 child: Text(
-                  'Ablehnen & blockieren',
+                  context.l10n.chatDeclineAndBlock,
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -1225,7 +1230,7 @@ class _DeclineDialog extends StatelessWidget {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(
-                'Abbrechen',
+                context.l10n.messengerCancel,
                 style: GoogleFonts.inter(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w600,
@@ -1268,7 +1273,7 @@ class _EmptyConversation extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           Text(
-            'Sag Hallo! 👋',
+            context.l10n.chatEmptyTitle,
             style: GoogleFonts.plusJakartaSans(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -1277,7 +1282,7 @@ class _EmptyConversation extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Noch keine Nachrichten.\nSchreib die erste und brich das Eis.',
+            context.l10n.chatEmptyHint,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
               fontSize: 13,

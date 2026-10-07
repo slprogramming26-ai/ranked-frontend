@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'moderation/suspension.dart';
 import 'token_storage.dart';
 
 class ApiClient {
@@ -81,6 +82,11 @@ class ApiClient {
       final newToken = await TokenStorage.getToken() ?? '';
       response = await sender(newToken); // genau ein Retry mit frischem Token
     }
+
+    // Erst NACH dem 401-Block pruefen: bei abgelaufenem Token kommt das 403
+    // erst beim Retry mit dem frischen Token.
+    final suspension = Suspension.fromResponse(response);
+    if (suspension != null) await _forceLogout(suspension: suspension);
     return response;
   }
 
@@ -91,12 +97,28 @@ class ApiClient {
   static final _forceLogoutController = StreamController<void>.broadcast();
   static Stream<void> get forceLogoutStream => _forceLogoutController.stream;
 
+  // Briefkasten fuer den Login-Screen: die Sperre, wegen der zuletzt
+  // ausgeloggt wurde. Static, weil startNewSession() main.dart und den
+  // LoginScreen neu baut -> ein Feld dort waere sofort wieder weg.
+  static Suspension? _pendingSuspension;
+
+  /// Liest und loescht in einem Schritt (wie KeySetup.takeLogoutNotice),
+  /// damit der Gesperrt-Screen nur einmal erscheint.
+  static Suspension? takeSuspension() {
+    final suspension = _pendingSuspension;
+    _pendingSuspension = null;
+    return suspension;
+  }
+
   // Verhindert, dass parallele 401s den Logout N-mal auslösen.
   static bool _loggingOut = false;
 
-  static Future<void> _forceLogout() async {
+  static Future<void> _forceLogout({Suspension? suspension}) async {
     if (_loggingOut) return; // schon am Ausloggen -> zweiter Aufrufer raus
     _loggingOut = true;
+    // VOR dem Stream-Event einwerfen: der Listener baut den LoginScreen neu,
+    // und der schaut in initState in den Briefkasten.
+    _pendingSuspension = suspension;
     await TokenStorage.clearAll();
     _forceLogoutController.add(null);
   }

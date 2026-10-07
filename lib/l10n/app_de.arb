@@ -1,11 +1,9 @@
 {
   "@@locale": "de",
-
   "appTitle": "ranked",
   "@appTitle": {
     "description": "App-Name im Task-Switcher"
   },
-
   "reportReasonSpam": "Spam",
   "@reportReasonSpam": {
     "description": "Melde-Grund: Spam"
@@ -26,7 +24,6 @@
   "@reportReasonOther": {
     "description": "Melde-Grund: Sonstiges"
   },
-
   "reportTitlePost": "Post melden",
   "@reportTitlePost": {
     "description": "Titel des Melde-Sheets für einen Post"
@@ -43,7 +40,6 @@
   "@reportTitleUser": {
     "description": "Titel des Melde-Sheets für ein Profil"
   },
-
   "reportSuccessPost": "Danke! Der Post wird dir nicht mehr angezeigt.",
   "@reportSuccessPost": {
     "description": "Snackbar nach erfolgreichem Melden eines Posts"
@@ -60,7 +56,6 @@
   "@reportSuccessUser": {
     "description": "Snackbar nach erfolgreichem Melden eines Profils"
   },
-
   "reportAlreadyPost": "Du hast diesen Post bereits gemeldet.",
   "@reportAlreadyPost": {
     "description": "Snackbar bei 409: Post schon gemeldet"
@@ -77,7 +72,6 @@
   "@reportAlreadyUser": {
     "description": "Snackbar bei 409: Profil schon gemeldet"
   },
-
   "reportDetailsHint": "Was ist passiert? (optional)",
   "@reportDetailsHint": {
     "description": "Platzhalter im Details-Feld des Melde-Sheets"
@@ -90,8 +84,1150 @@
   "@reportFailed": {
     "description": "Snackbar bei Netzwerk-/Serverfehler beim Melden"
   },
+  "commentDeleteTitle": "Kommentar löschen?",
+  "@commentDeleteTitle": {
+    "description": "Titel des Bestätigungs-Dialogs beim Löschen des eigenen Kommentars"
+  },
+  "commentDeleteMessage": "Der Kommentar wird endgültig entfernt.",
+  "@commentDeleteMessage": {
+    "description": "Text des Bestätigungs-Dialogs beim Löschen des eigenen Kommentars"
+  },
+  "commentDeleteConfirm": "Löschen",
+  "@commentDeleteConfirm": {
+    "description": "Bestätigen-Button im Kommentar-Löschen-Dialog"
+  },
+  "commentDeleteFailed": "Löschen fehlgeschlagen. Versuch es später erneut.",
+  "@commentDeleteFailed": {
+    "description": "Snackbar, wenn das Löschen des eigenen Kommentars scheitert"
+  },
+  "profileMenuReport": "Melden",
+  "@profileMenuReport": {
+    "description": "Eintrag im ⋮-Menü eines fremden Profils"
+  },
+  "profileBlocked": "{name} wurde blockiert.",
+  "@profileBlocked": {
+    "description": "Snackbar nach erfolgreichem Blockieren",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profileBlockFailed": "Blockieren fehlgeschlagen. Versuch es erneut.",
+  "@profileBlockFailed": {
+    "description": "Snackbar, wenn das Blockieren fehlschlägt"
+  },
   "postDeleteFailed": "Löschen fehlgeschlagen. Versuch es später erneut.",
   "@postDeleteFailed": {
     "description": "Snackbar, wenn das Loeschen des eigenen Posts scheitert"
+  },
+  "messengerGroupCreateFailed": "Fehler beim Erstellen der Gruppe.",
+  "@messengerGroupCreateFailed": {
+    "description": "SnackBar in der Chatliste, wenn Gruppenerstellung fehlschlägt"
+  },
+  "messengerJoinFailed": "Beitritt fehlgeschlagen. Ist der Code noch gültig?",
+  "@messengerJoinFailed": {
+    "description": "SnackBar in der Chatliste, wenn Gruppenbeitritt per Code fehlschlägt"
+  },
+  "messengerJoinGroupTitle": "Gruppe beitreten",
+  "@messengerJoinGroupTitle": {
+    "description": "Dialog-Titel und Aktions-Label zum Gruppenbeitritt"
+  },
+  "messengerJoinGroupSubtitle": "Mit Einladungs-Code einsteigen",
+  "@messengerJoinGroupSubtitle": {
+    "description": "Untertitel der Aktion Gruppe beitreten im Neue-Konversation-Sheet"
+  },
+  "messengerInviteCodeHint": "Einladungs-Code",
+  "@messengerInviteCodeHint": {
+    "description": "Hint im Beitritts-Dialog und Titel des Einladungs-Code-Dialogs"
+  },
+  "messengerCancel": "Abbrechen",
+  "@messengerCancel": {
+    "description": "Abbrechen-Button in Dialogen im Messenger"
+  },
+  "messengerJoin": "Beitreten",
+  "@messengerJoin": {
+    "description": "Beitreten-Button (Dialog und Einladungs-Card)"
+  },
+  "messengerNewConversation": "Neue Konversation",
+  "@messengerNewConversation": {
+    "description": "Titel des Aktions-Sheets und Tooltip des Stift-Buttons"
+  },
+  "messengerStartChat": "Chat starten",
+  "@messengerStartChat": {
+    "description": "Aktion und Titel der User-Suche für neuen Chat"
+  },
+  "messengerStartChatSubtitle": "User per Name suchen",
+  "@messengerStartChatSubtitle": {
+    "description": "Untertitel der Aktion Chat starten"
+  },
+  "messengerCreateGroup": "Gruppe erstellen",
+  "@messengerCreateGroup": {
+    "description": "Aktion im Neue-Konversation-Sheet"
+  },
+  "messengerCreateGroupSubtitle": "Neue Gruppe anlegen",
+  "@messengerCreateGroupSubtitle": {
+    "description": "Untertitel der Aktion Gruppe erstellen"
+  },
+  "messengerContactsTitle": "Kontakte",
+  "@messengerContactsTitle": {
+    "description": "AppBar-Titel der Chatliste"
+  },
+  "messengerRequests": "Anfragen",
+  "@messengerRequests": {
+    "description": "Titel der Anfragen-Zeile in der Chatliste und der Anfragen-Seite"
+  },
+  "messengerGroupChat": "Gruppenchat",
+  "@messengerGroupChat": {
+    "description": "Untertitel einer Gruppe in der Chatliste"
+  },
+  "messengerDirectMessage": "Direktnachricht",
+  "@messengerDirectMessage": {
+    "description": "Untertitel eines DM-Chats in der Chatliste"
+  },
+  "messengerEmptyTitle": "Keine Konversationen",
+  "@messengerEmptyTitle": {
+    "description": "Leer-Zustand der Chatliste, Titel"
+  },
+  "messengerEmptyHint": "Tipp auf das Stift-Symbol,\num einen Chat oder eine Gruppe zu starten.",
+  "@messengerEmptyHint": {
+    "description": "Leer-Zustand der Chatliste, Hinweis"
+  },
+  "messengerSearchUsernameHint": "Username suchen",
+  "@messengerSearchUsernameHint": {
+    "description": "Hint im Suchfeld der User-Suche"
+  },
+  "messengerMinChars": "Mindestens 2 Zeichen eingeben",
+  "@messengerMinChars": {
+    "description": "Hinweis in der User-Suche"
+  },
+  "messengerSomethingWrong": "Etwas ist schiefgelaufen.",
+  "@messengerSomethingWrong": {
+    "description": "Fehlerhinweis in der User-Suche"
+  },
+  "messengerNoUsersFound": "Keine User gefunden",
+  "@messengerNoUsersFound": {
+    "description": "Leer-Zustand der User-Suche"
+  },
+  "chatRequestsWantsToWrite": "Möchte dir schreiben",
+  "@chatRequestsWantsToWrite": {
+    "description": "Untertitel einer Chat-Anfrage"
+  },
+  "chatRequestsEmptyTitle": "Alles erledigt",
+  "@chatRequestsEmptyTitle": {
+    "description": "Leer-Zustand der Anfragen-Seite, Titel"
+  },
+  "chatRequestsEmptyHint": "Keine offenen Chat-Anfragen.",
+  "@chatRequestsEmptyHint": {
+    "description": "Leer-Zustand der Anfragen-Seite, Hinweis"
+  },
+  "chatEncrypted": "Ende-zu-Ende verschlüsselt",
+  "@chatEncrypted": {
+    "description": "Badge im Chat-Header und im Info-Sheet"
+  },
+  "chatPostUnavailable": "Post nicht verfügbar",
+  "@chatPostUnavailable": {
+    "description": "Vorschau-Card eines geteilten Posts, der nicht geladen werden kann"
+  },
+  "chatUnknownUser": "Unbekannt",
+  "@chatUnknownUser": {
+    "description": "Fallback-Username in der Post-Vorschau"
+  },
+  "chatGroupInvite": "Gruppeneinladung",
+  "@chatGroupInvite": {
+    "description": "Titel der Einladungs-Card im Chat"
+  },
+  "chatInviteCode": "Code {code}",
+  "@chatInviteCode": {
+    "description": "Code-Anzeige in der Einladungs-Card",
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "chatJoined": "Beigetreten",
+  "@chatJoined": {
+    "description": "Button-Text der Einladungs-Card nach erfolgreichem Beitritt"
+  },
+  "chatMessageHint": "Nachricht…",
+  "@chatMessageHint": {
+    "description": "Hint im Chat-Eingabefeld"
+  },
+  "chatAcceptToReply": "Nimm die Anfrage an, um antworten zu können.",
+  "@chatAcceptToReply": {
+    "description": "Hinweis in der Anfrage-Leiste"
+  },
+  "chatDecline": "Ablehnen",
+  "@chatDecline": {
+    "description": "Ablehnen-Button"
+  },
+  "chatAccept": "Annehmen",
+  "@chatAccept": {
+    "description": "Annehmen-Button der Anfrage-Leiste"
+  },
+  "chatDeclineDialogTitle": "Anfrage ablehnen?",
+  "@chatDeclineDialogTitle": {
+    "description": "Titel des Ablehnen-Dialogs"
+  },
+  "chatDeclineDialogBody": "Der Chat wird aus deiner Liste entfernt. Ohne Blockieren kann {username} dir aber erneut eine Anfrage schicken.",
+  "@chatDeclineDialogBody": {
+    "description": "Text des Ablehnen-Dialogs",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "chatDeclineAndBlock": "Ablehnen & blockieren",
+  "@chatDeclineAndBlock": {
+    "description": "Button im Ablehnen-Dialog"
+  },
+  "chatDeclined": "Anfrage abgelehnt.",
+  "@chatDeclined": {
+    "description": "Snackbar nach Ablehnen einer Chat-Anfrage (ohne Blockieren)"
+  },
+  "chatDeclinedAndBlocked": "Anfrage abgelehnt und {name} blockiert.",
+  "@chatDeclinedAndBlocked": {
+    "description": "Snackbar nach Ablehnen & Blockieren einer Chat-Anfrage",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatDeclinedBlockFailed": "Anfrage abgelehnt, Blockieren fehlgeschlagen.",
+  "@chatDeclinedBlockFailed": {
+    "description": "Snackbar: Anfrage lokal abgelehnt, aber das Blockieren am Server ging schief"
+  },
+  "chatEmptyTitle": "Sag Hallo! 👋",
+  "@chatEmptyTitle": {
+    "description": "Leerer Chat, Titel"
+  },
+  "chatEmptyHint": "Noch keine Nachrichten.\nSchreib die erste und brich das Eis.",
+  "@chatEmptyHint": {
+    "description": "Leerer Chat, Hinweis"
+  },
+  "chatInfoBlockTitle": "{name} blockieren?",
+  "@chatInfoBlockTitle": {
+    "description": "Titel des Blockieren-Bestätigungsdialogs",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoBlockMessage": "Ihr könnt einander keine Nachrichten mehr schreiben. Du kannst die Blockierung später wieder aufheben.",
+  "@chatInfoBlockMessage": {
+    "description": "Text des Blockieren-Bestätigungsdialogs"
+  },
+  "chatInfoBlock": "Blockieren",
+  "@chatInfoBlock": {
+    "description": "Blockieren-Aktion und Bestätigungs-Button im Info-Sheet"
+  },
+  "chatInfoOpenProfile": "Profil öffnen",
+  "@chatInfoOpenProfile": {
+    "description": "Aktion im DM-Info-Sheet"
+  },
+  "chatInfoLeaveTitle": "{name} verlassen?",
+  "@chatInfoLeaveTitle": {
+    "description": "Titel des Gruppe-verlassen-Dialogs",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoLeaveMessage": "Du bekommst keine neuen Nachrichten mehr aus dieser Gruppe. Mit einer Einladung kannst du jederzeit wieder beitreten.",
+  "@chatInfoLeaveMessage": {
+    "description": "Text des Gruppe-verlassen-Dialogs"
+  },
+  "chatInfoLeave": "Verlassen",
+  "@chatInfoLeave": {
+    "description": "Bestätigungs-Button im Gruppe-verlassen-Dialog"
+  },
+  "chatInfoMembers": "Mitglieder",
+  "@chatInfoMembers": {
+    "description": "Überschrift der Mitgliederliste im Gruppen-Info-Sheet"
+  },
+  "chatInfoInvite": "Einladen",
+  "@chatInfoInvite": {
+    "description": "Aktion im Gruppen-Info-Sheet"
+  },
+  "chatInfoLeaveGroup": "Gruppe verlassen",
+  "@chatInfoLeaveGroup": {
+    "description": "Aktion im Gruppen-Info-Sheet"
+  },
+  "chatInfoMembersLoadFailed": "Mitglieder konnten nicht geladen werden.",
+  "@chatInfoMembersLoadFailed": {
+    "description": "Fehlerhinweis der Mitgliederliste"
+  },
+  "chatInfoYou": "Du",
+  "@chatInfoYou": {
+    "description": "Badge am eigenen Eintrag in der Mitgliederliste"
+  },
+  "chatInfoInviteCodeNote": "Nur für begrenzte Zeit gültig. Wer den Code eingibt, tritt der Gruppe bei.",
+  "@chatInfoInviteCodeNote": {
+    "description": "Hinweis im Einladungs-Code-Dialog"
+  },
+  "chatInfoShareInChat": "Im Chat teilen",
+  "@chatInfoShareInChat": {
+    "description": "Button im Einladungs-Code-Dialog"
+  },
+  "chatInfoCopyCode": "Code kopieren",
+  "@chatInfoCopyCode": {
+    "description": "Button im Einladungs-Code-Dialog"
+  },
+  "onboardingWelcomeTitle": "Willkommen im\nPulse",
+  "@onboardingWelcomeTitle": {
+    "description": "Großer Titel auf Welcome-Seite (Onboarding Schritt 1)"
+  },
+  "onboardingWelcomeSubtitle": "Der erste redaktionelle Social Feed, in dem deine Energie zählt.",
+  "@onboardingWelcomeSubtitle": {
+    "description": "Untertitel auf Welcome-Seite"
+  },
+  "onboardingWelcomePostTitle": "Teile dein Leben",
+  "@onboardingWelcomePostTitle": {
+    "description": "Bento-Karte Titel 1: Post your life"
+  },
+  "onboardingWelcomePostSub": "Teile deinen täglichen Pulse. Echt und ungefiltert.",
+  "@onboardingWelcomePostSub": {
+    "description": "Bento-Karte Untertitel 1"
+  },
+  "onboardingWelcomeRankTitle": "Get Ranked",
+  "@onboardingWelcomeRankTitle": {
+    "description": "Bento-Karte Titel 2"
+  },
+  "onboardingWelcomeRankSub": "Die Community bewertet deine Kreativität.",
+  "@onboardingWelcomeRankSub": {
+    "description": "Bento-Karte Untertitel 2"
+  },
+  "onboardingWelcomeEarnTitle": "Verdienen und gestalten",
+  "@onboardingWelcomeEarnTitle": {
+    "description": "Bento-Karte Titel 3"
+  },
+  "onboardingWelcomeEarnSub": "Bewerte andere und verdiene Coins. Schalte exklusive Avatar-Items und \"Freundebuch\"-Skins frei.",
+  "@onboardingWelcomeEarnSub": {
+    "description": "Bento-Karte Untertitel 3"
+  },
+  "onboardingVibeTitle": "Was ist dein Vibe?",
+  "@onboardingVibeTitle": {
+    "description": "Titel auf Vibe-Seite (Schritt 2)"
+  },
+  "onboardingVibeSubtitle": "Wähle bis zu 2 Pulse-Faktoren, die deinen Alltag ausmachen – oder gar keinen. Teile nur, was du teilen willst.",
+  "@onboardingVibeSubtitle": {
+    "description": "Untertitel auf Vibe-Seite"
+  },
+  "onboardingAboutMeTitle": "Dein digitaler Pulse",
+  "@onboardingAboutMeTitle": {
+    "description": "Titel auf About-Me-Seite (Schritt 3)"
+  },
+  "onboardingAboutMeSubtitle": "Lass andere deine Energie spüren. Das ist dein persönlicher Freundebuch-Eintrag.",
+  "@onboardingAboutMeSubtitle": {
+    "description": "Untertitel auf About-Me-Seite"
+  },
+  "onboardingAboutMeStoryLabel": "DEINE STORY",
+  "@onboardingAboutMeStoryLabel": {
+    "description": "Label über dem Bio-Textarea"
+  },
+  "onboardingAboutMeBioHint": "Erzähl von dir, deinen Zielen oder was dich besonders macht ...",
+  "@onboardingAboutMeBioHint": {
+    "description": "Placeholder-Text im Bio-Textarea"
+  },
+  "onboardingAgeTitle": "Ein letzter Check",
+  "@onboardingAgeTitle": {
+    "description": "Titel auf Age-Seite (Schritt 4)"
+  },
+  "onboardingAgeSubtitle": "Wie alt bist du? Wir fragen das nur einmal – dein Alter wird nie gespeichert.",
+  "@onboardingAgeSubtitle": {
+    "description": "Untertitel auf Age-Seite"
+  },
+  "onboardingAgeWarning": "Ranked ist ab 16. Wir freuen uns, dich in ein paar Jahren wiederzusehen!",
+  "@onboardingAgeWarning": {
+    "description": "Warnung wenn User unter 16 ist"
+  },
+  "onboardingCredentialsTitle": "Werde Teil vom",
+  "@onboardingCredentialsTitle": {
+    "description": "Anfang des Titels auf Credentials-Seite (Schritt 5) - \"Pulse\" wird pink gefärbt und separat hinzugefügt"
+  },
+  "onboardingCredentialsSubtitle": "Letzter Schritt – wähle deine Login-Daten und dein Profil geht live.",
+  "@onboardingCredentialsSubtitle": {
+    "description": "Untertitel auf Credentials-Seite"
+  },
+  "onboardingCredentialsEmailHint": "E-Mail-Adresse",
+  "@onboardingCredentialsEmailHint": {
+    "description": "Platzhalter im Email-Feld (Credentials)"
+  },
+  "onboardingCredentialsUsernameHint": "Username",
+  "@onboardingCredentialsUsernameHint": {
+    "description": "Platzhalter im Username-Feld"
+  },
+  "onboardingCredentialsPasswordHint": "Passwort",
+  "@onboardingCredentialsPasswordHint": {
+    "description": "Platzhalter im Password-Feld"
+  },
+  "onboardingCredentialsLegal": "Mit der Registrierung stimmst du unseren Community-Richtlinien zu",
+  "@onboardingCredentialsLegal": {
+    "description": "Rechtlicher Text am Ende der Credentials-Seite"
+  },
+  "onboardingNextButton": "Weiter",
+  "@onboardingNextButton": {
+    "description": "Button-Text zum nächsten Schritt"
+  },
+  "onboardingCreateButton": "Account erstellen",
+  "@onboardingCreateButton": {
+    "description": "Button-Text zum Konto erstellen (finaler Schritt)"
+  },
+  "onboardingStepProgress": "Schritt {current} von {total}",
+  "@onboardingStepProgress": {
+    "description": "Fortschrittsanzeige im Header",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingLoadingSetup": "Dein Account wird eingerichtet",
+  "@onboardingLoadingSetup": {
+    "description": "Titel im Loading-Overlay während Kontoerstellung"
+  },
+  "onboardingLoadingCreating": "Account wird erstellt ...",
+  "@onboardingLoadingCreating": {
+    "description": "Lade-Nachricht 1"
+  },
+  "onboardingLoadingSigning": "Du wirst angemeldet ...",
+  "@onboardingLoadingSigning": {
+    "description": "Lade-Nachricht 2"
+  },
+  "onboardingLoadingSecuring": "Deine Chats werden gesichert ...",
+  "@onboardingLoadingSecuring": {
+    "description": "Lade-Nachricht 3"
+  },
+  "onboardingLoadingUploading": "Dein Foto wird hochgeladen ...",
+  "@onboardingLoadingUploading": {
+    "description": "Lade-Nachricht 4"
+  },
+  "onboardingLoadingAlmost": "Fast geschafft ...",
+  "@onboardingLoadingAlmost": {
+    "description": "Lade-Nachricht 5"
+  },
+  "onboardingImageProcessError": "Dein Profilbild konnte nicht verarbeitet werden — du kannst es später im Profil nachtragen.",
+  "@onboardingImageProcessError": {
+    "description": "Fehler-Snackbar wenn Bild-Verarbeitung fehlschlägt"
+  },
+  "onboardingLoginFailedAuto": "Dein Konto wurde erstellt, aber der automatische Login hat nicht geklappt. Bitte melde dich auf der Login-Seite an.",
+  "@onboardingLoginFailedAuto": {
+    "description": "Fehler-Meldung wenn Auto-Login nach Registrierung fehlschlägt"
+  },
+  "loginWelcome": "Willkommen zurück",
+  "@loginWelcome": {
+    "description": "Begrüßung auf Login-Seite"
+  },
+  "loginSubtitle": "Der Pulse wartet auf dich.",
+  "@loginSubtitle": {
+    "description": "Untertitel auf Login-Seite"
+  },
+  "loginEmailLabel": "E-Mail-Adresse",
+  "@loginEmailLabel": {
+    "description": "Label für Email-Feld auf Login-Seite"
+  },
+  "loginPasswordLabel": "Passwort",
+  "@loginPasswordLabel": {
+    "description": "Label für Password-Feld auf Login-Seite"
+  },
+  "loginForgotPassword": "Passwort vergessen?",
+  "@loginForgotPassword": {
+    "description": "Link zum Passwort zurücksetzen"
+  },
+  "loginButton": "Zum Feed einloggen",
+  "@loginButton": {
+    "description": "Hauptbutton auf Login-Seite"
+  },
+  "loginDivider": "ODER WEITER MIT",
+  "@loginDivider": {
+    "description": "Divider-Text für soziale Logins"
+  },
+  "loginGoogle": "Google",
+  "@loginGoogle": {
+    "description": "Google Login Button"
+  },
+  "loginApple": "Apple",
+  "@loginApple": {
+    "description": "Apple Login Button"
+  },
+  "loginNoAccount": "Neu bei Ranked?",
+  "@loginNoAccount": {
+    "description": "Text für Sign-Up-Link am Ende von Login-Seite"
+  },
+  "loginSignUp": "Registrieren",
+  "@loginSignUp": {
+    "description": "Link zu Onboarding auf Login-Seite"
+  },
+  "loginInvalidCredentials": "Ungültige E-Mail oder Passwort",
+  "@loginInvalidCredentials": {
+    "description": "Fehler-Meldung bei fehlgeschlagenem Login"
+  },
+  "loginAborted": "Anmeldung abgebrochen.",
+  "@loginAborted": {
+    "description": "Fehler-Meldung wenn User Key-Setup abbricht"
+  },
+  "loginServerError": "Verbindung zum Server fehlgeschlagen. Bitte versuche es nochmal.",
+  "@loginServerError": {
+    "description": "Fehler-Meldung bei Netzwerk/Server-Fehler beim Login"
+  },
+  "postCommentSectionTitle": "Kommentare",
+  "@postCommentSectionTitle": {
+    "description": "Titel der Kommentar-Section im Bottom-Sheet"
+  },
+  "postCommentsLoadError": "Kommentare konnten nicht geladen werden",
+  "@postCommentsLoadError": {
+    "description": "Fehlermeldung, wenn Kommentare nicht geladen werden können"
+  },
+  "postBeFirstToPulse": "Sei der Erste, um zu pulsieren!",
+  "@postBeFirstToPulse": {
+    "description": "Nachricht, wenn noch keine Kommentare vorhanden sind"
+  },
+  "postCommentHint": "Schreib einen Kommentar …",
+  "@postCommentHint": {
+    "description": "Platzhalter im Kommentar-Eingabefeld"
+  },
+  "postEditButton": "Post bearbeiten",
+  "@postEditButton": {
+    "description": "Button-Text zum Bearbeiten des eigenen Posts"
+  },
+  "postDeleteButton": "Post löschen",
+  "@postDeleteButton": {
+    "description": "Button-Text zum Löschen des eigenen Posts"
+  },
+  "postReportButton": "Post melden",
+  "@postReportButton": {
+    "description": "Button-Text zum Melden eines fremden Posts"
+  },
+  "shareMessengerNotReady": "Messenger nicht bereit — bitte kurz warten und erneut versuchen.",
+  "@shareMessengerNotReady": {
+    "description": "Fehlermeldung, wenn der Messenger nicht verbunden ist"
+  },
+  "shareSheetTitle": "Teilen",
+  "@shareSheetTitle": {
+    "description": "Titel des Share-Sheets"
+  },
+  "shareNoChats": "Noch keine Chats zum Teilen.",
+  "@shareNoChats": {
+    "description": "Nachricht, wenn der Benutzer noch keine Chats hat"
+  },
+  "shareCopyLink": "Link kopieren",
+  "@shareCopyLink": {
+    "description": "Button zum Kopieren des Post-Links"
+  },
+  "shareLinkCopied": "Link kopiert",
+  "@shareLinkCopied": {
+    "description": "Bestätigung, dass der Link kopiert wurde"
+  },
+  "shareSentTo": "An {username} gesendet!",
+  "@shareSentTo": {
+    "description": "Bestätigung nach dem Versenden eines Posts",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "feedLocationSaveError": "Ort konnte nicht gespeichert werden",
+  "@feedLocationSaveError": {
+    "description": "Fehlermeldung, wenn der Ort nicht gespeichert werden kann"
+  },
+  "feedForYou": "Für dich",
+  "@feedForYou": {
+    "description": "Label für den globalen Feed"
+  },
+  "feedLocal": "Lokal",
+  "@feedLocal": {
+    "description": "Label für den lokalen Feed"
+  },
+  "feedNoLocationTitle": "Kein Ort gesetzt",
+  "@feedNoLocationTitle": {
+    "description": "Überschrift im Empty-State, wenn der Benutzer keinen Ort hat"
+  },
+  "feedNoPostsTitle": "Noch nichts los hier",
+  "@feedNoPostsTitle": {
+    "description": "Überschrift im Empty-State, wenn keine Posts vorhanden sind"
+  },
+  "feedChooseLocationHint": "Wähle deinen Ort, um Posts aus deiner Umgebung zu sehen.",
+  "@feedChooseLocationHint": {
+    "description": "Hinweis im Empty-State, wenn der Benutzer keinen Ort gesetzt hat"
+  },
+  "feedNoPostsHint": "An deinem Ort wurde noch nichts gepostet — sei die/der Erste!",
+  "@feedNoPostsHint": {
+    "description": "Hinweis im Empty-State, wenn keine Posts am Ort vorhanden sind"
+  },
+  "feedChooseLocation": "Ort wählen",
+  "@feedChooseLocation": {
+    "description": "Button zum Auswählen eines Ortes"
+  },
+  "storyRowYourPulse": "Dein Pulse",
+  "@storyRowYourPulse": {
+    "description": "Label für den Button zum Erstellen einer Story"
+  },
+  "createPostTitle": "Post erstellen",
+  "@createPostTitle": {
+    "description": "Titel der Create-Post-Screen"
+  },
+  "locationPickerTitle": "Ort wählen",
+  "@locationPickerTitle": {
+    "description": "Titel des Location-Picker-Sheets"
+  },
+  "locationSearchHint": "Stadt suchen …",
+  "@locationSearchHint": {
+    "description": "Platzhalter im Location-Search-Feld"
+  },
+  "locationSearchStartHint": "Tippe, um deine Stadt zu suchen",
+  "@locationSearchStartHint": {
+    "description": "Hinweis am Anfang des Location-Pickers"
+  },
+  "locationNotFound": "Keinen Ort gefunden — probier eine andere Schreibweise",
+  "@locationNotFound": {
+    "description": "Nachricht, wenn bei der Ortssuche keine Ergebnisse gefunden werden"
+  },
+  "rankingOptinTitle": "MACH MIT BEIM\nRANKING",
+  "@rankingOptinTitle": {
+    "description": "Titel des Ranking Opt-In Screens"
+  },
+  "rankingOptinDescription": "Aktiviere das Ranking und lass dich täglich von der Community bewerten — Productivity, Creativity & Engagement.",
+  "@rankingOptinDescription": {
+    "description": "Beschreibungstext des Ranking Opt-In Screens"
+  },
+  "rankingOptinButton": "AKTIVIEREN",
+  "@rankingOptinButton": {
+    "description": "Button zum Aktivieren des Rankings"
+  },
+  "rankingStatsHeader": "DEINE STATS",
+  "@rankingStatsHeader": {
+    "description": "Header für persönliche Ranking-Statistiken"
+  },
+  "rankingPointsToday": "PUNKTE HEUTE",
+  "@rankingPointsToday": {
+    "description": "Label für heute erhaltene Punkte in Bento Card"
+  },
+  "rankingStreakLabel": "DEIN STREAK",
+  "@rankingStreakLabel": {
+    "description": "Label für Streak-Zähler in Bento Card"
+  },
+  "rankingEvaluatingLabel": "DU BEWERTEST",
+  "@rankingEvaluatingLabel": {
+    "description": "Label über dem Nutzernamen beim Swipen"
+  },
+  "rankingYourBadge": "DU",
+  "@rankingYourBadge": {
+    "description": "Badge-Text in der Leaderboard-Zeile des Nutzers"
+  },
+  "rankingNoPointsHeadline": "Noch keine Punkte heute",
+  "@rankingNoPointsHeadline": {
+    "description": "Headline wenn der Nutzer heute noch keine Punkte hat"
+  },
+  "rankingNoPointsSubline": "Poste, um bewertet zu werden",
+  "@rankingNoPointsSubline": {
+    "description": "Subline wenn der Nutzer heute noch keine Punkte hat"
+  },
+  "rankingLeadingHeadline": "Du führst heute!",
+  "@rankingLeadingHeadline": {
+    "description": "Headline wenn der Nutzer Platz 1 hat"
+  },
+  "rankingLeadingSubline": "Verteidge deinen Platz",
+  "@rankingLeadingSubline": {
+    "description": "Subline wenn der Nutzer Platz 1 hat"
+  },
+  "rankingMyRank": "Platz #{rank}",
+  "@rankingMyRank": {
+    "description": "Headline wenn der Nutzer einen anderen Platz hat",
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "rankingEmptyLeaderboard": "Noch keine Rankings heute",
+  "@rankingEmptyLeaderboard": {
+    "description": "Empty state wenn noch keine Leaderboard-Einträge vorhanden sind"
+  },
+  "rankingAlreadyRankedButton": "HEUTE SCHON GEWERTET",
+  "@rankingAlreadyRankedButton": {
+    "description": "Button label wenn der Nutzer bereits heute gerankt hat"
+  },
+  "rankingGetPartnerButton": "FINDE DEINEN RANKING-PARTNER",
+  "@rankingGetPartnerButton": {
+    "description": "Button zum Starten einer Ranking-Session"
+  },
+  "rankingNoParticipants": "Aktuell keine Teilnehmer zum Bewerten verfügbar.",
+  "@rankingNoParticipants": {
+    "description": "Empty state wenn keine Teilnehmer zum Bewerten vorhanden sind"
+  },
+  "rankingSwipeLike": "LIKE",
+  "@rankingSwipeLike": {
+    "description": "Label für Like-Swipe Aktion"
+  },
+  "rankingSwipeNope": "NOPE",
+  "@rankingSwipeNope": {
+    "description": "Label für Nope-Swipe Aktion"
+  },
+  "rankingResultLabel": "PUNKTE VERGEBEN",
+  "@rankingResultLabel": {
+    "description": "Label auf dem Result Screen nach dem Swipen"
+  },
+  "rankingResultDone": "FERTIG",
+  "@rankingResultDone": {
+    "description": "Button zum Schließen des Result Screens"
+  },
+  "rankingAlreadyVotedHeadline": "BEREITS\nGEWERTET",
+  "@rankingAlreadyVotedHeadline": {
+    "description": "Error Headline wenn der Nutzer bereits heute gewertet hat"
+  },
+  "rankingErrorHeadline": "FEHLER",
+  "@rankingErrorHeadline": {
+    "description": "Error Headline für allgemeine Fehler"
+  },
+  "rankingAlreadyVotedMessage": "Du hast heute schon abgestimmt.\nMorgen bist du wieder dran!",
+  "@rankingAlreadyVotedMessage": {
+    "description": "Error Message wenn der Nutzer bereits heute gewertet hat"
+  },
+  "rankingErrorMessage": "Etwas ist schiefgelaufen. Versuch es später nochmal.",
+  "@rankingErrorMessage": {
+    "description": "Standard Error Message für Fehler beim Ranking"
+  },
+  "rankingBackButton": "ZURÜCK",
+  "@rankingBackButton": {
+    "description": "Button zum Zurückgehen vom Error Screen"
+  },
+  "profileNoActivity": "Noch keine Aktivität — sobald dich jemand bewertet, steht es hier.",
+  "@profileNoActivity": {
+    "description": "Empty state in activity section of profile"
+  },
+  "profileActivityRated": "Du wurdest bewertet",
+  "@profileActivityRated": {
+    "description": "Activity item title for rating"
+  },
+  "profileActivityDefault": "Neue Aktivität",
+  "@profileActivityDefault": {
+    "description": "Default activity item title"
+  },
+  "profileActivityRatedSubtitle": "+{points} Punkte von der Community erhalten",
+  "@profileActivityRatedSubtitle": {
+    "description": "Activity subtitle showing points earned",
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "profileLeagueMaxReached": "Höchste Liga erreicht",
+  "@profileLeagueMaxReached": {
+    "description": "Message when user reaches max league"
+  },
+  "profileLeagueProgress": "Noch {xp} XP bis {next}",
+  "@profileLeagueProgress": {
+    "description": "League progress message with XP remaining",
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      },
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "profileFollow": "Folgen",
+  "@profileFollow": {
+    "description": "Follow button text"
+  },
+  "profileFollowing": "Gefolgt",
+  "@profileFollowing": {
+    "description": "Following button text"
+  },
+  "settingsTitle": "Einstellungen",
+  "@settingsTitle": {
+    "description": "Settings screen title"
+  },
+  "settingsSectionAppearance": "DARSTELLUNG",
+  "@settingsSectionAppearance": {
+    "description": "Appearance section label in settings"
+  },
+  "settingsDarkMode": "Dark Mode",
+  "@settingsDarkMode": {
+    "description": "Dark mode setting title"
+  },
+  "settingsDarkModeSubtitle": "Dunkles Erscheinungsbild",
+  "@settingsDarkModeSubtitle": {
+    "description": "Dark mode setting subtitle"
+  },
+  "settingsSectionProfile": "PROFIL",
+  "@settingsSectionProfile": {
+    "description": "Profile section label in settings"
+  },
+  "settingsLocation": "Standort",
+  "@settingsLocation": {
+    "description": "Location setting title"
+  },
+  "settingsLocationLoading": "Wird geladen …",
+  "@settingsLocationLoading": {
+    "description": "Location loading state"
+  },
+  "settingsLocationNotSet": "Kein Ort gesetzt",
+  "@settingsLocationNotSet": {
+    "description": "Location not set message"
+  },
+  "settingsRemoveLocation": "Standort entfernen",
+  "@settingsRemoveLocation": {
+    "description": "Tooltip for remove location button"
+  },
+  "settingsLocationFailed": "Ort konnte nicht gespeichert werden.",
+  "@settingsLocationFailed": {
+    "description": "Error message when saving location fails"
+  },
+  "settingsClearLocationTitle": "Standort entfernen?",
+  "@settingsClearLocationTitle": {
+    "description": "Confirmation dialog title for removing location"
+  },
+  "settingsClearLocationMessage": "Ohne Standort kannst du den lokalen Feed nicht nutzen, bis du wieder einen Ort waehlst.",
+  "@settingsClearLocationMessage": {
+    "description": "Confirmation dialog message for removing location"
+  },
+  "settingsClearLocationButton": "Entfernen",
+  "@settingsClearLocationButton": {
+    "description": "Confirmation button for removing location"
+  },
+  "settingsClearLocationError": "Entfernen fehlgeschlagen. Bitte erneut versuchen.",
+  "@settingsClearLocationError": {
+    "description": "Error message when removing location fails"
+  },
+  "settingsSectionPrivacy": "PRIVATSPHÄRE",
+  "@settingsSectionPrivacy": {
+    "description": "Privacy section label in settings (blocked accounts etc.)"
+  },
+  "settingsBlockedAccounts": "Blockierte Konten",
+  "@settingsBlockedAccounts": {
+    "description": "Settings tile that opens the blocked accounts list"
+  },
+  "settingsBlockedAccountsSubtitle": "Blockierungen ansehen und aufheben",
+  "@settingsBlockedAccountsSubtitle": {
+    "description": "Subtitle of the blocked accounts tile"
+  },
+  "blockedTitle": "Blockierte Konten",
+  "@blockedTitle": {
+    "description": "Header of the blocked accounts screen"
+  },
+  "blockedEmpty": "Du hast niemanden blockiert.",
+  "@blockedEmpty": {
+    "description": "Empty state of the blocked accounts list"
+  },
+  "blockedLoadFailed": "Die Liste konnte nicht geladen werden.",
+  "@blockedLoadFailed": {
+    "description": "Error state when GET /users/blocked fails"
+  },
+  "blockedRetry": "Erneut versuchen",
+  "@blockedRetry": {
+    "description": "Retry button in the error state"
+  },
+  "blockedSince": "Blockiert am {date}",
+  "@blockedSince": {
+    "description": "Subtitle per row; date is already formatted",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblock": "Aufheben",
+  "@blockedUnblock": {
+    "description": "Button per row to unblock a user"
+  },
+  "blockedUnblockTitle": "{name} nicht mehr blockieren?",
+  "@blockedUnblockTitle": {
+    "description": "Title of the unblock confirm dialog",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblockMessage": "{name} kann dir dann wieder schreiben und deine Inhalte sehen.",
+  "@blockedUnblockMessage": {
+    "description": "Message of the unblock confirm dialog",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblocked": "{name} ist nicht mehr blockiert.",
+  "@blockedUnblocked": {
+    "description": "Snackbar after a successful unblock",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedUnblockFailed": "Aufheben fehlgeschlagen. Versuch es erneut.",
+  "@blockedUnblockFailed": {
+    "description": "Snackbar when unblocking fails"
+  },
+  "settingsSectionLegal": "RECHTLICHES",
+  "@settingsSectionLegal": {
+    "description": "Legal section label in settings"
+  },
+  "settingsPrivacy": "Datenschutz (DSGVO)",
+  "@settingsPrivacy": {
+    "description": "Privacy/GDPR setting title"
+  },
+  "settingsPrivacySubtitle": "Wie wir mit deinen Daten umgehen",
+  "@settingsPrivacySubtitle": {
+    "description": "Privacy setting subtitle"
+  },
+  "settingsSectionAccount": "KONTO",
+  "@settingsSectionAccount": {
+    "description": "Account section label in settings"
+  },
+  "settingsLogout": "Abmelden",
+  "@settingsLogout": {
+    "description": "Logout button text"
+  },
+  "settingsDeleteAccount": "Account löschen",
+  "@settingsDeleteAccount": {
+    "description": "Delete account button text"
+  },
+  "settingsLogoutTitle": "Abmelden?",
+  "@settingsLogoutTitle": {
+    "description": "Logout confirmation dialog title"
+  },
+  "settingsLogoutMessage": "Du wirst von diesem Gerät abgemeldet.",
+  "@settingsLogoutMessage": {
+    "description": "Logout confirmation dialog message"
+  },
+  "settingsDeleteAccountTitle": "Account löschen?",
+  "@settingsDeleteAccountTitle": {
+    "description": "Delete account confirmation dialog title"
+  },
+  "settingsDeleteAccountMessage": "Dein Account, alle Posts, Votes und Kommentare werden dauerhaft gelöscht. Das lässt sich nicht rückgängig machen.",
+  "@settingsDeleteAccountMessage": {
+    "description": "Delete account confirmation dialog message"
+  },
+  "settingsDeleteAccountButton": "Endgültig löschen",
+  "@settingsDeleteAccountButton": {
+    "description": "Delete account confirmation button"
+  },
+  "settingsDeleteFailed": "Löschen fehlgeschlagen. Bitte später erneut versuchen.",
+  "@settingsDeleteFailed": {
+    "description": "Error message when account deletion fails"
+  },
+  "settingsCancelButton": "Abbrechen",
+  "@settingsCancelButton": {
+    "description": "Generic cancel button in settings dialogs"
+  },
+  "settingsDsgvoTitle": "Datenschutz",
+  "@settingsDsgvoTitle": {
+    "description": "GDPR/Privacy screen title"
+  },
+  "searchClearHistoryTitle": "Suchverlauf löschen?",
+  "@searchClearHistoryTitle": {
+    "description": "Confirmation dialog title for clearing search history"
+  },
+  "searchClearHistoryMessage": "Dies entfernt alle kürzlichen Suchen von diesem Gerät.",
+  "@searchClearHistoryMessage": {
+    "description": "Confirmation dialog message for clearing search history"
+  },
+  "searchCancelButton": "Abbrechen",
+  "@searchCancelButton": {
+    "description": "Cancel button in search dialogs"
+  },
+  "searchClearButton": "Löschen",
+  "@searchClearButton": {
+    "description": "Clear button in search history"
+  },
+  "searchPlaceholder": "Nutzer suchen",
+  "@searchPlaceholder": {
+    "description": "Search input placeholder"
+  },
+  "searchNoUsersFound": "Keine Nutzer gefunden",
+  "@searchNoUsersFound": {
+    "description": "Message when no users match search"
+  },
+  "searchMinCharacters": "Mindestens 2 Zeichen eintippen",
+  "@searchMinCharacters": {
+    "description": "Hint when query is too short"
+  },
+  "searchHistoryRecent": "Kürzlich",
+  "@searchHistoryRecent": {
+    "description": "Recent searches header"
+  },
+  "searchHistoryEmpty": "Keine kürzlichen Suchen",
+  "@searchHistoryEmpty": {
+    "description": "Empty state title for search history"
+  },
+  "searchHistoryEmptyMessage": "Erkunde die App – deine letzten Suchen\nwerden hier angezeigt.",
+  "@searchHistoryEmptyMessage": {
+    "description": "Empty state message for search history"
+  },
+  "keyRestoreTitle": "Chats wiederherstellen",
+  "@keyRestoreTitle": {
+    "description": "Dialog title for restoring chats from backup"
+  },
+  "keyRestoreMessage": "Deine Chats wurden mit einem anderen Passwort gesichert. Gib dein vorheriges Passwort ein, um sie wiederherzustellen.",
+  "@keyRestoreMessage": {
+    "description": "Dialog message for restoring chats"
+  },
+  "keyRestorePasswordLabel": "Vorheriges Passwort",
+  "@keyRestorePasswordLabel": {
+    "description": "Label for password input in restore dialog"
+  },
+  "keyRestoreWrongPassword": "Das Passwort passt nicht. Versuch es nochmal.",
+  "@keyRestoreWrongPassword": {
+    "description": "Error message for incorrect backup password"
+  },
+  "keyRestoreButton": "Wiederherstellen",
+  "@keyRestoreButton": {
+    "description": "Button to restore chats"
+  },
+  "keyRestoreCancelButton": "Abbrechen",
+  "@keyRestoreCancelButton": {
+    "description": "Cancel button in key restore dialogs"
+  },
+  "keyRestoreForgotPassword": "Passwort vergessen? Chats zurücksetzen",
+  "@keyRestoreForgotPassword": {
+    "description": "Emergency option to reset chats without password"
+  },
+  "keyRestoreResetTitle": "Chats zurücksetzen?",
+  "@keyRestoreResetTitle": {
+    "description": "Dialog title for emergency chat reset"
+  },
+  "keyRestoreResetMessage": "Das lässt sich nicht rückgängig machen. Bitte lies kurz, was passiert:",
+  "@keyRestoreResetMessage": {
+    "description": "Warning message for emergency chat reset"
+  },
+  "keyRestoreResetConsequence1": "Deine bisherigen Nachrichten sind auf allen Geräten nicht mehr lesbar.",
+  "@keyRestoreResetConsequence1": {
+    "description": "First consequence of chat reset"
+  },
+  "keyRestoreResetConsequence2": "Andere angemeldete Geräte werden abgemeldet.",
+  "@keyRestoreResetConsequence2": {
+    "description": "Second consequence of chat reset"
+  },
+  "keyRestoreResetConsequence3": "Neue Chats funktionieren ganz normal.",
+  "@keyRestoreResetConsequence3": {
+    "description": "Third consequence/positive note of chat reset"
+  },
+  "keyRestoreResetButton": "Chats zurücksetzen",
+  "@keyRestoreResetButton": {
+    "description": "Button to execute emergency chat reset"
+  },
+  "appDraftRestoreTitle": "Entwurf wiederherstellen?",
+  "@appDraftRestoreTitle": {
+    "description": "Dialog title for recovering lost post draft"
+  },
+  "appDraftRestoreMessage": "Du hast einen unfertigen Post.",
+  "@appDraftRestoreMessage": {
+    "description": "Dialog message for recovering lost post draft"
+  },
+  "appDraftDiscardButton": "Verwerfen",
+  "@appDraftDiscardButton": {
+    "description": "Button to discard post draft"
+  },
+  "appDraftRestoreButton": "Wiederherstellen",
+  "@appDraftRestoreButton": {
+    "description": "Button to restore post draft"
+  },
+  "storyDeleteFailedSnackbar": "Story konnte nicht gelöscht werden",
+  "@storyDeleteFailedSnackbar": {
+    "description": "Snackbar when story deletion fails"
+  },
+  "storyYourStory": "Deine Story",
+  "@storyYourStory": {
+    "description": "Header text in viewer for own story"
+  },
+  "storyDeleteTitle": "Story löschen",
+  "@storyDeleteTitle": {
+    "description": "Title in delete sheet of story viewer"
+  },
+  "storyDeleteCancel": "Abbrechen",
+  "@storyDeleteCancel": {
+    "description": "Cancel button in delete sheet"
+  },
+  "storyProcessingError": "Bild konnte nicht verarbeitet werden",
+  "@storyProcessingError": {
+    "description": "Error when formatting image to 9:16 aspect ratio"
+  },
+  "storyUploadError": "Story-Upload fehlgeschlagen",
+  "@storyUploadError": {
+    "description": "Error when uploading story"
+  },
+  "storyCreateTitle": "Neue Story",
+  "@storyCreateTitle": {
+    "description": "Header in create screen"
+  },
+  "storyShareMoment": "Teile deinen Moment",
+  "@storyShareMoment": {
+    "description": "Hero text in create screen"
+  },
+  "storyCreateDescription": "Erstelle in Sekunden eine Story für deine Follower.",
+  "@storyCreateDescription": {
+    "description": "Description text in create screen"
+  },
+  "storyVisibleTime": "24H sichtbar",
+  "@storyVisibleTime": {
+    "description": "Badge text above button row"
+  },
+  "storySourceGallery": "Galerie",
+  "@storySourceGallery": {
+    "description": "Label of gallery source card"
+  },
+  "storySourceGallerySubtitle": "Bild wählen",
+  "@storySourceGallerySubtitle": {
+    "description": "Subtitle of gallery source card"
+  },
+  "storySourceCamera": "Kamera",
+  "@storySourceCamera": {
+    "description": "Label of camera source card"
+  },
+  "storySourceCameraSubtitle": "Live aufnehmen",
+  "@storySourceCameraSubtitle": {
+    "description": "Subtitle of camera source card"
+  },
+  "storyUploadingButton": "Wird geteilt...",
+  "@storyUploadingButton": {
+    "description": "Button text while uploading"
+  },
+  "storyShareButton": "Story teilen",
+  "@storyShareButton": {
+    "description": "Button text for sharing story"
+  },
+  "suspendedTitle": "Konto gesperrt",
+  "@suspendedTitle": {
+    "description": "Title of the suspended screen"
+  },
+  "suspendedUntil": "Dein Konto ist bis {date} gesperrt.",
+  "@suspendedUntil": {
+    "description": "Temporary suspension; date is already formatted (date + time)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "suspendedPermanent": "Dein Konto ist dauerhaft gesperrt.",
+  "@suspendedPermanent": {
+    "description": "Permanent suspension (banned_until year 9999)"
+  },
+  "suspendedReasonLabel": "GRUND",
+  "@suspendedReasonLabel": {
+    "description": "Small label above the ban reason"
+  },
+  "suspendedHint": "Danach kannst du dich wieder ganz normal anmelden.",
+  "@suspendedHint": {
+    "description": "Hint below a temporary suspension"
+  },
+  "suspendedBack": "Zurück zum Login",
+  "@suspendedBack": {
+    "description": "Button on the suspended screen"
   }
 }

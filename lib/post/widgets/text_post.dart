@@ -167,7 +167,7 @@ class _TextPostState extends State<TextPost>
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 child: Text(
-                  "Comments",
+                  context.l10n.postCommentSectionTitle,
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -196,7 +196,7 @@ class _TextPostState extends State<TextPost>
                           // Neu: vorher gab es diesen Fall im UI gar nicht.
                           error: (error, _) => Center(
                             child: Text(
-                              "Kommentare konnten nicht geladen werden",
+                              context.l10n.postCommentsLoadError,
                               style: TextStyle(
                                 color: AppColors.onSurfaceVariant,
                               ),
@@ -206,7 +206,7 @@ class _TextPostState extends State<TextPost>
                             if (comments.isEmpty) {
                               return Center(
                                 child: Text(
-                                  "Be the first to pulse!",
+                                  context.l10n.postBeFirstToPulse,
                                   style: TextStyle(
                                     color: AppColors.onSurfaceVariant,
                                   ),
@@ -234,6 +234,9 @@ class _TextPostState extends State<TextPost>
                                   comment: commentData['comment'],
                                   username:
                                       commentData['username'] ?? "Anonymous",
+                                  // Fehlt is_mine (alter Server), lieber
+                                  // Melden anbieten als fremdes Loeschen.
+                                  isMine: commentData['is_mine'] == true,
                                 );
                               }).toList(),
                             );
@@ -258,7 +261,7 @@ class _TextPostState extends State<TextPost>
                         controller: commentController,
                         style: const TextStyle(fontSize: 14),
                         decoration: InputDecoration(
-                          hintText: "Write a comment...",
+                          hintText: context.l10n.postCommentHint,
                           hintStyle: TextStyle(
                             color: AppColors.onSurfaceVariant.withValues(
                               alpha: 0.5,
@@ -554,7 +557,7 @@ class _TextPostState extends State<TextPost>
                     // Eigener Post: Edit + Delete.
                     _buildRankedButton(
                       icon: Icons.edit_outlined,
-                      text: 'Edit Post',
+                      text: context.l10n.postEditButton,
                       color: AppColors.onSurface,
                       onTap: () {
                         // Deine Edit-Logik
@@ -570,7 +573,7 @@ class _TextPostState extends State<TextPost>
                     ),
                     _buildRankedButton(
                       icon: Icons.delete_outline_rounded,
-                      text: 'Delete Post',
+                      text: context.l10n.postDeleteButton,
                       color: AppColors.primary,
                       isBold: true,
                       onTap: () {
@@ -582,7 +585,7 @@ class _TextPostState extends State<TextPost>
                     // Fremder Post: melden statt loeschen.
                     _buildRankedButton(
                       icon: Icons.flag_outlined,
-                      text: 'Report Post',
+                      text: context.l10n.postReportButton,
                       color: AppColors.primary,
                       isBold: true,
                       onTap: () {
@@ -636,8 +639,8 @@ class _TextPostState extends State<TextPost>
     );
   }
 
-  // Melden: das gemeinsame Sheet aus lib/moderation. true kommt sofort nach
-  // "Senden" (gesendet wird im Hintergrund), also klappt der Post direkt weg.
+  // Melden: das gemeinsame Sheet aus lib/moderation. true kommt erst, wenn
+  // der Server die Meldung angenommen hat (201/409), dann klappt der Post weg.
   Future<void> _reportPost() async {
     // Vor dem await greifen, danach kann der context weg sein.
     final tracker = context.read<ImpressionTracker>();
@@ -654,7 +657,7 @@ class _TextPostState extends State<TextPost>
     setState(() => _hiding = true);
   }
 
-  // Loeschen: erst nach Server-OK wegklappen (anders als Melden). Ein
+  // Loeschen: erst nach Server-OK wegklappen (wie Melden). Ein
   // geloeschter Post, der wieder auftaucht, waere schlimmer als kurz warten.
   Future<void> _deletePost() async {
     final messenger = ScaffoldMessenger.of(context);

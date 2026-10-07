@@ -1,11 +1,16 @@
 
 import 'package:flutter/material.dart';
+import 'package:ranked/api_client.dart';
+import 'package:ranked/l10n/l10n.dart';
+import 'login_result.dart';
 import 'user_api_service.dart';
 import 'onboarding/onboarding_flow.dart';
 import 'app_colors.dart';
 import 'key_restore_dialogs.dart';
 import 'key_setup.dart';
 import 'token_storage.dart';
+import 'package:ranked/moderation/suspended_screen.dart';
+import 'package:ranked/moderation/suspension.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -22,6 +27,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   late TextEditingController email_editing_controller;
   late TextEditingController password_editing_controller;
+  // Gesetzt = Gesperrt-Screen statt Formular. Kommt aus dem ApiClient-
+  // Briefkasten (Zwangs-Logout) oder aus dem Login selbst.
+  Suspension? _suspension;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -30,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     email_editing_controller = TextEditingController();
     password_editing_controller = TextEditingController();
+    _suspension = ApiClient.takeSuspension();
     // Z.B. "Chat-Schluessel auf anderem Geraet zurueckgesetzt" nach einem
     // Logout, den der Nutzer nicht selbst ausgeloest hat.
     _errorMessage = KeySetup.takeLogoutNotice();
@@ -50,16 +59,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Einmal festhalten: exakt diese Bytes verpacken/entpacken das Backup.
     final password = password_editing_controller.text;
-    final success = await UserApiService.login(
+    final loginResult = await UserApiService.login(
       email_editing_controller.text.trim(),
       password,
     );
-    if (!success) {
-      setState(() {
-        _errorMessage = 'Ungültige E-Mail oder Passwort';
-        _isLoading = false;
-      });
-      return;
+    if (!mounted) return;
+    // Kein default: kommt ein neuer LoginResult-Fall dazu, meckert der Compiler.
+    switch (loginResult) {
+      case LoginOk():
+        break; // weiter unten mit dem Key-Setup
+      case LoginInvalid():
+        return _showError(context.l10n.loginInvalidCredentials);
+      case LoginOffline():
+        return _showError(context.l10n.loginServerError);
+      // (:final suspension) holt das Feld direkt aus dem Objekt heraus.
+      case LoginSuspended(:final suspension):
+        setState(() {
+          _suspension = suspension;
+          _isLoading = false;
+        });
+        return;
     }
 
     // E2EE-Keys VOR dem Messenger-Start sicherstellen (sonst gaebe es kein
@@ -89,8 +108,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() {
       _errorMessage = result == null
-          ? 'Anmeldung abgebrochen.'
-          : 'Verbindung zum Server fehlgeschlagen. Bitte versuche es nochmal.';
+          ? context.l10n.loginAborted
+          : context.l10n.loginServerError;
+      _isLoading = false;
+    });
+  }
+
+  void _showError(String message) {
+    setState(() {
+      _errorMessage = message;
       _isLoading = false;
     });
   }
@@ -139,6 +165,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Lokale Kopie: ein nicht-finales Feld "befoerdert" Dart nach dem
+    // null-Check nicht zu Suspension (es koennte sich dazwischen aendern).
+    final suspension = _suspension;
+    if (suspension != null) {
+      return SuspendedScreen(
+        suspension: suspension,
+        onBack: () => setState(() => _suspension = null),
+      );
+    }
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: AppColors.surface,
@@ -191,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     // 2. GREETING
                     Text(
-                      "Welcome back",
+                      context.l10n.loginWelcome,
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w800,
@@ -200,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     Text(
-                      "The pulse is waiting for you.",
+                      context.l10n.loginSubtitle,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -210,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 32),
 
                     // 3. EMAIL INPUT
-                    _buildLabel("Email Address"),
+                    _buildLabel(context.l10n.loginEmailLabel),
                     _buildCustomTextField(
                       controller: email_editing_controller,
                       hint: "alex@example.com",
@@ -219,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
 
                     // 4. PASSWORD INPUT
-                    _buildLabel("Password"),
+                    _buildLabel(context.l10n.loginPasswordLabel),
                     _buildCustomTextField(
                       controller: password_editing_controller,
                       hint: "••••••••",
@@ -232,7 +267,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: TextButton(
                         onPressed: () {},
                         child: Text(
-                          "Forgot password?",
+                          context.l10n.loginForgotPassword,
                           style: TextStyle(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -282,26 +317,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: _isLoading ? null : _handleLogin,
                         child: _isLoading
                             ? const CircularProgressIndicator(
+                          color: Colors.white,
+                        )
+                            : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              context.l10n.loginButton,
+                              style: const TextStyle(
                                 color: Colors.white,
-                              )
-                            : const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Login to Feed",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  SizedBox(width: 10),
-                                  Icon(
-                                    Icons.arrow_forward,
-                                    color: Colors.white,
-                                  ),
-                                ],
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Icon(
+                              Icons.arrow_forward,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
 
@@ -315,9 +350,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            "OR CONTINUE WITH",
+                            context.l10n.loginDivider,
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -337,10 +372,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     // 7. SOCIAL LOGINS
                     Row(
                       children: [
-                        Expanded(child: _buildSocialButton("Google", "G")),
+                        Expanded(child: _buildSocialButton(
+                            context.l10n.loginGoogle, "G")),
                         // Platzhalter für Logo
                         const SizedBox(width: 16),
-                        Expanded(child: _buildSocialButton("Apple", "A")),
+                        Expanded(child: _buildSocialButton(
+                            context.l10n.loginApple, "A")),
                       ],
                     ),
 
@@ -351,20 +388,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "New to Ranked?",
+                            context.l10n.loginNoAccount,
                             style: TextStyle(
                               color: AppColors.onSurfaceVariant,
                             ),
                           ),
                           TextButton(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const OnboardingFlow(),
-                              ),
-                            ),
+                            onPressed: () =>
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (
+                                        context) => const OnboardingFlow(),
+                                  ),
+                                ),
                             child: Text(
-                              "Sign Up",
+                              context.l10n.loginSignUp,
                               style: TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w900,
