@@ -7,6 +7,7 @@ import 'api_client.dart';
 import 'key_service.dart';
 import 'location_picker.dart';
 import 'moderation/blocked_accounts_screen.dart';
+import 'moderation/moderation_home.dart';
 import 'profile.dart';
 import 'theme_provider.dart';
 import 'user_api_service.dart';
@@ -192,6 +193,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
+    // watch: Laedt das Profil noch, ist die Rolle erst "user" und die
+    // Moderations-Kachel taucht auf, sobald die Daten da sind.
+    final role = context.watch<ProfileProvider>().role;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -223,6 +227,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
+
+                // ── Moderation (nur Mods/Admins) ─────────────────────────
+                // Nur Optik: Die echte Rechte-Pruefung macht das Backend.
+                if (role.canModerate) ...[
+                  _SectionLabel(context.l10n.settingsSectionModeration),
+                  _SettingsCard(
+                    children: [
+                      _SettingsTile(
+                        icon: Icons.admin_panel_settings_outlined,
+                        title: context.l10n.settingsModeration,
+                        subtitle: context.l10n.settingsModerationSubtitle,
+                        trailing: Icon(Icons.chevron_right,
+                            color: AppColors.onSurfaceVariant, size: 22),
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ModerationHome(role: role),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
                 // ── Darstellung ──────────────────────────────────────────
                 _SectionLabel(context.l10n.settingsSectionAppearance),

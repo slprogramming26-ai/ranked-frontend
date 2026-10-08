@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/moderation/report_sheet.dart';
 import 'package:ranked/moderation/report_target.dart';
+import 'package:ranked/moderation/user_role.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
 import 'net_image.dart';
@@ -24,6 +25,8 @@ class ProfileProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get activity => _activity;
   bool get isLoading  => _isLoading;
   bool get hasFetched => _hasFetched;
+  // Jedes Mal frisch aus userdata, dann ist sie nach einem Refresh nie veraltet.
+  UserRole get role   => UserRole.fromApi(_userdata['role']);
 
   Future<void> fetchUser({bool forceRefresh = false}) async {
     if (_hasFetched && !forceRefresh) return; // schon geladen? nichts tun

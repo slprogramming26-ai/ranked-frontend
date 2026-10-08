@@ -1813,6 +1813,162 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Zurück zum Login'**
   String get suspendedBack;
+
+  /// Moderation section label in settings, only visible for moderators/admins
+  ///
+  /// In de, this message translates to:
+  /// **'MODERATION'**
+  String get settingsSectionModeration;
+
+  /// Settings tile that opens the moderation area
+  ///
+  /// In de, this message translates to:
+  /// **'Moderation'**
+  String get settingsModeration;
+
+  /// Subtitle of the moderation tile
+  ///
+  /// In de, this message translates to:
+  /// **'Meldungen prüfen'**
+  String get settingsModerationSubtitle;
+
+  /// Title of the moderation home screen
+  ///
+  /// In de, this message translates to:
+  /// **'Moderation'**
+  String get moderationTitle;
+
+  /// Tab in the moderation area: report queue
+  ///
+  /// In de, this message translates to:
+  /// **'Meldungen'**
+  String get moderationTabReports;
+
+  /// Tab in the moderation area: audit log (admins only)
+  ///
+  /// In de, this message translates to:
+  /// **'Protokoll'**
+  String get moderationTabAudit;
+
+  /// Report queue filter chip: pending reports
+  ///
+  /// In de, this message translates to:
+  /// **'Offen'**
+  String get moderationFilterPending;
+
+  /// Report queue filter chip: dismissed reports
+  ///
+  /// In de, this message translates to:
+  /// **'Abgelehnt'**
+  String get moderationFilterDismissed;
+
+  /// Report queue filter chip: reports where action was taken
+  ///
+  /// In de, this message translates to:
+  /// **'Erledigt'**
+  String get moderationFilterActionTaken;
+
+  /// Empty state of the pending report queue
+  ///
+  /// In de, this message translates to:
+  /// **'Keine offenen Meldungen. Alles sauber!'**
+  String get moderationEmptyPending;
+
+  /// Empty state of the dismissed report list
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine abgelehnten Meldungen.'**
+  String get moderationEmptyDismissed;
+
+  /// Empty state of the action-taken report list
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine erledigten Meldungen.'**
+  String get moderationEmptyActionTaken;
+
+  /// Error state of the report queue
+  ///
+  /// In de, this message translates to:
+  /// **'Die Meldungen konnten nicht geladen werden.'**
+  String get moderationLoadFailed;
+
+  /// Retry button in the report queue (first load and load more)
+  ///
+  /// In de, this message translates to:
+  /// **'Erneut versuchen'**
+  String get moderationRetry;
+
+  /// How many reports a queue entry has
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Meldung} other{{count} Meldungen}}'**
+  String moderationReportCount(int count);
+
+  /// When the newest report came in (queue card header)
+  ///
+  /// In de, this message translates to:
+  /// **'zuletzt {date}'**
+  String moderationLastReported(String date);
+
+  /// Badge on a queue card: the reported user is currently banned
+  ///
+  /// In de, this message translates to:
+  /// **'Gesperrt'**
+  String get moderationBanned;
+
+  /// Badge on a queue card: the reported user is banned forever
+  ///
+  /// In de, this message translates to:
+  /// **'Dauerhaft gesperrt'**
+  String get moderationBannedPermanent;
+
+  /// Queue card: the user deleted the content, the text shown is the copy from the time of the report
+  ///
+  /// In de, this message translates to:
+  /// **'Vom User gelöscht – Stand beim Melden'**
+  String get moderationContentDeleted;
+
+  /// Queue card: the server sent no preview
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Vorschau verfügbar'**
+  String get moderationNoPreview;
+
+  /// Queue card: expands the free-text notes the reporters wrote
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Anmerkung anzeigen} other{{count} Anmerkungen anzeigen}}'**
+  String moderationShowDetails(int count);
+
+  /// Queue card: collapses the reporters' notes again
+  ///
+  /// In de, this message translates to:
+  /// **'Anmerkungen ausblenden'**
+  String get moderationHideDetails;
+
+  /// Queue card button: the reports were unfounded (status dismissed)
+  ///
+  /// In de, this message translates to:
+  /// **'Ablehnen'**
+  String get moderationDismiss;
+
+  /// Queue card button: the reports were handled (status action_taken)
+  ///
+  /// In de, this message translates to:
+  /// **'Erledigt'**
+  String get moderationMarkDone;
+
+  /// Snackbar when dismissing / marking a report as done failed
+  ///
+  /// In de, this message translates to:
+  /// **'Konnte nicht gespeichert werden. Versuch es nochmal.'**
+  String get moderationResolveFailed;
+
+  /// Placeholder until the audit log is built
+  ///
+  /// In de, this message translates to:
+  /// **'Hier erscheint bald das Protokoll aller Moderations-Aktionen.'**
+  String get moderationAuditPlaceholder;
 }
 
 class _AppLocalizationsDelegate

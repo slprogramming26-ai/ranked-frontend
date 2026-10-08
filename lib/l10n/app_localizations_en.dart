@@ -940,4 +940,103 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get suspendedBack => 'Back to login';
+
+  @override
+  String get settingsSectionModeration => 'MODERATION';
+
+  @override
+  String get settingsModeration => 'Moderation';
+
+  @override
+  String get settingsModerationSubtitle => 'Review reports';
+
+  @override
+  String get moderationTitle => 'Moderation';
+
+  @override
+  String get moderationTabReports => 'Reports';
+
+  @override
+  String get moderationTabAudit => 'Audit log';
+
+  @override
+  String get moderationFilterPending => 'Open';
+
+  @override
+  String get moderationFilterDismissed => 'Dismissed';
+
+  @override
+  String get moderationFilterActionTaken => 'Action taken';
+
+  @override
+  String get moderationEmptyPending => 'No open reports. All clear!';
+
+  @override
+  String get moderationEmptyDismissed => 'No dismissed reports yet.';
+
+  @override
+  String get moderationEmptyActionTaken => 'No resolved reports yet.';
+
+  @override
+  String get moderationLoadFailed => 'Couldn\'t load the reports.';
+
+  @override
+  String get moderationRetry => 'Try again';
+
+  @override
+  String moderationReportCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reports',
+      one: '1 report',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String moderationLastReported(String date) {
+    return 'last $date';
+  }
+
+  @override
+  String get moderationBanned => 'Banned';
+
+  @override
+  String get moderationBannedPermanent => 'Permanently banned';
+
+  @override
+  String get moderationContentDeleted =>
+      'Deleted by the user – snapshot from the report';
+
+  @override
+  String get moderationNoPreview => 'No preview available';
+
+  @override
+  String moderationShowDetails(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Show $count notes',
+      one: 'Show 1 note',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get moderationHideDetails => 'Hide notes';
+
+  @override
+  String get moderationDismiss => 'Dismiss';
+
+  @override
+  String get moderationMarkDone => 'Done';
+
+  @override
+  String get moderationResolveFailed =>
+      'Couldn\'t save that. Please try again.';
+
+  @override
+  String get moderationAuditPlaceholder =>
+      'The log of all moderation actions will show up here soon.';
 }

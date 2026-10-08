@@ -1229,5 +1229,124 @@
   "suspendedBack": "Zurück zum Login",
   "@suspendedBack": {
     "description": "Button on the suspended screen"
+  },
+  "settingsSectionModeration": "MODERATION",
+  "@settingsSectionModeration": {
+    "description": "Moderation section label in settings, only visible for moderators/admins"
+  },
+  "settingsModeration": "Moderation",
+  "@settingsModeration": {
+    "description": "Settings tile that opens the moderation area"
+  },
+  "settingsModerationSubtitle": "Meldungen prüfen",
+  "@settingsModerationSubtitle": {
+    "description": "Subtitle of the moderation tile"
+  },
+  "moderationTitle": "Moderation",
+  "@moderationTitle": {
+    "description": "Title of the moderation home screen"
+  },
+  "moderationTabReports": "Meldungen",
+  "@moderationTabReports": {
+    "description": "Tab in the moderation area: report queue"
+  },
+  "moderationTabAudit": "Protokoll",
+  "@moderationTabAudit": {
+    "description": "Tab in the moderation area: audit log (admins only)"
+  },
+  "moderationFilterPending": "Offen",
+  "@moderationFilterPending": {
+    "description": "Report queue filter chip: pending reports"
+  },
+  "moderationFilterDismissed": "Abgelehnt",
+  "@moderationFilterDismissed": {
+    "description": "Report queue filter chip: dismissed reports"
+  },
+  "moderationFilterActionTaken": "Erledigt",
+  "@moderationFilterActionTaken": {
+    "description": "Report queue filter chip: reports where action was taken"
+  },
+  "moderationEmptyPending": "Keine offenen Meldungen. Alles sauber!",
+  "@moderationEmptyPending": {
+    "description": "Empty state of the pending report queue"
+  },
+  "moderationEmptyDismissed": "Noch keine abgelehnten Meldungen.",
+  "@moderationEmptyDismissed": {
+    "description": "Empty state of the dismissed report list"
+  },
+  "moderationEmptyActionTaken": "Noch keine erledigten Meldungen.",
+  "@moderationEmptyActionTaken": {
+    "description": "Empty state of the action-taken report list"
+  },
+  "moderationLoadFailed": "Die Meldungen konnten nicht geladen werden.",
+  "@moderationLoadFailed": {
+    "description": "Error state of the report queue"
+  },
+  "moderationRetry": "Erneut versuchen",
+  "@moderationRetry": {
+    "description": "Retry button in the report queue (first load and load more)"
+  },
+  "moderationReportCount": "{count, plural, =1{1 Meldung} other{{count} Meldungen}}",
+  "@moderationReportCount": {
+    "description": "How many reports a queue entry has",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moderationLastReported": "zuletzt {date}",
+  "@moderationLastReported": {
+    "description": "When the newest report came in (queue card header)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "moderationBanned": "Gesperrt",
+  "@moderationBanned": {
+    "description": "Badge on a queue card: the reported user is currently banned"
+  },
+  "moderationBannedPermanent": "Dauerhaft gesperrt",
+  "@moderationBannedPermanent": {
+    "description": "Badge on a queue card: the reported user is banned forever"
+  },
+  "moderationContentDeleted": "Vom User gelöscht – Stand beim Melden",
+  "@moderationContentDeleted": {
+    "description": "Queue card: the user deleted the content, the text shown is the copy from the time of the report"
+  },
+  "moderationNoPreview": "Keine Vorschau verfügbar",
+  "@moderationNoPreview": {
+    "description": "Queue card: the server sent no preview"
+  },
+  "moderationShowDetails": "{count, plural, =1{1 Anmerkung anzeigen} other{{count} Anmerkungen anzeigen}}",
+  "@moderationShowDetails": {
+    "description": "Queue card: expands the free-text notes the reporters wrote",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moderationHideDetails": "Anmerkungen ausblenden",
+  "@moderationHideDetails": {
+    "description": "Queue card: collapses the reporters' notes again"
+  },
+  "moderationDismiss": "Ablehnen",
+  "@moderationDismiss": {
+    "description": "Queue card button: the reports were unfounded (status dismissed)"
+  },
+  "moderationMarkDone": "Erledigt",
+  "@moderationMarkDone": {
+    "description": "Queue card button: the reports were handled (status action_taken)"
+  },
+  "moderationResolveFailed": "Konnte nicht gespeichert werden. Versuch es nochmal.",
+  "@moderationResolveFailed": {
+    "description": "Snackbar when dismissing / marking a report as done failed"
+  },
+  "moderationAuditPlaceholder": "Hier erscheint bald das Protokoll aller Moderations-Aktionen.",
+  "@moderationAuditPlaceholder": {
+    "description": "Placeholder until the audit log is built"
   }
 }

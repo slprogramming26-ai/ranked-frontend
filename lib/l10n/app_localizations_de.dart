@@ -953,4 +953,104 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get suspendedBack => 'Zurück zum Login';
+
+  @override
+  String get settingsSectionModeration => 'MODERATION';
+
+  @override
+  String get settingsModeration => 'Moderation';
+
+  @override
+  String get settingsModerationSubtitle => 'Meldungen prüfen';
+
+  @override
+  String get moderationTitle => 'Moderation';
+
+  @override
+  String get moderationTabReports => 'Meldungen';
+
+  @override
+  String get moderationTabAudit => 'Protokoll';
+
+  @override
+  String get moderationFilterPending => 'Offen';
+
+  @override
+  String get moderationFilterDismissed => 'Abgelehnt';
+
+  @override
+  String get moderationFilterActionTaken => 'Erledigt';
+
+  @override
+  String get moderationEmptyPending => 'Keine offenen Meldungen. Alles sauber!';
+
+  @override
+  String get moderationEmptyDismissed => 'Noch keine abgelehnten Meldungen.';
+
+  @override
+  String get moderationEmptyActionTaken => 'Noch keine erledigten Meldungen.';
+
+  @override
+  String get moderationLoadFailed =>
+      'Die Meldungen konnten nicht geladen werden.';
+
+  @override
+  String get moderationRetry => 'Erneut versuchen';
+
+  @override
+  String moderationReportCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Meldungen',
+      one: '1 Meldung',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String moderationLastReported(String date) {
+    return 'zuletzt $date';
+  }
+
+  @override
+  String get moderationBanned => 'Gesperrt';
+
+  @override
+  String get moderationBannedPermanent => 'Dauerhaft gesperrt';
+
+  @override
+  String get moderationContentDeleted =>
+      'Vom User gelöscht – Stand beim Melden';
+
+  @override
+  String get moderationNoPreview => 'Keine Vorschau verfügbar';
+
+  @override
+  String moderationShowDetails(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Anmerkungen anzeigen',
+      one: '1 Anmerkung anzeigen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get moderationHideDetails => 'Anmerkungen ausblenden';
+
+  @override
+  String get moderationDismiss => 'Ablehnen';
+
+  @override
+  String get moderationMarkDone => 'Erledigt';
+
+  @override
+  String get moderationResolveFailed =>
+      'Konnte nicht gespeichert werden. Versuch es nochmal.';
+
+  @override
+  String get moderationAuditPlaceholder =>
+      'Hier erscheint bald das Protokoll aller Moderations-Aktionen.';
 }

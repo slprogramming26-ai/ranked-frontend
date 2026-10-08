@@ -13,6 +13,15 @@ enum ReportReason {
 
   const ReportReason(this.apiValue);
   final String apiValue;
+
+  /// Fuer die Queue. Unbekannter Grund (z.B. ein neuer im Backend) -> null,
+  /// dann faellt nur dieser eine Chip weg statt der ganzen Liste.
+  static ReportReason? fromApi(Object? raw) {
+    for (final r in values) {
+      if (r.apiValue == raw) return r;
+    }
+    return null;
+  }
 }
 
 // Uebersetzung erst im Widget: Services haben keinen context.
