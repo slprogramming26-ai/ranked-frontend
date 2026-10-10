@@ -1164,4 +1164,63 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get moderationPictureRemoved =>
       'Profile picture removed. The reports stay open.';
+
+  @override
+  String get accountStatusTitle => 'Account status';
+
+  @override
+  String get accountStatusEmpty => 'There are no actions against your account.';
+
+  @override
+  String get accountStatusLoadFailed => 'Couldn\'t load your account status.';
+
+  @override
+  String get accountStatusRemovedPost => 'Post removed';
+
+  @override
+  String get accountStatusRemovedComment => 'Comment removed';
+
+  @override
+  String get accountStatusRemovedStory => 'Story removed';
+
+  @override
+  String get accountStatusRemovedPicture => 'Profile picture removed';
+
+  @override
+  String accountStatusBanned(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Account banned for $count days',
+      one: 'Account banned for 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountStatusBannedPermanent => 'Account permanently banned';
+
+  @override
+  String get accountStatusRestored => 'Restored';
+
+  @override
+  String get accountStatusReasonLabel => 'Reason';
+
+  @override
+  String get accountStatusNoteLabel => 'Note from the moderators';
+
+  @override
+  String get accountStatusSnapshotLabel => 'Your content';
+
+  @override
+  String get settingsAccountStatusSubtitle => 'Removed content and bans';
+
+  @override
+  String get profileActivityContentRemoved => 'Content removed';
+
+  @override
+  String get profileActivityContentRestored => 'Content restored';
+
+  @override
+  String get profileActivityModerationSubtitle => 'Tap for details';
 }

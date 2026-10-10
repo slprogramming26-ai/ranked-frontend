@@ -47,35 +47,33 @@ Future<void> main() async {
   final db = AppDatabase();
 
   runApp(
-    // ProviderScope ist die Wurzel der Riverpod-Welt: hier liegt der Speicher
-    // fuer alle Riverpod-Provider. Er muss ueber allem stehen, was sie liest.
-    // Solange kein Widget Riverpod nutzt, tut er schlicht nichts: deshalb ist
-    // dieser Schritt fuer die laufende App ein No-Op.
-    ProviderScope(
-      // Diese beiden ueberleben die ganze App-Laufzeit unabhaengig vom Login:
-      // ThemeProvider ist eine Geraete-Einstellung, die DB-Instanz wird beim
-      // Logout separat per clearDatabase() geleert statt neu erzeugt.
-      child: MultiProvider(
-        providers: [
-          ChangeNotifierProvider.value(value: themeProvider),
-          Provider.value(value: db),
-        ],
-        child: const SessionScope(child: MyApp()),
-      ),
+    // Diese beiden ueberleben die ganze App-Laufzeit unabhaengig vom Login:
+    // ThemeProvider ist eine Geraete-Einstellung, die DB-Instanz wird beim
+    // Logout separat per clearDatabase() geleert statt neu erzeugt.
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: themeProvider),
+        Provider.value(value: db),
+      ],
+      child: const SessionScope(child: MyApp()),
     ),
   );
 }
 
-// Haelt die Provider, die an einen eingeloggten User gebunden sind. Bei
-// startNewSession() aendert sich der Key des inneren MultiProvider -> Flutter
-// disposed den kompletten Subtree (alle 5 ChangeNotifier-Instanzen samt
-// ihrer Felder) und baut ihn mit frischen Instanzen neu auf. So bleiben beim
+// Haelt alles, was an einen eingeloggten User gebunden ist. Bei
+// startNewSession() aendert sich der Key -> Flutter disposed den kompletten
+// Subtree und baut ihn mit frischen Instanzen neu auf. So bleiben beim
 // naechsten Login keine Werte des vorherigen Users im RAM haengen.
 //
-// Die Kommentare stehen bewusst NICHT mehr hier: die liegen inzwischen in
-// Riverpod (post/comment_provider.dart) und raeumen sich per autoDispose
-// selbst weg, sobald das Kommentar-Sheet zugeht. Beim Logout ist also
-// ohnehin nichts mehr da, was ein naechster User sehen koennte.
+// Das gilt fuer BEIDE Welten:
+// - provider: die ChangeNotifier im MultiProvider unten.
+// - Riverpod: der ProviderScope ist der Speicher aller Riverpod-Provider.
+//   Er steht deshalb HIER und nicht ganz oben in runApp — sonst wuerde er
+//   den Logout ueberleben. Konkret passiert ist das mit den Kommentaren:
+//   cacheFor haelt die Liste nach dem Schliessen des Sheets noch eine Weile,
+//   und User B bekam dann User A's is_mine (Loeschen statt Melden).
+//   Kein zweiter, verschachtelter ProviderScope: ein innerer Scope legt nur
+//   ueberschriebene Provider neu an, alle anderen blieben im aeusseren liegen.
 class SessionScope extends StatefulWidget {
   const SessionScope({super.key, required this.child});
 
@@ -92,20 +90,22 @@ class SessionScopeState extends State<SessionScope> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
+    return ProviderScope(
       key: ValueKey(_sessionId),
-      providers: [
-        ChangeNotifierProvider(create: (_) => RankingProvider()),
-        ChangeNotifierProvider(create: (_) => PostProvider()),
-        ChangeNotifierProvider(create: (_) => StoryProvider()),
-        ChangeNotifierProvider(create: (_) => ProfileProvider()),
-        ChangeNotifierProvider(create: (_) => MessengerController()),
-        Provider(
-          create: (_) => ImpressionTracker(),
-          dispose: (_, tracker) => tracker.dispose(),
-        ),
-      ],
-      child: widget.child,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => RankingProvider()),
+          ChangeNotifierProvider(create: (_) => PostProvider()),
+          ChangeNotifierProvider(create: (_) => StoryProvider()),
+          ChangeNotifierProvider(create: (_) => ProfileProvider()),
+          ChangeNotifierProvider(create: (_) => MessengerController()),
+          Provider(
+            create: (_) => ImpressionTracker(),
+            dispose: (_, tracker) => tracker.dispose(),
+          ),
+        ],
+        child: widget.child,
+      ),
     );
   }
 }
@@ -233,7 +233,8 @@ class _MyHomePageState extends State<MyHomePage> {
         await db.clearDatabase();
         if (mounted) {
           // Wirft RankingProvider/PostProvider/StoryProvider/ProfileProvider/
-          // MessengerController weg und erzeugt sie neu, damit der naechste
+          // MessengerController und den kompletten Riverpod-Speicher (z.B.
+          // gecachte Kommentare) weg und erzeugt sie neu, damit der naechste
           // User nicht die Werte des vorherigen sieht.
           context
               .findAncestorStateOfType<SessionScopeState>()

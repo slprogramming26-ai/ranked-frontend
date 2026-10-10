@@ -344,5 +344,22 @@
   "moderationUnbanMessage": "They can log in again right away.",
   "moderationUserUnbanned": "{username} has been unbanned",
   "moderationContentRemoved": "Content removed",
-  "moderationPictureRemoved": "Profile picture removed. The reports stay open."
+  "moderationPictureRemoved": "Profile picture removed. The reports stay open.",
+  "accountStatusTitle": "Account status",
+  "accountStatusEmpty": "There are no actions against your account.",
+  "accountStatusLoadFailed": "Couldn't load your account status.",
+  "accountStatusRemovedPost": "Post removed",
+  "accountStatusRemovedComment": "Comment removed",
+  "accountStatusRemovedStory": "Story removed",
+  "accountStatusRemovedPicture": "Profile picture removed",
+  "accountStatusBanned": "{count, plural, =1{Account banned for 1 day} other{Account banned for {count} days}}",
+  "accountStatusBannedPermanent": "Account permanently banned",
+  "accountStatusRestored": "Restored",
+  "accountStatusReasonLabel": "Reason",
+  "accountStatusNoteLabel": "Note from the moderators",
+  "accountStatusSnapshotLabel": "Your content",
+  "settingsAccountStatusSubtitle": "Removed content and bans",
+  "profileActivityContentRemoved": "Content removed",
+  "profileActivityContentRestored": "Content restored",
+  "profileActivityModerationSubtitle": "Tap for details"
 }

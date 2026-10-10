@@ -2167,6 +2167,108 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Profilbild entfernt. Die Meldungen bleiben offen.'**
   String get moderationPictureRemoved;
+
+  /// Title of the screen listing moderation actions against the current user (GET /users/moderation)
+  ///
+  /// In de, this message translates to:
+  /// **'Kontostatus'**
+  String get accountStatusTitle;
+
+  /// Empty state of the account status screen
+  ///
+  /// In de, this message translates to:
+  /// **'Gegen dich liegen keine Maßnahmen vor.'**
+  String get accountStatusEmpty;
+
+  /// Error state / snackbar when loading the account status failed
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Kontostatus konnte nicht geladen werden.'**
+  String get accountStatusLoadFailed;
+
+  /// Account status card title: a moderator removed one of your posts
+  ///
+  /// In de, this message translates to:
+  /// **'Beitrag entfernt'**
+  String get accountStatusRemovedPost;
+
+  /// Account status card title: a moderator removed one of your comments
+  ///
+  /// In de, this message translates to:
+  /// **'Kommentar entfernt'**
+  String get accountStatusRemovedComment;
+
+  /// Account status card title: a moderator removed one of your stories
+  ///
+  /// In de, this message translates to:
+  /// **'Story entfernt'**
+  String get accountStatusRemovedStory;
+
+  /// Account status card title: a moderator removed your profile picture
+  ///
+  /// In de, this message translates to:
+  /// **'Profilbild entfernt'**
+  String get accountStatusRemovedPicture;
+
+  /// Account status card title for a temporary ban
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{Konto für 1 Tag gesperrt} other{Konto für {count} Tage gesperrt}}'**
+  String accountStatusBanned(int count);
+
+  /// Account status card title for a permanent ban
+  ///
+  /// In de, this message translates to:
+  /// **'Konto dauerhaft gesperrt'**
+  String get accountStatusBannedPermanent;
+
+  /// Badge on an account status card: an admin restored the removed content
+  ///
+  /// In de, this message translates to:
+  /// **'Wiederhergestellt'**
+  String get accountStatusRestored;
+
+  /// Account status card: label above the reason (category or ban text)
+  ///
+  /// In de, this message translates to:
+  /// **'Grund'**
+  String get accountStatusReasonLabel;
+
+  /// Account status card: label above the optional explanation the moderator wrote
+  ///
+  /// In de, this message translates to:
+  /// **'Hinweis der Moderation'**
+  String get accountStatusNoteLabel;
+
+  /// Account status card: label above the text copy of the removed content
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Inhalt'**
+  String get accountStatusSnapshotLabel;
+
+  /// Subtitle of the account status tile in settings
+  ///
+  /// In de, this message translates to:
+  /// **'Entfernte Inhalte und Sperren'**
+  String get settingsAccountStatusSubtitle;
+
+  /// Activity item title: a moderator removed some of your content
+  ///
+  /// In de, this message translates to:
+  /// **'Inhalt entfernt'**
+  String get profileActivityContentRemoved;
+
+  /// Activity item title: an admin restored previously removed content
+  ///
+  /// In de, this message translates to:
+  /// **'Inhalt wiederhergestellt'**
+  String get profileActivityContentRestored;
+
+  /// Activity item subtitle for moderation events; tapping opens the account status screen
+  ///
+  /// In de, this message translates to:
+  /// **'Tippe für Details'**
+  String get profileActivityModerationSubtitle;
 }
 
 class _AppLocalizationsDelegate

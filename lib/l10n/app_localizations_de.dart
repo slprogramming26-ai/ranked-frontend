@@ -1179,4 +1179,64 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get moderationPictureRemoved =>
       'Profilbild entfernt. Die Meldungen bleiben offen.';
+
+  @override
+  String get accountStatusTitle => 'Kontostatus';
+
+  @override
+  String get accountStatusEmpty => 'Gegen dich liegen keine Maßnahmen vor.';
+
+  @override
+  String get accountStatusLoadFailed =>
+      'Dein Kontostatus konnte nicht geladen werden.';
+
+  @override
+  String get accountStatusRemovedPost => 'Beitrag entfernt';
+
+  @override
+  String get accountStatusRemovedComment => 'Kommentar entfernt';
+
+  @override
+  String get accountStatusRemovedStory => 'Story entfernt';
+
+  @override
+  String get accountStatusRemovedPicture => 'Profilbild entfernt';
+
+  @override
+  String accountStatusBanned(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Konto für $count Tage gesperrt',
+      one: 'Konto für 1 Tag gesperrt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountStatusBannedPermanent => 'Konto dauerhaft gesperrt';
+
+  @override
+  String get accountStatusRestored => 'Wiederhergestellt';
+
+  @override
+  String get accountStatusReasonLabel => 'Grund';
+
+  @override
+  String get accountStatusNoteLabel => 'Hinweis der Moderation';
+
+  @override
+  String get accountStatusSnapshotLabel => 'Dein Inhalt';
+
+  @override
+  String get settingsAccountStatusSubtitle => 'Entfernte Inhalte und Sperren';
+
+  @override
+  String get profileActivityContentRemoved => 'Inhalt entfernt';
+
+  @override
+  String get profileActivityContentRestored => 'Inhalt wiederhergestellt';
+
+  @override
+  String get profileActivityModerationSubtitle => 'Tippe für Details';
 }

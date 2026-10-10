@@ -1505,5 +1505,78 @@
   "moderationPictureRemoved": "Profilbild entfernt. Die Meldungen bleiben offen.",
   "@moderationPictureRemoved": {
     "description": "Snackbar after a moderator removed a profile picture; the user reports stay open because they may concern name or bio"
+  },
+  "accountStatusTitle": "Kontostatus",
+  "@accountStatusTitle": {
+    "description": "Title of the screen listing moderation actions against the current user (GET /users/moderation)"
+  },
+  "accountStatusEmpty": "Gegen dich liegen keine Maßnahmen vor.",
+  "@accountStatusEmpty": {
+    "description": "Empty state of the account status screen"
+  },
+  "accountStatusLoadFailed": "Dein Kontostatus konnte nicht geladen werden.",
+  "@accountStatusLoadFailed": {
+    "description": "Error state / snackbar when loading the account status failed"
+  },
+  "accountStatusRemovedPost": "Beitrag entfernt",
+  "@accountStatusRemovedPost": {
+    "description": "Account status card title: a moderator removed one of your posts"
+  },
+  "accountStatusRemovedComment": "Kommentar entfernt",
+  "@accountStatusRemovedComment": {
+    "description": "Account status card title: a moderator removed one of your comments"
+  },
+  "accountStatusRemovedStory": "Story entfernt",
+  "@accountStatusRemovedStory": {
+    "description": "Account status card title: a moderator removed one of your stories"
+  },
+  "accountStatusRemovedPicture": "Profilbild entfernt",
+  "@accountStatusRemovedPicture": {
+    "description": "Account status card title: a moderator removed your profile picture"
+  },
+  "accountStatusBanned": "{count, plural, =1{Konto für 1 Tag gesperrt} other{Konto für {count} Tage gesperrt}}",
+  "@accountStatusBanned": {
+    "description": "Account status card title for a temporary ban",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountStatusBannedPermanent": "Konto dauerhaft gesperrt",
+  "@accountStatusBannedPermanent": {
+    "description": "Account status card title for a permanent ban"
+  },
+  "accountStatusRestored": "Wiederhergestellt",
+  "@accountStatusRestored": {
+    "description": "Badge on an account status card: an admin restored the removed content"
+  },
+  "accountStatusReasonLabel": "Grund",
+  "@accountStatusReasonLabel": {
+    "description": "Account status card: label above the reason (category or ban text)"
+  },
+  "accountStatusNoteLabel": "Hinweis der Moderation",
+  "@accountStatusNoteLabel": {
+    "description": "Account status card: label above the optional explanation the moderator wrote"
+  },
+  "accountStatusSnapshotLabel": "Dein Inhalt",
+  "@accountStatusSnapshotLabel": {
+    "description": "Account status card: label above the text copy of the removed content"
+  },
+  "settingsAccountStatusSubtitle": "Entfernte Inhalte und Sperren",
+  "@settingsAccountStatusSubtitle": {
+    "description": "Subtitle of the account status tile in settings"
+  },
+  "profileActivityContentRemoved": "Inhalt entfernt",
+  "@profileActivityContentRemoved": {
+    "description": "Activity item title: a moderator removed some of your content"
+  },
+  "profileActivityContentRestored": "Inhalt wiederhergestellt",
+  "@profileActivityContentRestored": {
+    "description": "Activity item title: an admin restored previously removed content"
+  },
+  "profileActivityModerationSubtitle": "Tippe für Details",
+  "@profileActivityModerationSubtitle": {
+    "description": "Activity item subtitle for moderation events; tapping opens the account status screen"
   }
 }

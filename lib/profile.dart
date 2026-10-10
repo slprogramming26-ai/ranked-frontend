@@ -2,6 +2,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:ranked/moderation/my_moderation_screen.dart';
 import 'package:ranked/moderation/report_sheet.dart';
 import 'package:ranked/moderation/report_target.dart';
 import 'package:ranked/moderation/user_role.dart';
@@ -405,7 +406,8 @@ class _ProfileState extends State<Profile> {
                             icon:     _activityIcon(a),
                             title:    _activityTitle(a),
                             subtitle: _activitySubtitle(a),
-                            time:     _relativeTime(
+                            onTap:    _activityTap(a),
+                            time:    _relativeTime(
                               DateTime.tryParse(
                                   a['created_at']?.toString() ?? ''),
                             ),
@@ -461,6 +463,10 @@ class _ProfileState extends State<Profile> {
     switch (a['type']) {
       case 'rated':
         return Icons.bolt_rounded;
+      case 'content_removed':
+        return Icons.gavel_rounded;
+      case 'content_restored':
+        return Icons.restore_rounded;
       default:
         return Icons.notifications_none_rounded;
     }
@@ -470,6 +476,10 @@ class _ProfileState extends State<Profile> {
     switch (a['type']) {
       case 'rated':
         return context.l10n.profileActivityRated;
+      case 'content_removed':
+        return context.l10n.profileActivityContentRemoved;
+      case 'content_restored':
+        return context.l10n.profileActivityContentRestored;
       default:
         return context.l10n.profileActivityDefault;
     }
@@ -480,8 +490,26 @@ class _ProfileState extends State<Profile> {
     switch (a['type']) {
       case 'rated':
         return context.l10n.profileActivityRatedSubtitle(payload);
+      // payload ist hier die ID der Mod-Aktion, nichts zum Anzeigen.
+      case 'content_removed':
+      case 'content_restored':
+        return context.l10n.profileActivityModerationSubtitle;
       default:
         return '';
+    }
+  }
+
+  /// Moderations-Events fuehren zum Kontostatus (Details + Begruendung).
+  /// Alle anderen sind nicht antippbar.
+  VoidCallback? _activityTap(Map<String, dynamic> a) {
+    switch (a['type']) {
+      case 'content_removed':
+      case 'content_restored':
+        return () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const MyModerationScreen()),
+            );
+      default:
+        return null;
     }
   }
 
@@ -955,16 +983,22 @@ class _ActivityItem extends StatelessWidget {
   final String title;
   final String subtitle;
   final String time;
+  final VoidCallback? onTap; // null = nicht antippbar
   const _ActivityItem({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.time,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    // opaque: auch Luecken in der Zeile reagieren auf den Tap.
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
       padding: const EdgeInsets.only(bottom: 24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1023,6 +1057,7 @@ class _ActivityItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

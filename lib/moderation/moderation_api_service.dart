@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../api_client.dart';
 import '../user_api_service.dart';
+import 'my_moderation_action.dart';
 import 'report_queue_item.dart';
 import 'report_reason.dart';
 import 'report_target.dart';
@@ -44,6 +45,28 @@ class ModerationApiService {
         // fromJson liefert null bei unbekanntem Typ -> nonNulls filtert die raus.
         return data
             .map((e) => ReportQueueItem.fromJson(e as Map<String, dynamic>))
+            .nonNulls
+            .toList();
+      }
+    } catch (_) {
+      // kein Netz / kaputtes JSON -> unten null
+    }
+    return null;
+  }
+
+  /// Massnahmen gegen MICH (GET /users/moderation), neueste zuerst. Liegt
+  /// unter /users, gehoert inhaltlich aber hierher. Ohne Paginierung: 50
+  /// reichen fuer jeden normalen Account.
+  /// null = Fehler, [] = keine Massnahmen.
+  static Future<List<MyModerationAction>?> getMyActions() async {
+    try {
+      final response =
+          await ApiClient.get(Uri.parse('$_baseUrl/users/moderation?limit=50'));
+      if (response.statusCode == 200) {
+        final data =
+            jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+        return data
+            .map((e) => MyModerationAction.fromJson(e as Map<String, dynamic>))
             .nonNulls
             .toList();
       }

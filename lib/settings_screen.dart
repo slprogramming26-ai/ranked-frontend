@@ -8,6 +8,7 @@ import 'key_service.dart';
 import 'location_picker.dart';
 import 'moderation/blocked_accounts_screen.dart';
 import 'moderation/moderation_home.dart';
+import 'moderation/my_moderation_screen.dart';
 import 'profile.dart';
 import 'theme_provider.dart';
 import 'user_api_service.dart';
@@ -338,6 +339,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _SectionLabel(context.l10n.settingsSectionAccount),
                 _SettingsCard(
                   children: [
+                    _SettingsTile(
+                      icon: Icons.verified_user_outlined,
+                      title: context.l10n.accountStatusTitle,
+                      subtitle: context.l10n.settingsAccountStatusSubtitle,
+                      trailing: Icon(Icons.chevron_right,
+                          color: AppColors.onSurfaceVariant, size: 22),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const MyModerationScreen(),
+                        ),
+                      ),
+                    ),
+                    const _TileDivider(),
                     _SettingsTile(
                       icon: Icons.logout,
                       title: context.l10n.settingsLogout,
