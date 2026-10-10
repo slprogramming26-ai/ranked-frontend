@@ -155,9 +155,9 @@ class ApiClient {
         _client.put(url, headers: _auth(token, headers), body: body));
   }
 
-  static Future<http.Response> delete(Uri url, {Map<String, String>? headers}) {
+  static Future<http.Response> delete(Uri url, {Object? body, Map<String, String>? headers}) {
     return _send(
-        (token) => _client.delete(url, headers: _auth(token, headers)));
+        (token) => _client.delete(url, headers: _auth(token, headers), body:  body));
   }
 
   static Future<http.Response> uploadFile(Uri url, File file,

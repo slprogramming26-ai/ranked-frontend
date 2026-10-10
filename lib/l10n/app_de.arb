@@ -1333,20 +1333,177 @@
   "@moderationHideDetails": {
     "description": "Queue card: collapses the reporters' notes again"
   },
-  "moderationDismiss": "Ablehnen",
+  "moderationDismiss": "Kein Verstoß",
   "@moderationDismiss": {
     "description": "Queue card button: the reports were unfounded (status dismissed)"
   },
-  "moderationMarkDone": "Erledigt",
+  "moderationTakeAction": "Eingreifen",
+  "@moderationTakeAction": {
+    "description": "Queue card button: opens the sheet with the possible actions (remove, ban, unban, mark as done)"
+  },
+  "moderationActionSheetTitle": "Was möchtest du tun?",
+  "@moderationActionSheetTitle": {
+    "description": "Title of the action sheet opened by 'Take action' on a queue card"
+  },
+  "moderationActionRemoveHint": "Für alle ausgeblendet. Die Meldungen gelten damit als erledigt.",
+  "@moderationActionRemoveHint": {
+    "description": "Action sheet: explanation under 'Remove post/comment/story'"
+  },
+  "moderationActionRemovePictureHint": "Name und Bio bleiben. Die Meldungen bleiben offen.",
+  "@moderationActionRemovePictureHint": {
+    "description": "Action sheet: explanation under 'Remove profile picture'"
+  },
+  "moderationActionBanHint": "Die Person wird abgemeldet und kann sich bis zum Ende der Sperre nicht anmelden. Die Meldungen bleiben offen.",
+  "@moderationActionBanHint": {
+    "description": "Action sheet: explanation under 'Ban {username}'"
+  },
+  "moderationActionMarkDoneHint": "Z. B. wenn es schon anders geklärt ist. Die Karte wandert zu „Erledigt“.",
+  "@moderationActionMarkDoneHint": {
+    "description": "Action sheet: explanation under 'Just mark as done' (status action_taken)"
+  },
+  "moderationActionRestricted": "Gleicher oder höherer Rang als du. Du kannst die Meldungen nur als erledigt markieren.",
+  "@moderationActionRestricted": {
+    "description": "Action sheet: hint when the reported user has the same or a higher role"
+  },
+  "moderationMarkDone": "Nur als erledigt markieren",
   "@moderationMarkDone": {
-    "description": "Queue card button: the reports were handled (status action_taken)"
+    "description": "Action sheet option: mark the reports as handled without removing or banning (status action_taken)"
   },
   "moderationResolveFailed": "Konnte nicht gespeichert werden. Versuch es nochmal.",
   "@moderationResolveFailed": {
     "description": "Snackbar when dismissing / marking a report as done failed"
   },
+  "moderationRemoveTitlePost": "Beitrag entfernen",
+  "@moderationRemoveTitlePost": {
+    "description": "Title of the moderator removal sheet for a post"
+  },
+  "moderationRemoveTitleComment": "Kommentar entfernen",
+  "@moderationRemoveTitleComment": {
+    "description": "Title of the moderator removal sheet for a comment"
+  },
+  "moderationRemoveTitleStory": "Story entfernen",
+  "@moderationRemoveTitleStory": {
+    "description": "Title of the moderator removal sheet for a story"
+  },
+  "moderationRemoveTitleProfilePicture": "Profilbild entfernen",
+  "@moderationRemoveTitleProfilePicture": {
+    "description": "Title of the moderator removal sheet for a profile picture (reported user)"
+  },
+  "moderationRemoveReasonLabel": "Grund",
+  "@moderationRemoveReasonLabel": {
+    "description": "Section label above the reason chips in the removal sheet"
+  },
+  "moderationRemoveDetailsHint": "Begründung für die Person (optional)",
+  "@moderationRemoveDetailsHint": {
+    "description": "Hint of the optional details field in the removal sheet; the affected user sees this text (GET /users/moderation) and it goes into the audit log"
+  },
+  "moderationRemoveHint": "Für alle sofort ausgeblendet. Ein Admin kann es 180 Tage lang wiederherstellen.",
+  "@moderationRemoveHint": {
+    "description": "Info line above the remove button; content is archived for 180 days, not deleted"
+  },
+  "moderationRemoveConfirm": "Entfernen",
+  "@moderationRemoveConfirm": {
+    "description": "Confirm button of the removal sheet"
+  },
   "moderationAuditPlaceholder": "Hier erscheint bald das Protokoll aller Moderations-Aktionen.",
   "@moderationAuditPlaceholder": {
     "description": "Placeholder until the audit log is built"
+  },
+  "moderationBanTitle": "{username} sperren",
+  "@moderationBanTitle": {
+    "description": "Title of the ban sheet",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "moderationBanDurationLabel": "Dauer",
+  "@moderationBanDurationLabel": {
+    "description": "Section label above the duration chips in the ban sheet"
+  },
+  "moderationBanDays": "{count, plural, =1{1 Tag} other{{count} Tage}}",
+  "@moderationBanDays": {
+    "description": "Duration chip in the ban sheet",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moderationBanPermanent": "Dauerhaft",
+  "@moderationBanPermanent": {
+    "description": "Duration chip for a permanent ban (admins only)"
+  },
+  "moderationBanReasonLabel": "Begründung",
+  "@moderationBanReasonLabel": {
+    "description": "Section label above the required reason field in the ban sheet"
+  },
+  "moderationBanReasonHint": "Die Person sieht diesen Text beim Login",
+  "@moderationBanReasonHint": {
+    "description": "Hint of the required reason field; the banned user sees it on the suspended screen"
+  },
+  "moderationBanHintNew": "Die Person wird sofort abgemeldet.",
+  "@moderationBanHintNew": {
+    "description": "Info line above the ban button when the user is not banned yet"
+  },
+  "moderationBanHintReplace": "Ersetzt die laufende Sperre.",
+  "@moderationBanHintReplace": {
+    "description": "Info line above the ban button when the user is already banned"
+  },
+  "moderationBanConfirm": "Sperren",
+  "@moderationBanConfirm": {
+    "description": "Confirm button of the ban sheet"
+  },
+  "moderationUnban": "Entsperren",
+  "@moderationUnban": {
+    "description": "Button on a report card to lift the reported user's ban"
+  },
+  "moderationUserBanned": "{username} wurde gesperrt",
+  "@moderationUserBanned": {
+    "description": "Snackbar after banning a user from the report queue",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "moderationForbidden": "Dafür fehlt dir die Berechtigung",
+  "@moderationForbidden": {
+    "description": "Snackbar when the backend answers 403 to a moderation action (rank rule or moderator limit)"
+  },
+  "moderationActionFailed": "Aktion fehlgeschlagen. Bitte versuche es erneut.",
+  "@moderationActionFailed": {
+    "description": "Snackbar when a moderation action (remove, ban, unban) failed"
+  },
+  "moderationUnbanTitle": "{username} entsperren?",
+  "@moderationUnbanTitle": {
+    "description": "Title of the confirm dialog before lifting a ban",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "moderationUnbanMessage": "Die Person kann sich sofort wieder anmelden.",
+  "@moderationUnbanMessage": {
+    "description": "Message of the confirm dialog before lifting a ban"
+  },
+  "moderationUserUnbanned": "{username} wurde entsperrt",
+  "@moderationUserUnbanned": {
+    "description": "Snackbar after lifting a ban from the report queue",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "moderationContentRemoved": "Inhalt entfernt",
+  "@moderationContentRemoved": {
+    "description": "Snackbar after a moderator removed a post, comment or story"
+  },
+  "moderationPictureRemoved": "Profilbild entfernt. Die Meldungen bleiben offen.",
+  "@moderationPictureRemoved": {
+    "description": "Snackbar after a moderator removed a profile picture; the user reports stay open because they may concern name or bio"
   }
 }

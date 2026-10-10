@@ -5,34 +5,70 @@ import 'package:intl/intl.dart';
 import '../app_colors.dart';
 import '../l10n/l10n.dart';
 import '../net_image.dart';
-import 'moderation_api_service.dart';
 import 'report_queue_item.dart';
 import 'report_reason.dart';
 import 'report_target.dart';
 
+/// Die zwei Buttons einer Karte. Die Queue merkt sich pro Karte, welcher
+/// davon gerade auf den Server wartet (Spinner). act = alles, was ueber das
+/// Massnahmen-Sheet laeuft (Entfernen, Sperren, Entsperren, Erledigt).
+enum ReportCardAction { dismiss, act }
+
 /// Eine Karte in der Report-Queue: wer, was, wie oft gemeldet.
 /// Rein darstellend: Was beim Tippen passiert, entscheidet die Queue-View.
+/// Sind beide Callbacks null, gibt es keine Button-Zeile.
 class ReportCard extends StatelessWidget {
   final ReportQueueItem item;
 
-  /// Beide null = keine Buttonleiste (Filter "Abgelehnt"/"Erledigt").
+  /// Stufe 1: "Keine Massnahme" (= Ablehnen) bzw. "Massnahme ergreifen"
+  /// (oeffnet in der Queue das Sheet mit Stufe 2).
   final VoidCallback? onDismiss;
-  final VoidCallback? onMarkDone;
+  final VoidCallback? onTakeAction;
 
   /// Welcher Button gerade auf den Server wartet (Spinner), sonst null.
   /// Solange etwas laeuft, sind BEIDE Buttons gesperrt.
-  final ReportStatus? busyStatus;
+  final ReportCardAction? busyAction;
 
   const ReportCard({
     super.key,
     required this.item,
     this.onDismiss,
-    this.onMarkDone,
-    this.busyStatus,
+    this.onTakeAction,
+    this.busyAction,
   });
+
+  /// Ein Button der Karte. Laeuft irgendeine Aktion, ist er gesperrt (onTap
+  /// null), der laufende zeigt den Spinner.
+  Widget _button(
+    String label,
+    ReportCardAction action,
+    VoidCallback onTap,
+    _ButtonStyle style,
+  ) =>
+      Expanded(
+        child: _ActionButton(
+          label: label,
+          style: style,
+          loading: busyAction == action,
+          onTap: busyAction == null ? onTap : null,
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
+    // Lokale Kopien: Felder promoten nicht, lokale finals schon.
+    final dismiss = onDismiss, act = onTakeAction;
+
+    final buttons = [
+      if (dismiss != null)
+        _button(l.moderationDismiss, ReportCardAction.dismiss, dismiss,
+            _ButtonStyle.neutral),
+      if (act != null)
+        _button(l.moderationTakeAction, ReportCardAction.act, act,
+            _ButtonStyle.primary),
+    ];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -55,28 +91,14 @@ class ReportCard extends StatelessWidget {
             const SizedBox(height: 6),
             _DetailsSection(details: item.details),
           ],
-          if (onDismiss != null || onMarkDone != null) ...[
+          if (buttons.isNotEmpty) ...[
             const SizedBox(height: 14),
             Row(
               children: [
-                Expanded(
-                  child: _ActionButton(
-                    label: context.l10n.moderationDismiss,
-                    primary: false,
-                    loading: busyStatus == ReportStatus.dismissed,
-                    // busy -> null -> Button gesperrt
-                    onTap: busyStatus == null ? onDismiss : null,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _ActionButton(
-                    label: context.l10n.moderationMarkDone,
-                    primary: true,
-                    loading: busyStatus == ReportStatus.actionTaken,
-                    onTap: busyStatus == null ? onMarkDone : null,
-                  ),
-                ),
+                for (var i = 0; i < buttons.length; i++) ...[
+                  if (i > 0) const SizedBox(width: 10),
+                  buttons[i],
+                ],
               ],
             ),
           ],
@@ -547,25 +569,34 @@ class _DetailsSectionState extends State<_DetailsSection> {
 
 // ── Buttons ──────────────────────────────────────────────────────────────
 
-/// Pill-Button: grau (Ablehnen) oder lila (Erledigt).
+/// neutral = grau (Keine Massnahme), primary = lila (Massnahme ergreifen).
+enum _ButtonStyle { neutral, primary }
+
+/// Pill-Button in einem der zwei Stile.
 /// [onTap] null = gesperrt (halb transparent), [loading] = Spinner statt Text.
 class _ActionButton extends StatelessWidget {
   final String label;
-  final bool primary;
+  final _ButtonStyle style;
   final bool loading;
   final VoidCallback? onTap;
 
   const _ActionButton({
     required this.label,
-    required this.primary,
+    required this.style,
     required this.loading,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final fg = primary ? Colors.white : AppColors.onSurface;
-    // Der ladende Button bleibt voll sichtbar, nur der ANDERE wird blass.
+    final (bg, fg) = switch (style) {
+      _ButtonStyle.neutral => (
+          AppColors.surfaceContainerHighest,
+          AppColors.onSurface
+        ),
+      _ButtonStyle.primary => (AppColors.primary, Colors.white),
+    };
+    // Der ladende Button bleibt voll sichtbar, nur die ANDEREN werden blass.
     final dimmed = onTap == null && !loading;
 
     return GestureDetector(
@@ -576,10 +607,9 @@ class _ActionButton extends StatelessWidget {
         child: Container(
           height: 40,
           alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
-            color: primary
-                ? AppColors.primary
-                : AppColors.surfaceContainerHighest,
+            color: bg,
             borderRadius: BorderRadius.circular(20),
           ),
           child: loading
@@ -588,12 +618,18 @@ class _ActionButton extends StatelessWidget {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2, color: fg),
                 )
-              : Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: fg,
+              // scaleDown: Wird ein Label (andere Sprache, grosse
+              // Systemschrift) zu breit, schrumpft es statt anzustossen.
+              : FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: fg,
+                    ),
                   ),
                 ),
         ),

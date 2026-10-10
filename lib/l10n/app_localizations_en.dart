@@ -1027,16 +1027,141 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moderationHideDetails => 'Hide notes';
 
   @override
-  String get moderationDismiss => 'Dismiss';
+  String get moderationDismiss => 'No violation';
 
   @override
-  String get moderationMarkDone => 'Done';
+  String get moderationTakeAction => 'Take action';
+
+  @override
+  String get moderationActionSheetTitle => 'What do you want to do?';
+
+  @override
+  String get moderationActionRemoveHint =>
+      'Hidden for everyone. The reports count as handled.';
+
+  @override
+  String get moderationActionRemovePictureHint =>
+      'Name and bio stay. The reports stay open.';
+
+  @override
+  String get moderationActionBanHint =>
+      'They\'re logged out and can\'t log in until the ban ends. The reports stay open.';
+
+  @override
+  String get moderationActionMarkDoneHint =>
+      'E.g. if it\'s already been handled another way. The card moves to “Action taken”.';
+
+  @override
+  String get moderationActionRestricted =>
+      'Same or higher role than you. You can only mark the reports as done.';
+
+  @override
+  String get moderationMarkDone => 'Just mark as done';
 
   @override
   String get moderationResolveFailed =>
       'Couldn\'t save that. Please try again.';
 
   @override
+  String get moderationRemoveTitlePost => 'Remove post';
+
+  @override
+  String get moderationRemoveTitleComment => 'Remove comment';
+
+  @override
+  String get moderationRemoveTitleStory => 'Remove story';
+
+  @override
+  String get moderationRemoveTitleProfilePicture => 'Remove profile picture';
+
+  @override
+  String get moderationRemoveReasonLabel => 'Reason';
+
+  @override
+  String get moderationRemoveDetailsHint =>
+      'Explanation for the person (optional)';
+
+  @override
+  String get moderationRemoveHint =>
+      'Hidden for everyone right away. An admin can restore it for 180 days.';
+
+  @override
+  String get moderationRemoveConfirm => 'Remove';
+
+  @override
   String get moderationAuditPlaceholder =>
       'The log of all moderation actions will show up here soon.';
+
+  @override
+  String moderationBanTitle(String username) {
+    return 'Ban $username';
+  }
+
+  @override
+  String get moderationBanDurationLabel => 'Duration';
+
+  @override
+  String moderationBanDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get moderationBanPermanent => 'Permanent';
+
+  @override
+  String get moderationBanReasonLabel => 'Reason';
+
+  @override
+  String get moderationBanReasonHint =>
+      'The person sees this text when logging in';
+
+  @override
+  String get moderationBanHintNew =>
+      'The person will be logged out right away.';
+
+  @override
+  String get moderationBanHintReplace => 'Replaces the current ban.';
+
+  @override
+  String get moderationBanConfirm => 'Ban';
+
+  @override
+  String get moderationUnban => 'Unban';
+
+  @override
+  String moderationUserBanned(String username) {
+    return '$username has been banned';
+  }
+
+  @override
+  String get moderationForbidden => 'You don\'t have permission to do that';
+
+  @override
+  String get moderationActionFailed => 'Action failed. Please try again.';
+
+  @override
+  String moderationUnbanTitle(String username) {
+    return 'Unban $username?';
+  }
+
+  @override
+  String get moderationUnbanMessage => 'They can log in again right away.';
+
+  @override
+  String moderationUserUnbanned(String username) {
+    return '$username has been unbanned';
+  }
+
+  @override
+  String get moderationContentRemoved => 'Content removed';
+
+  @override
+  String get moderationPictureRemoved =>
+      'Profile picture removed. The reports stay open.';
 }

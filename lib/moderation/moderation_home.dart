@@ -81,7 +81,7 @@ class _ModerationHomeState extends State<ModerationHome> {
             Expanded(
               // Ein Mod landet immer bei den Meldungen, egal was in _tab steht.
               child: (!isAdmin || _tab == _ModTab.reports)
-                  ? const ReportQueueView()
+                  ? ReportQueueView(role: widget.role)
                   : _Placeholder(
                       icon: Icons.history_rounded,
                       text: l.moderationAuditPlaceholder,

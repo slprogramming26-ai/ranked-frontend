@@ -3,6 +3,8 @@ import 'dart:convert';
 import '../api_client.dart';
 import '../user_api_service.dart';
 import 'report_queue_item.dart';
+import 'report_reason.dart';
+import 'report_target.dart';
 
 /// Status einer Meldung. apiValue = Query-Parameter `status` bzw. der Wert
 /// beim Resolve. Bewusst nicht .name (action_taken vs. actionTaken).
@@ -14,6 +16,10 @@ enum ReportStatus {
   const ReportStatus(this.apiValue);
   final String apiValue;
 }
+
+/// Ergebnis einer Mod-Aktion. forbidden = 403 (Rangregel / Mod-Limit), damit
+/// die UI etwas anderes zeigen kann als ein generisches "fehlgeschlagen".
+enum ModerationResult { ok, forbidden, failed }
 
 /// Alles unter /admin/... . Die Rechte prueft das Backend (403), die App
 /// blendet den Einstieg nur aus.
@@ -69,5 +75,82 @@ class ModerationApiService {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Sperrt einen User. days == null = dauerhaft (nur Admin, sonst 403).
+  /// reason ist hier FREITEXT (1-500), keine Kategorie wie beim Entfernen.
+  static Future<ModerationResult> banUser(
+    int userId, {
+    int? days,
+    required String reason,
+  }) async {
+    try {
+      final response = await ApiClient.post(
+        Uri.parse('$_baseUrl/admin/users/$userId/ban'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'days': days, // null wird als JSON null geschickt -> dauerhaft
+          'reason': reason.trim(),
+        }),
+      );
+      return _toResult(response.statusCode, ok: const {200});
+    } catch (_) {
+      return ModerationResult.failed;
+    }
+  }
+
+  /// 400 = "user is not banned" -> Ziel erreicht, also ok.
+  static Future<ModerationResult> unbanUser(int userId) async {
+    try {
+      final response = await ApiClient.delete(
+        Uri.parse('$_baseUrl/admin/users/$userId/ban'),
+      );
+      return _toResult(response.statusCode, ok: const {200, 400});
+    } catch (_) {
+      return ModerationResult.failed;
+    }
+  }
+
+  /// Entfernt den gemeldeten Inhalt. Bei Post/Kommentar/Story setzt das
+  /// Backend die offenen Meldungen selbst auf action_taken. Beim Profilbild
+  /// NICHT, dort muss der Aufrufer danach selbst resolve aufrufen.
+  /// 404 = schon weg (anderer Mod war schneller) -> ok.
+  static Future<ModerationResult> removeContent(
+    ReportQueueItem item,
+    ReportReason reason, {
+    String? details,
+  }) async {
+    // Eigener switch statt '${apiValue}s': die Pfade sind plural, und beim
+    // User geht es ums Profilbild. Exhaustive -> neues Ziel = Compile-Fehler.
+    final path = switch (item.target) {
+      ReportTarget.post => 'posts/${item.targetId}',
+      ReportTarget.comment => 'comments/${item.targetId}',
+      ReportTarget.story => 'stories/${item.targetId}',
+      ReportTarget.user => 'users/${item.targetId}/profile-picture',
+    };
+    final trimmed = details?.trim();
+    try {
+      final response = await ApiClient.delete(
+        Uri.parse('$_baseUrl/admin/$path'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'reason': reason.apiValue,
+          // leer weglassen, sonst 422 (min_length=1)
+          if (trimmed != null && trimmed.isNotEmpty) 'details': trimmed,
+        }),
+      );
+      // Profilbild: 400 heisst "kein Bild" ODER "nicht dich selbst" ->
+      // bewusst NICHT als ok werten, damit nichts still verschluckt wird.
+      return _toResult(response.statusCode, ok: const {204, 404});
+    } catch (_) {
+      return ModerationResult.failed;
+    }
+  }
+
+  /// 403 = Rangregel (nur niedrigere Rollen) bzw. Mod-Limit -> eigene Meldung.
+  static ModerationResult _toResult(int code, {required Set<int> ok}) {
+    if (ok.contains(code)) return ModerationResult.ok;
+    if (code == 403) return ModerationResult.forbidden;
+    return ModerationResult.failed;
   }
 }

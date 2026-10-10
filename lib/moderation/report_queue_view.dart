@@ -4,14 +4,25 @@ import 'package:google_fonts/google_fonts.dart';
 import '../app_colors.dart';
 import '../l10n/l10n.dart';
 import '../post/widgets/collapse_out.dart';
+import '../confirm_dialog.dart';
+import 'action_sheet.dart';
+import 'ban_sheet.dart';
 import 'moderation_api_service.dart';
+import 'remove_sheet.dart';
 import 'report_card.dart';
 import 'report_queue_item.dart';
+import 'report_reason.dart';
+import 'report_target.dart';
+import 'user_role.dart';
 
 /// Der Bereich "Meldungen" in ModerationHome: Status-Filter + Queue-Liste.
 /// Kein eigenes Scaffold, Header und Admin-Umschalter liegen in ModerationHome.
 class ReportQueueView extends StatefulWidget {
-  const ReportQueueView({super.key});
+  /// Meine Rolle: Admin darf laenger/dauerhaft sperren, und die Rangregel
+  /// entscheidet, ob Entfernen/Sperren ueberhaupt angeboten wird.
+  final UserRole role;
+
+  const ReportQueueView({super.key, required this.role});
 
   @override
   State<ReportQueueView> createState() => _ReportQueueViewState();
@@ -43,8 +54,8 @@ class _ReportQueueViewState extends State<ReportQueueView> {
   // mehr aktuell ist (Filter inzwischen gewechselt), wird verworfen.
   int _loadGen = 0;
 
-  // Karten, deren resolve gerade laeuft: key -> welcher Button (Spinner).
-  final Map<String, ReportStatus> _busy = {};
+  // Karten, bei denen gerade ein Request laeuft: key -> welcher Button (Spinner).
+  final Map<String, ReportCardAction> _busy = {};
 
   // Karten, die auf dem Server schon erledigt sind und gerade wegklappen.
   // Sie stecken noch in _items, bis CollapseOut fertig ist.
@@ -174,7 +185,9 @@ class _ReportQueueViewState extends State<ReportQueueView> {
     final key = item.key;
     if (_busy.containsKey(key)) return; // Doppeltipp
 
-    setState(() => _busy[key] = status);
+    setState(() => _busy[key] = status == ReportStatus.dismissed
+        ? ReportCardAction.dismiss
+        : ReportCardAction.act);
     final ok = await ModerationApiService.resolve(item, status);
     if (!mounted) return;
 
@@ -193,6 +206,207 @@ class _ReportQueueViewState extends State<ReportQueueView> {
       );
     }
   }
+
+  /// "Massnahme ergreifen": Sheet mit Stufe 2 -> je nach Wahl weiter an
+  /// _remove / _ban / _unban / _resolve. Angeboten wird nur, was geht.
+  Future<void> _takeAction(ReportQueueItem item) async {
+    if (_busy.containsKey(item.key)) return;
+
+    // Rangregel: Das Backend zeigt Meldungen gegen gleich-/hoeherrangige
+    // gar nicht erst. Greift nur, wenn sich die Rolle nach dem Laden aendert.
+    final mayAct = _outranks(item);
+    final banned = item.user.isBanned;
+    final action = await showActionSheet(
+      context,
+      target: item.target,
+      username: item.user.username,
+      restricted: !mayAct,
+      available: {
+        if (mayAct && _canRemove(item)) ModerationAction.remove,
+        // Gesperrt -> nur Entsperren (zum Verlaengern erst entsperren).
+        if (mayAct && !banned) ModerationAction.ban,
+        if (mayAct && banned) ModerationAction.unban,
+        ModerationAction.markDone,
+      },
+    );
+    if (action == null || !mounted) return; // abgebrochen
+
+    switch (action) {
+      case ModerationAction.remove:
+        await _remove(item);
+      case ModerationAction.ban:
+        await _ban(item);
+      case ModerationAction.unban:
+        await _unban(item);
+      case ModerationAction.markDone:
+        await _resolve(item, ReportStatus.actionTaken);
+    }
+  }
+
+  /// "Sperren": Sheet (Dauer + Begruendung) -> banUser -> Badge aktualisieren.
+  /// Die Karte bleibt stehen, Sperren erledigt keine Meldungen.
+  Future<void> _ban(ReportQueueItem item) async {
+    final key = item.key;
+    if (_busy.containsKey(key)) return;
+
+    final selection = await showBanSheet(
+      context,
+      username: item.user.username,
+      isAdmin: widget.role.isAdmin,
+      isBanned: item.user.isBanned,
+    );
+    if (selection == null || !mounted) return; // abgebrochen
+
+    setState(() => _busy[key] = ReportCardAction.act);
+    final result = await ModerationApiService.banUser(
+      item.user.id,
+      days: selection.days,
+      reason: selection.reason,
+    );
+    if (!mounted) return;
+
+    // Lokal nachrechnen, was der Server gesetzt hat (Jahr 9999 = dauerhaft).
+    final days = selection.days;
+    final until = days == null
+        ? DateTime(9999, 12, 31)
+        : DateTime.now().add(Duration(days: days));
+
+    setState(() {
+      _busy.remove(key);
+      if (result == ModerationResult.ok) _setBan(item.user.id, until);
+    });
+    _showResult(
+      result,
+      okText: context.l10n.moderationUserBanned(item.user.username),
+    );
+  }
+
+  /// ALLE Karten dieses Users anpassen, nicht nur die angetippte:
+  /// derselbe User kann mit Post + Kommentar + Profil in der Queue stehen.
+  /// until == null = entsperrt. Nur innerhalb von setState aufrufen.
+  void _setBan(int userId, DateTime? until) {
+    _items = [
+      for (final i in _items)
+        i.user.id == userId ? i.copyWith(user: i.user.withBan(until)) : i,
+    ];
+  }
+
+  /// "Entsperren": Bestaetigen -> unbanUser -> Badge auf allen Karten weg.
+  /// Wie beim Sperren bleiben die Meldungen offen (kein resolve).
+  Future<void> _unban(ReportQueueItem item) async {
+    final key = item.key;
+    if (_busy.containsKey(key)) return;
+
+    final l = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => ConfirmDialog(
+        icon: Icons.lock_open_rounded,
+        title: l.moderationUnbanTitle(item.user.username),
+        message: l.moderationUnbanMessage,
+        confirmLabel: l.moderationUnban,
+      ),
+    );
+    // null (weggetippt) oder false (Abbrechen) -> nichts tun.
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _busy[key] = ReportCardAction.act);
+    final result = await ModerationApiService.unbanUser(item.user.id);
+    if (!mounted) return;
+
+    setState(() {
+      _busy.remove(key);
+      // null = entsperrt, deshalb nimmt _setBan ein DateTime?.
+      if (result == ModerationResult.ok) _setBan(item.user.id, null);
+    });
+    _showResult(
+      result,
+      okText: context.l10n.moderationUserUnbanned(item.user.username),
+    );
+  }
+
+  /// "Entfernen": Sheet (Grund + optionale Begruendung) -> removeContent.
+  /// Post/Kommentar/Story: Das Backend setzt die Meldungen selbst auf
+  /// action_taken -> Karte klappt weg. Profilbild: Meldungen bleiben offen
+  /// (koennen auch Name/Bio betreffen) -> Karte bleibt, nur das Bild geht.
+  Future<void> _remove(ReportQueueItem item) async {
+    final key = item.key;
+    if (_busy.containsKey(key)) return;
+
+    final selection = await showRemoveSheet(
+      context,
+      target: item.target,
+      initialReason: _topReason(item),
+    );
+    if (selection == null || !mounted) return; // abgebrochen
+
+    setState(() => _busy[key] = ReportCardAction.act);
+    final result = await ModerationApiService.removeContent(
+      item,
+      selection.reason,
+      details: selection.details,
+    );
+    if (!mounted) return;
+
+    final isPicture = item.target == ReportTarget.user;
+    // Wie bei _resolve: nach einem Filterwechsel nicht mehr in der Liste
+    // -> dann NICHT nach _removing (laege dort fuer immer, skip falsch).
+    final index = _items.indexWhere((i) => i.key == key);
+
+    setState(() {
+      _busy.remove(key);
+      if (result != ModerationResult.ok || index == -1) return;
+      if (isPicture) {
+        final current = _items[index];
+        final preview = current.preview;
+        if (preview != null) {
+          _items[index] = current.copyWith(preview: preview.withoutImage());
+        }
+      } else {
+        _removing.add(key);
+      }
+    });
+    final l = context.l10n;
+    _showResult(
+      result,
+      okText: isPicture ? l.moderationPictureRemoved : l.moderationContentRemoved,
+    );
+  }
+
+  /// Haeufigster Meldegrund als Vorauswahl im Entfernen-Sheet.
+  ReportReason? _topReason(ReportQueueItem item) {
+    if (item.reasons.isEmpty) return null;
+    return item.reasons.entries
+        .reduce((a, b) => b.value > a.value ? b : a)
+        .key;
+  }
+
+  /// Gibt es ueberhaupt etwas zu entfernen? Vom User geloescht -> 404,
+  /// User ohne Profilbild -> 400. Beides gar nicht erst anbieten.
+  bool _canRemove(ReportQueueItem item) {
+    if (item.contentDeleted) return false;
+    if (item.target != ReportTarget.user) return true;
+    final image = item.preview?.imageUrl;
+    return image != null && image.isNotEmpty;
+  }
+
+  /// Snackbar nach Entfernen/Sperren/Entsperren, je nach Ergebnis.
+  void _showResult(ModerationResult result, {required String okText}) {
+    final l = context.l10n;
+    final text = switch (result) {
+      ModerationResult.ok => okText,
+      ModerationResult.forbidden => l.moderationForbidden,
+      ModerationResult.failed => l.moderationActionFailed,
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  /// Rangregel wie im Backend: nur gegen niedrigere Rollen vorgehen.
+  /// Sonst gaebe es garantiert ein 403, also gar nicht erst anbieten.
+  bool _outranks(ReportQueueItem item) =>
+      item.user.role.index < widget.role.index;
 
   /// CollapseOut ist fertig: jetzt wirklich aus der Liste nehmen.
   void _onCollapsed(String key) {
@@ -309,13 +523,11 @@ class _ReportQueueViewState extends State<ReportQueueView> {
             onCollapsed: () => _onCollapsed(key),
             child: ReportCard(
               item: item,
-              busyStatus: _busy[key],
+              busyAction: _busy[key],
               onDismiss: actionable
                   ? () => _resolve(item, ReportStatus.dismissed)
                   : null,
-              onMarkDone: actionable
-                  ? () => _resolve(item, ReportStatus.actionTaken)
-                  : null,
+              onTakeAction: actionable ? () => _takeAction(item) : null,
             ),
           );
         },

@@ -29,6 +29,17 @@ class ReportedUser {
     );
   }
 
+  /// Kopie mit neuem Sperrstatus (null = entsperrt).
+  /// Kein klassisches copyWith({DateTime? bannedUntil}): Dort hiesse null
+  /// "Feld nicht aendern", und Entsperren waere nicht ausdrueckbar.
+  ReportedUser withBan(DateTime? until) => ReportedUser(
+        id: id,
+        username: username,
+        role: role,
+        avatarUrl: avatarUrl,
+        bannedUntil: until,
+      );
+
   bool get isBanned =>
       bannedUntil != null && bannedUntil!.isAfter(DateTime.now());
 
@@ -52,6 +63,9 @@ class ReportPreview {
         content: json['content'] as String?,
         imageUrl: json['image_url'] as String?,
       );
+
+  /// Nach "Profilbild entfernen": Bio bleibt, das Bild faellt weg.
+  ReportPreview withoutImage() => ReportPreview(title: title, content: content);
 }
 
 /// EIN Eintrag pro gemeldetem Ziel, egal wie viele Meldungen dranhaengen.
@@ -84,6 +98,22 @@ class ReportQueueItem {
 
   /// Eindeutig pro Ziel: fuer Dedupe beim Nachladen und als ValueKey.
   String get key => '${target.apiValue}:$targetId';
+
+  /// Kopie mit ausgetauschtem User bzw. Preview. Hier reicht das normale
+  /// Muster (null = behalten), weil beide nie auf null gesetzt werden muessen.
+  ReportQueueItem copyWith({ReportedUser? user, ReportPreview? preview}) =>
+      ReportQueueItem(
+        target: target,
+        targetId: targetId,
+        user: user ?? this.user,
+        count: count,
+        reasons: reasons,
+        details: details,
+        firstReportedAt: firstReportedAt,
+        lastReportedAt: lastReportedAt,
+        preview: preview ?? this.preview,
+        contentDeleted: contentDeleted,
+      );
 
   /// Gibt null zurueck, wenn target_type unbekannt ist (Eintrag ueberspringen).
   static ReportQueueItem? fromJson(Map<String, dynamic> json) {

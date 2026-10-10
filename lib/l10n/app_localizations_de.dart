@@ -1041,16 +1041,142 @@ class AppLocalizationsDe extends AppLocalizations {
   String get moderationHideDetails => 'Anmerkungen ausblenden';
 
   @override
-  String get moderationDismiss => 'Ablehnen';
+  String get moderationDismiss => 'Kein Verstoß';
 
   @override
-  String get moderationMarkDone => 'Erledigt';
+  String get moderationTakeAction => 'Eingreifen';
+
+  @override
+  String get moderationActionSheetTitle => 'Was möchtest du tun?';
+
+  @override
+  String get moderationActionRemoveHint =>
+      'Für alle ausgeblendet. Die Meldungen gelten damit als erledigt.';
+
+  @override
+  String get moderationActionRemovePictureHint =>
+      'Name und Bio bleiben. Die Meldungen bleiben offen.';
+
+  @override
+  String get moderationActionBanHint =>
+      'Die Person wird abgemeldet und kann sich bis zum Ende der Sperre nicht anmelden. Die Meldungen bleiben offen.';
+
+  @override
+  String get moderationActionMarkDoneHint =>
+      'Z. B. wenn es schon anders geklärt ist. Die Karte wandert zu „Erledigt“.';
+
+  @override
+  String get moderationActionRestricted =>
+      'Gleicher oder höherer Rang als du. Du kannst die Meldungen nur als erledigt markieren.';
+
+  @override
+  String get moderationMarkDone => 'Nur als erledigt markieren';
 
   @override
   String get moderationResolveFailed =>
       'Konnte nicht gespeichert werden. Versuch es nochmal.';
 
   @override
+  String get moderationRemoveTitlePost => 'Beitrag entfernen';
+
+  @override
+  String get moderationRemoveTitleComment => 'Kommentar entfernen';
+
+  @override
+  String get moderationRemoveTitleStory => 'Story entfernen';
+
+  @override
+  String get moderationRemoveTitleProfilePicture => 'Profilbild entfernen';
+
+  @override
+  String get moderationRemoveReasonLabel => 'Grund';
+
+  @override
+  String get moderationRemoveDetailsHint =>
+      'Begründung für die Person (optional)';
+
+  @override
+  String get moderationRemoveHint =>
+      'Für alle sofort ausgeblendet. Ein Admin kann es 180 Tage lang wiederherstellen.';
+
+  @override
+  String get moderationRemoveConfirm => 'Entfernen';
+
+  @override
   String get moderationAuditPlaceholder =>
       'Hier erscheint bald das Protokoll aller Moderations-Aktionen.';
+
+  @override
+  String moderationBanTitle(String username) {
+    return '$username sperren';
+  }
+
+  @override
+  String get moderationBanDurationLabel => 'Dauer';
+
+  @override
+  String moderationBanDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Tage',
+      one: '1 Tag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get moderationBanPermanent => 'Dauerhaft';
+
+  @override
+  String get moderationBanReasonLabel => 'Begründung';
+
+  @override
+  String get moderationBanReasonHint =>
+      'Die Person sieht diesen Text beim Login';
+
+  @override
+  String get moderationBanHintNew => 'Die Person wird sofort abgemeldet.';
+
+  @override
+  String get moderationBanHintReplace => 'Ersetzt die laufende Sperre.';
+
+  @override
+  String get moderationBanConfirm => 'Sperren';
+
+  @override
+  String get moderationUnban => 'Entsperren';
+
+  @override
+  String moderationUserBanned(String username) {
+    return '$username wurde gesperrt';
+  }
+
+  @override
+  String get moderationForbidden => 'Dafür fehlt dir die Berechtigung';
+
+  @override
+  String get moderationActionFailed =>
+      'Aktion fehlgeschlagen. Bitte versuche es erneut.';
+
+  @override
+  String moderationUnbanTitle(String username) {
+    return '$username entsperren?';
+  }
+
+  @override
+  String get moderationUnbanMessage =>
+      'Die Person kann sich sofort wieder anmelden.';
+
+  @override
+  String moderationUserUnbanned(String username) {
+    return '$username wurde entsperrt';
+  }
+
+  @override
+  String get moderationContentRemoved => 'Inhalt entfernt';
+
+  @override
+  String get moderationPictureRemoved =>
+      'Profilbild entfernt. Die Meldungen bleiben offen.';
 }

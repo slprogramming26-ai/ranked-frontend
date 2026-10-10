@@ -1949,13 +1949,55 @@ abstract class AppLocalizations {
   /// Queue card button: the reports were unfounded (status dismissed)
   ///
   /// In de, this message translates to:
-  /// **'Ablehnen'**
+  /// **'Kein Verstoß'**
   String get moderationDismiss;
 
-  /// Queue card button: the reports were handled (status action_taken)
+  /// Queue card button: opens the sheet with the possible actions (remove, ban, unban, mark as done)
   ///
   /// In de, this message translates to:
-  /// **'Erledigt'**
+  /// **'Eingreifen'**
+  String get moderationTakeAction;
+
+  /// Title of the action sheet opened by 'Take action' on a queue card
+  ///
+  /// In de, this message translates to:
+  /// **'Was möchtest du tun?'**
+  String get moderationActionSheetTitle;
+
+  /// Action sheet: explanation under 'Remove post/comment/story'
+  ///
+  /// In de, this message translates to:
+  /// **'Für alle ausgeblendet. Die Meldungen gelten damit als erledigt.'**
+  String get moderationActionRemoveHint;
+
+  /// Action sheet: explanation under 'Remove profile picture'
+  ///
+  /// In de, this message translates to:
+  /// **'Name und Bio bleiben. Die Meldungen bleiben offen.'**
+  String get moderationActionRemovePictureHint;
+
+  /// Action sheet: explanation under 'Ban {username}'
+  ///
+  /// In de, this message translates to:
+  /// **'Die Person wird abgemeldet und kann sich bis zum Ende der Sperre nicht anmelden. Die Meldungen bleiben offen.'**
+  String get moderationActionBanHint;
+
+  /// Action sheet: explanation under 'Just mark as done' (status action_taken)
+  ///
+  /// In de, this message translates to:
+  /// **'Z. B. wenn es schon anders geklärt ist. Die Karte wandert zu „Erledigt“.'**
+  String get moderationActionMarkDoneHint;
+
+  /// Action sheet: hint when the reported user has the same or a higher role
+  ///
+  /// In de, this message translates to:
+  /// **'Gleicher oder höherer Rang als du. Du kannst die Meldungen nur als erledigt markieren.'**
+  String get moderationActionRestricted;
+
+  /// Action sheet option: mark the reports as handled without removing or banning (status action_taken)
+  ///
+  /// In de, this message translates to:
+  /// **'Nur als erledigt markieren'**
   String get moderationMarkDone;
 
   /// Snackbar when dismissing / marking a report as done failed
@@ -1964,11 +2006,167 @@ abstract class AppLocalizations {
   /// **'Konnte nicht gespeichert werden. Versuch es nochmal.'**
   String get moderationResolveFailed;
 
+  /// Title of the moderator removal sheet for a post
+  ///
+  /// In de, this message translates to:
+  /// **'Beitrag entfernen'**
+  String get moderationRemoveTitlePost;
+
+  /// Title of the moderator removal sheet for a comment
+  ///
+  /// In de, this message translates to:
+  /// **'Kommentar entfernen'**
+  String get moderationRemoveTitleComment;
+
+  /// Title of the moderator removal sheet for a story
+  ///
+  /// In de, this message translates to:
+  /// **'Story entfernen'**
+  String get moderationRemoveTitleStory;
+
+  /// Title of the moderator removal sheet for a profile picture (reported user)
+  ///
+  /// In de, this message translates to:
+  /// **'Profilbild entfernen'**
+  String get moderationRemoveTitleProfilePicture;
+
+  /// Section label above the reason chips in the removal sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Grund'**
+  String get moderationRemoveReasonLabel;
+
+  /// Hint of the optional details field in the removal sheet; the affected user sees this text (GET /users/moderation) and it goes into the audit log
+  ///
+  /// In de, this message translates to:
+  /// **'Begründung für die Person (optional)'**
+  String get moderationRemoveDetailsHint;
+
+  /// Info line above the remove button; content is archived for 180 days, not deleted
+  ///
+  /// In de, this message translates to:
+  /// **'Für alle sofort ausgeblendet. Ein Admin kann es 180 Tage lang wiederherstellen.'**
+  String get moderationRemoveHint;
+
+  /// Confirm button of the removal sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Entfernen'**
+  String get moderationRemoveConfirm;
+
   /// Placeholder until the audit log is built
   ///
   /// In de, this message translates to:
   /// **'Hier erscheint bald das Protokoll aller Moderations-Aktionen.'**
   String get moderationAuditPlaceholder;
+
+  /// Title of the ban sheet
+  ///
+  /// In de, this message translates to:
+  /// **'{username} sperren'**
+  String moderationBanTitle(String username);
+
+  /// Section label above the duration chips in the ban sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Dauer'**
+  String get moderationBanDurationLabel;
+
+  /// Duration chip in the ban sheet
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Tag} other{{count} Tage}}'**
+  String moderationBanDays(int count);
+
+  /// Duration chip for a permanent ban (admins only)
+  ///
+  /// In de, this message translates to:
+  /// **'Dauerhaft'**
+  String get moderationBanPermanent;
+
+  /// Section label above the required reason field in the ban sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Begründung'**
+  String get moderationBanReasonLabel;
+
+  /// Hint of the required reason field; the banned user sees it on the suspended screen
+  ///
+  /// In de, this message translates to:
+  /// **'Die Person sieht diesen Text beim Login'**
+  String get moderationBanReasonHint;
+
+  /// Info line above the ban button when the user is not banned yet
+  ///
+  /// In de, this message translates to:
+  /// **'Die Person wird sofort abgemeldet.'**
+  String get moderationBanHintNew;
+
+  /// Info line above the ban button when the user is already banned
+  ///
+  /// In de, this message translates to:
+  /// **'Ersetzt die laufende Sperre.'**
+  String get moderationBanHintReplace;
+
+  /// Confirm button of the ban sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Sperren'**
+  String get moderationBanConfirm;
+
+  /// Button on a report card to lift the reported user's ban
+  ///
+  /// In de, this message translates to:
+  /// **'Entsperren'**
+  String get moderationUnban;
+
+  /// Snackbar after banning a user from the report queue
+  ///
+  /// In de, this message translates to:
+  /// **'{username} wurde gesperrt'**
+  String moderationUserBanned(String username);
+
+  /// Snackbar when the backend answers 403 to a moderation action (rank rule or moderator limit)
+  ///
+  /// In de, this message translates to:
+  /// **'Dafür fehlt dir die Berechtigung'**
+  String get moderationForbidden;
+
+  /// Snackbar when a moderation action (remove, ban, unban) failed
+  ///
+  /// In de, this message translates to:
+  /// **'Aktion fehlgeschlagen. Bitte versuche es erneut.'**
+  String get moderationActionFailed;
+
+  /// Title of the confirm dialog before lifting a ban
+  ///
+  /// In de, this message translates to:
+  /// **'{username} entsperren?'**
+  String moderationUnbanTitle(String username);
+
+  /// Message of the confirm dialog before lifting a ban
+  ///
+  /// In de, this message translates to:
+  /// **'Die Person kann sich sofort wieder anmelden.'**
+  String get moderationUnbanMessage;
+
+  /// Snackbar after lifting a ban from the report queue
+  ///
+  /// In de, this message translates to:
+  /// **'{username} wurde entsperrt'**
+  String moderationUserUnbanned(String username);
+
+  /// Snackbar after a moderator removed a post, comment or story
+  ///
+  /// In de, this message translates to:
+  /// **'Inhalt entfernt'**
+  String get moderationContentRemoved;
+
+  /// Snackbar after a moderator removed a profile picture; the user reports stay open because they may concern name or bio
+  ///
+  /// In de, this message translates to:
+  /// **'Profilbild entfernt. Die Meldungen bleiben offen.'**
+  String get moderationPictureRemoved;
 }
 
 class _AppLocalizationsDelegate
