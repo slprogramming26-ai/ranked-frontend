@@ -1239,4 +1239,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get profileActivityModerationSubtitle => 'Tippe für Details';
+
+  @override
+  String accountStatusLifted(String date) {
+    return 'Vorzeitig aufgehoben am $date';
+  }
+
+  @override
+  String get profileActivityAccountUnbanned => 'Sperre aufgehoben';
 }

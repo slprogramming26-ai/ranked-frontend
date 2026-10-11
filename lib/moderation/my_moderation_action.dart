@@ -46,6 +46,10 @@ class MyModerationAction {
   /// Ein Admin hat den Inhalt wiederhergestellt.
   final bool restored;
 
+  /// Nur bei ban: Sperre vorzeitig aufgehoben (lokal). null = nicht
+  /// aufgehoben oder Eintrag von vor der Backend-Aenderung.
+  final DateTime? liftedAt;
+
   const MyModerationAction({
     required this.id,
     required this.kind,
@@ -53,6 +57,7 @@ class MyModerationAction {
     this.details,
     this.banDays,
     this.contentSnapshot,
+    this.liftedAt,
     required this.createdAt,
     required this.appealUntil,
     required this.restored,
@@ -65,7 +70,8 @@ class MyModerationAction {
 
   /// Grund als Kategorie (nur bei delete_*). null bei ban (dort ist reason
   /// Freitext) oder bei unbekannter Kategorie -> dann Rohtext anzeigen.
-  ReportReason? get reasonCategory => isBan ? null : ReportReason.fromApi(reason);
+  ReportReason? get reasonCategory =>
+      isBan ? null : ReportReason.fromApi(reason);
 
   /// Gibt null zurueck, wenn "action" unbekannt ist (Eintrag ueberspringen,
   /// getMyActions filtert per nonNulls, wie bei der Queue).
@@ -73,6 +79,8 @@ class MyModerationAction {
     // Nach dem Null-Check ist kind promoted (MyActionKind statt MyActionKind?).
     final kind = MyActionKind.fromApi(json['action']);
     if (kind == null) return null;
+
+    final rawLifted = json['lifted_at'] as String?;
 
     return MyModerationAction(
       id: json['id'] as int,
@@ -85,6 +93,7 @@ class MyModerationAction {
       appealUntil: DateTime.parse(json['appeal_until'] as String).toLocal(),
       // == true statt "as bool": fehlt das Feld, ist es false statt Crash.
       restored: json['restored'] == true,
+      liftedAt: rawLifted == null ? null : DateTime.parse(rawLifted).toLocal(),
     );
   }
 }

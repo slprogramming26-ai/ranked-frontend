@@ -361,5 +361,7 @@
   "settingsAccountStatusSubtitle": "Removed content and bans",
   "profileActivityContentRemoved": "Content removed",
   "profileActivityContentRestored": "Content restored",
-  "profileActivityModerationSubtitle": "Tap for details"
+  "profileActivityModerationSubtitle": "Tap for details",
+  "accountStatusLifted": "Lifted early on {date}",
+  "profileActivityAccountUnbanned": "Suspension lifted"
 }

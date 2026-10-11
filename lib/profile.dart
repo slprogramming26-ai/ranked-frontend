@@ -467,6 +467,8 @@ class _ProfileState extends State<Profile> {
         return Icons.gavel_rounded;
       case 'content_restored':
         return Icons.restore_rounded;
+      case 'account_unbanned':
+        return Icons.lock_open_rounded;
       default:
         return Icons.notifications_none_rounded;
     }
@@ -480,6 +482,8 @@ class _ProfileState extends State<Profile> {
         return context.l10n.profileActivityContentRemoved;
       case 'content_restored':
         return context.l10n.profileActivityContentRestored;
+      case 'account_unbanned':
+        return context.l10n.profileActivityAccountUnbanned;
       default:
         return context.l10n.profileActivityDefault;
     }
@@ -493,6 +497,7 @@ class _ProfileState extends State<Profile> {
       // payload ist hier die ID der Mod-Aktion, nichts zum Anzeigen.
       case 'content_removed':
       case 'content_restored':
+      case 'account_unbanned':
         return context.l10n.profileActivityModerationSubtitle;
       default:
         return '';
@@ -505,6 +510,7 @@ class _ProfileState extends State<Profile> {
     switch (a['type']) {
       case 'content_removed':
       case 'content_restored':
+      case 'account_unbanned':
         return () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const MyModerationScreen()),
             );

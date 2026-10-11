@@ -183,10 +183,13 @@ class _ActionCard extends StatelessWidget {
           l.accountStatusRemovedPicture
         ),
     };
-    // Wiederhergestellt = gruen, sonst rot (wie Sperren/Entfernen in der Queue).
-    final color = a.restored ? _green : Colors.red.shade700;
     // "10. Okt. 2026" / "Oct 10, 2026"
-    final date = DateFormat.yMMMd(l.localeName).format(a.createdAt);
+    final dateFormat = DateFormat.yMMMd(l.localeName);
+    final date = dateFormat.format(a.createdAt);
+    final lifted = a.liftedAt;
+    // Wiederhergestellt / vorzeitig aufgehoben = gruen, sonst rot
+    // (wie Sperren/Entfernen in der Queue).
+    final color = (a.restored || lifted != null) ? _green : Colors.red.shade700;
 
     // Leere Strings wie null behandeln (dann faellt der Abschnitt weg).
     final reason = _nonEmpty(a.reason);
@@ -231,7 +234,12 @@ class _ActionCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Row(
+                    // Wrap statt Row: "Vorzeitig aufgehoben am ..." ist lang
+                    // und rutscht auf schmalen Geraeten in die naechste Zeile.
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         Text(
                           date,
@@ -240,10 +248,13 @@ class _ActionCard extends StatelessWidget {
                             color: AppColors.onSurfaceVariant,
                           ),
                         ),
-                        if (a.restored) ...[
-                          const SizedBox(width: 8),
+                        if (a.restored)
                           _Badge(l.accountStatusRestored, color: _green),
-                        ],
+                        if (lifted != null)
+                          _Badge(
+                            l.accountStatusLifted(dateFormat.format(lifted)),
+                            color: _green,
+                          ),
                       ],
                     ),
                   ],

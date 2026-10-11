@@ -1223,4 +1223,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileActivityModerationSubtitle => 'Tap for details';
+
+  @override
+  String accountStatusLifted(String date) {
+    return 'Lifted early on $date';
+  }
+
+  @override
+  String get profileActivityAccountUnbanned => 'Suspension lifted';
 }

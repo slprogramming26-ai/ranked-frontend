@@ -2269,6 +2269,18 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Tippe für Details'**
   String get profileActivityModerationSubtitle;
+
+  /// Badge on a ban card in account status: the ban was lifted early by a moderator
+  ///
+  /// In de, this message translates to:
+  /// **'Vorzeitig aufgehoben am {date}'**
+  String accountStatusLifted(String date);
+
+  /// Activity item title: a moderator lifted the account ban early
+  ///
+  /// In de, this message translates to:
+  /// **'Sperre aufgehoben'**
+  String get profileActivityAccountUnbanned;
 }
 
 class _AppLocalizationsDelegate

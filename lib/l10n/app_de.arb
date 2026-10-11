@@ -1578,5 +1578,18 @@
   "profileActivityModerationSubtitle": "Tippe für Details",
   "@profileActivityModerationSubtitle": {
     "description": "Activity item subtitle for moderation events; tapping opens the account status screen"
+  },
+  "accountStatusLifted": "Vorzeitig aufgehoben am {date}",
+  "@accountStatusLifted": {
+    "description": "Badge on a ban card in account status: the ban was lifted early by a moderator",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "profileActivityAccountUnbanned": "Sperre aufgehoben",
+  "@profileActivityAccountUnbanned": {
+    "description": "Activity item title: a moderator lifted the account ban early"
   }
 }
