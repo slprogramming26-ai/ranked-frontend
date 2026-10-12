@@ -92,6 +92,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get profileMenuReport => 'Melden';
 
   @override
+  String get profileMenuModeration => 'Moderation';
+
+  @override
   String profileBlocked(String name) {
     return '$name wurde blockiert.';
   }
@@ -1247,4 +1250,115 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get profileActivityAccountUnbanned => 'Sperre aufgehoben';
+
+  @override
+  String get userDetailTitle => 'Account';
+
+  @override
+  String get userDetailForbidden =>
+      'Diesen Account darfst du nicht moderieren.';
+
+  @override
+  String get userDetailNotFound => 'Diesen Account gibt es nicht mehr.';
+
+  @override
+  String get userDetailLoadFailed => 'Der Account konnte nicht geladen werden.';
+
+  @override
+  String get userDetailRoleUser => 'User';
+
+  @override
+  String get userDetailRoleModerator => 'Moderator';
+
+  @override
+  String get userDetailRoleAdmin => 'Admin';
+
+  @override
+  String userDetailMemberSince(String date) {
+    return 'Mitglied seit $date';
+  }
+
+  @override
+  String userDetailBannedUntil(String date) {
+    return 'Gesperrt bis $date';
+  }
+
+  @override
+  String get userDetailReportsPending => 'Offene Meldungen';
+
+  @override
+  String get userDetailReportsTotal => 'Meldungen gesamt';
+
+  @override
+  String get userDetailRecentActions => 'Letzte Maßnahmen';
+
+  @override
+  String get userDetailNoActions => 'Noch keine Maßnahmen.';
+
+  @override
+  String get userDetailLogBan => 'Konto gesperrt';
+
+  @override
+  String get userDetailLogUnban => 'Sperre aufgehoben';
+
+  @override
+  String get userDetailLogDismissed => 'Meldungen abgelehnt';
+
+  @override
+  String get userDetailLogResolved => 'Meldungen erledigt';
+
+  @override
+  String userDetailLogRoleChange(String oldRole, String newRole) {
+    return 'Rolle geändert: $oldRole → $newRole';
+  }
+
+  @override
+  String get userDetailLogRestored => 'Inhalt wiederhergestellt';
+
+  @override
+  String get userDetailLogUnknown => 'Unbekannte Aktion';
+
+  @override
+  String userDetailLogBy(String username) {
+    return 'von $username';
+  }
+
+  @override
+  String get userDetailLogDeletedModerator => 'von gelöschtem Account';
+
+  @override
+  String get userDetailLogSnapshotLabel => 'Inhalt';
+
+  @override
+  String get userDetailChangeRole => 'Rolle ändern';
+
+  @override
+  String userDetailRoleChanged(String username, String role) {
+    return '$username ist jetzt $role';
+  }
+
+  @override
+  String roleSheetTitle(String username) {
+    return 'Rolle von $username';
+  }
+
+  @override
+  String get roleSheetUserHint => 'Normaler Account ohne Moderationsrechte.';
+
+  @override
+  String get roleSheetModeratorHint =>
+      'Prüft Meldungen, entfernt Inhalte und sperrt bis zu 30 Tage.';
+
+  @override
+  String get roleSheetCurrent => 'Aktuell';
+
+  @override
+  String get roleSheetBannedHint =>
+      'Gesperrte Accounts können nicht befördert werden.';
+
+  @override
+  String get roleSheetReasonLabel => 'Begründung (optional)';
+
+  @override
+  String get roleSheetReasonHint => 'Erscheint im Moderations-Protokoll';
 }

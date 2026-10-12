@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:ranked/moderation/my_moderation_screen.dart';
 import 'package:ranked/moderation/report_sheet.dart';
 import 'package:ranked/moderation/report_target.dart';
+import 'package:ranked/moderation/user_detail_screen.dart';
 import 'package:ranked/moderation/user_role.dart';
 import 'package:ranked/user_api_service.dart';
 import 'app_colors.dart';
@@ -129,12 +130,16 @@ class _ProfileState extends State<Profile> {
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
     final l10n = context.l10n;
+    // Meine eigene Rolle (nicht die des Profils: fremde Profile liefern
+    // role null). Ob ich DIESEN User moderieren darf, weiss erst das Backend
+    // -> notfalls 403 und der Detail-Screen zeigt "keine Berechtigung".
+    final myRole = context.read<ProfileProvider>().role;
 
     final action = await showModalBottomSheet<_ProfileAction>(
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.3),
-      builder: (_) => const _ProfileMenuSheet(),
+      builder: (_) => _ProfileMenuSheet(canModerate: myRole.canModerate),
     );
     if (!mounted || action == null) return; // weggewischt
 
@@ -159,6 +164,16 @@ class _ProfileState extends State<Profile> {
         if (ok && nav.canPop()) nav.pop(); // Profil zu
         messenger.showSnackBar(SnackBar(
           content: Text(ok ? l10n.profileBlocked(name) : l10n.profileBlockFailed),
+        ));
+
+      case _ProfileAction.moderate:
+        // Rueckgabe (BanChange) ignorieren: das Profil zeigt keinen Sperrstatus.
+        await nav.push(MaterialPageRoute<void>(
+          builder: (_) => UserDetailScreen(
+            userId: id,
+            username: name.isEmpty ? null : name,
+            myRole: myRole,
+          ),
         ));
     }
   }
@@ -692,12 +707,14 @@ class _LeagueProgress extends StatelessWidget {
 // ── ⋮-Menü (fremdes Profil) ──────────────────────────────────────────────────
 // Enum statt String ('report'/'block'): Tippfehler werden zum Compile-Fehler,
 // und der switch in _onMore braucht kein default.
-enum _ProfileAction { report, block }
+enum _ProfileAction { report, block, moderate }
 
 // Gleicher Look wie das Melde-Sheet (Griff oben, 32er Radius, Zeilen mit
 // InkWell). Gibt die Wahl per Navigator.pop zurueck, sonst nichts.
 class _ProfileMenuSheet extends StatelessWidget {
-  const _ProfileMenuSheet();
+  /// Zeigt zusaetzlich "Moderation" (nur Mods/Admins).
+  final bool canModerate;
+  const _ProfileMenuSheet({required this.canModerate});
 
   @override
   Widget build(BuildContext context) {
@@ -734,6 +751,14 @@ class _ProfileMenuSheet extends StatelessWidget {
               color: AppColors.primary, // destruktiv hervorgehoben
               action: _ProfileAction.block,
             ),
+            if (canModerate)
+              _row(
+                context,
+                icon: Icons.admin_panel_settings_outlined,
+                label: context.l10n.profileMenuModeration,
+                color: AppColors.onSurface,
+                action: _ProfileAction.moderate,
+              ),
             const SizedBox(height: 12),
           ],
         ),

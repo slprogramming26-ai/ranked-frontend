@@ -155,6 +155,12 @@ class ApiClient {
         _client.put(url, headers: _auth(token, headers), body: body));
   }
 
+  static Future<http.Response> patch(Uri url,
+      {Object? body, Map<String, String>? headers}) {
+    return _send((token) =>
+        _client.patch(url, headers: _auth(token, headers), body: body));
+  }
+
   static Future<http.Response> delete(Uri url, {Object? body, Map<String, String>? headers}) {
     return _send(
         (token) => _client.delete(url, headers: _auth(token, headers), body:  body));

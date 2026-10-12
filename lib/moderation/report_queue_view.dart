@@ -13,6 +13,7 @@ import 'report_card.dart';
 import 'report_queue_item.dart';
 import 'report_reason.dart';
 import 'report_target.dart';
+import 'user_detail_screen.dart';
 import 'user_role.dart';
 
 /// Der Bereich "Meldungen" in ModerationHome: Status-Filter + Queue-Liste.
@@ -408,6 +409,23 @@ class _ReportQueueViewState extends State<ReportQueueView> {
   bool _outranks(ReportQueueItem item) =>
       item.user.role.index < widget.role.index;
 
+  /// Kopf der Karte -> User-Detail. Wurde dort gesperrt/entsperrt, kommt der
+  /// neue Stand zurueck und landet auf ALLEN Karten des Users (ohne Reload,
+  /// Scroll-Position bleibt).
+  Future<void> _openUser(ReportQueueItem item) async {
+    final change = await Navigator.of(context).push<BanChange>(
+      MaterialPageRoute(
+        builder: (_) => UserDetailScreen(
+          userId: item.user.id,
+          username: item.user.username,
+          myRole: widget.role,
+        ),
+      ),
+    );
+    if (change == null || !mounted) return; // nichts geaendert
+    setState(() => _setBan(item.user.id, change.bannedUntil));
+  }
+
   /// CollapseOut ist fertig: jetzt wirklich aus der Liste nehmen.
   void _onCollapsed(String key) {
     if (!mounted) return;
@@ -528,6 +546,8 @@ class _ReportQueueViewState extends State<ReportQueueView> {
                   ? () => _resolve(item, ReportStatus.dismissed)
                   : null,
               onTakeAction: actionable ? () => _takeAction(item) : null,
+              // In jedem Filter, aber nur bei niedrigerem Rang (sonst 403).
+              onOpenUser: _outranks(item) ? () => _openUser(item) : null,
             ),
           );
         },

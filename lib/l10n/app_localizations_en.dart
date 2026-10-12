@@ -89,6 +89,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileMenuReport => 'Report';
 
   @override
+  String get profileMenuModeration => 'Moderation';
+
+  @override
   String profileBlocked(String name) {
     return '$name has been blocked.';
   }
@@ -1231,4 +1234,114 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileActivityAccountUnbanned => 'Suspension lifted';
+
+  @override
+  String get userDetailTitle => 'Account';
+
+  @override
+  String get userDetailForbidden =>
+      'You\'re not allowed to moderate this account.';
+
+  @override
+  String get userDetailNotFound => 'This account no longer exists.';
+
+  @override
+  String get userDetailLoadFailed => 'Couldn\'t load this account.';
+
+  @override
+  String get userDetailRoleUser => 'User';
+
+  @override
+  String get userDetailRoleModerator => 'Moderator';
+
+  @override
+  String get userDetailRoleAdmin => 'Admin';
+
+  @override
+  String userDetailMemberSince(String date) {
+    return 'Member since $date';
+  }
+
+  @override
+  String userDetailBannedUntil(String date) {
+    return 'Banned until $date';
+  }
+
+  @override
+  String get userDetailReportsPending => 'Open reports';
+
+  @override
+  String get userDetailReportsTotal => 'Total reports';
+
+  @override
+  String get userDetailRecentActions => 'Recent actions';
+
+  @override
+  String get userDetailNoActions => 'No actions yet.';
+
+  @override
+  String get userDetailLogBan => 'Account banned';
+
+  @override
+  String get userDetailLogUnban => 'Ban lifted';
+
+  @override
+  String get userDetailLogDismissed => 'Reports dismissed';
+
+  @override
+  String get userDetailLogResolved => 'Reports resolved';
+
+  @override
+  String userDetailLogRoleChange(String oldRole, String newRole) {
+    return 'Role changed: $oldRole → $newRole';
+  }
+
+  @override
+  String get userDetailLogRestored => 'Content restored';
+
+  @override
+  String get userDetailLogUnknown => 'Unknown action';
+
+  @override
+  String userDetailLogBy(String username) {
+    return 'by $username';
+  }
+
+  @override
+  String get userDetailLogDeletedModerator => 'by a deleted account';
+
+  @override
+  String get userDetailLogSnapshotLabel => 'Content';
+
+  @override
+  String get userDetailChangeRole => 'Change role';
+
+  @override
+  String userDetailRoleChanged(String username, String role) {
+    return '$username is now $role';
+  }
+
+  @override
+  String roleSheetTitle(String username) {
+    return 'Role of $username';
+  }
+
+  @override
+  String get roleSheetUserHint => 'Regular account without moderation rights.';
+
+  @override
+  String get roleSheetModeratorHint =>
+      'Reviews reports, removes content and bans for up to 30 days.';
+
+  @override
+  String get roleSheetCurrent => 'Current';
+
+  @override
+  String get roleSheetBannedHint => 'Banned accounts can\'t be promoted.';
+
+  @override
+  String get roleSheetReasonLabel => 'Reason (optional)';
+
+  @override
+  String get roleSheetReasonHint => 'Shown in the moderation log';
 }

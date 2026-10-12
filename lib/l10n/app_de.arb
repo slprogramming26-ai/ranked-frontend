@@ -104,6 +104,10 @@
   "@profileMenuReport": {
     "description": "Eintrag im ⋮-Menü eines fremden Profils"
   },
+  "profileMenuModeration": "Moderation",
+  "@profileMenuModeration": {
+    "description": "Eintrag im ⋮-Menü eines fremden Profils, nur für Mods/Admins; öffnet den User-Detail-Screen"
+  },
   "profileBlocked": "{name} wurde blockiert.",
   "@profileBlocked": {
     "description": "Snackbar nach erfolgreichem Blockieren",
@@ -1591,5 +1595,169 @@
   "profileActivityAccountUnbanned": "Sperre aufgehoben",
   "@profileActivityAccountUnbanned": {
     "description": "Activity item title: a moderator lifted the account ban early"
+  },
+  "userDetailTitle": "Account",
+  "@userDetailTitle": {
+    "description": "Fallback title of the moderator user detail screen when the username is not known yet"
+  },
+  "userDetailForbidden": "Diesen Account darfst du nicht moderieren.",
+  "@userDetailForbidden": {
+    "description": "User detail screen: the account has the same or a higher role (403) or is your own (400)"
+  },
+  "userDetailNotFound": "Diesen Account gibt es nicht mehr.",
+  "@userDetailNotFound": {
+    "description": "User detail screen: the account does not exist (404)"
+  },
+  "userDetailLoadFailed": "Der Account konnte nicht geladen werden.",
+  "@userDetailLoadFailed": {
+    "description": "User detail screen: error state / snackbar when loading failed"
+  },
+  "userDetailRoleUser": "User",
+  "@userDetailRoleUser": {
+    "description": "Role pill on the user detail screen"
+  },
+  "userDetailRoleModerator": "Moderator",
+  "@userDetailRoleModerator": {
+    "description": "Role pill on the user detail screen"
+  },
+  "userDetailRoleAdmin": "Admin",
+  "@userDetailRoleAdmin": {
+    "description": "Role pill on the user detail screen"
+  },
+  "userDetailMemberSince": "Mitglied seit {date}",
+  "@userDetailMemberSince": {
+    "description": "User detail screen: account creation date",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "userDetailBannedUntil": "Gesperrt bis {date}",
+  "@userDetailBannedUntil": {
+    "description": "User detail screen: title of the red ban card for a temporary ban",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "userDetailReportsPending": "Offene Meldungen",
+  "@userDetailReportsPending": {
+    "description": "User detail screen: stat tile label, open reports against the user and their content"
+  },
+  "userDetailReportsTotal": "Meldungen gesamt",
+  "@userDetailReportsTotal": {
+    "description": "User detail screen: stat tile label, all reports ever"
+  },
+  "userDetailRecentActions": "Letzte Maßnahmen",
+  "@userDetailRecentActions": {
+    "description": "User detail screen: section title above the moderation log entries"
+  },
+  "userDetailNoActions": "Noch keine Maßnahmen.",
+  "@userDetailNoActions": {
+    "description": "User detail screen: empty state of the recent actions section"
+  },
+  "userDetailLogBan": "Konto gesperrt",
+  "@userDetailLogBan": {
+    "description": "Log entry title: ban without known duration (old entries)"
+  },
+  "userDetailLogUnban": "Sperre aufgehoben",
+  "@userDetailLogUnban": {
+    "description": "Log entry title: a moderator lifted a ban"
+  },
+  "userDetailLogDismissed": "Meldungen abgelehnt",
+  "@userDetailLogDismissed": {
+    "description": "Log entry title: reports resolved as no violation"
+  },
+  "userDetailLogResolved": "Meldungen erledigt",
+  "@userDetailLogResolved": {
+    "description": "Log entry title: reports resolved with action taken"
+  },
+  "userDetailLogRoleChange": "Rolle geändert: {oldRole} → {newRole}",
+  "@userDetailLogRoleChange": {
+    "description": "Log entry title: an admin changed the user's role",
+    "placeholders": {
+      "oldRole": {
+        "type": "String"
+      },
+      "newRole": {
+        "type": "String"
+      }
+    }
+  },
+  "userDetailLogRestored": "Inhalt wiederhergestellt",
+  "@userDetailLogRestored": {
+    "description": "Log entry title: an admin restored removed content"
+  },
+  "userDetailLogUnknown": "Unbekannte Aktion",
+  "@userDetailLogUnknown": {
+    "description": "Log entry title: action type this app version does not know yet"
+  },
+  "userDetailLogBy": "von {username}",
+  "@userDetailLogBy": {
+    "description": "Log entry: which moderator did it",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "userDetailLogDeletedModerator": "von gelöschtem Account",
+  "@userDetailLogDeletedModerator": {
+    "description": "Log entry: the moderator's account no longer exists"
+  },
+  "userDetailLogSnapshotLabel": "Inhalt",
+  "@userDetailLogSnapshotLabel": {
+    "description": "Log entry: label above the text copy of the removed content"
+  },
+  "userDetailChangeRole": "Rolle ändern",
+  "@userDetailChangeRole": {
+    "description": "Button in the user detail screen (admins only) and confirm button of the role sheet"
+  },
+  "userDetailRoleChanged": "{username} ist jetzt {role}",
+  "@userDetailRoleChanged": {
+    "description": "Snackbar after changing a user's role",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "roleSheetTitle": "Rolle von {username}",
+  "@roleSheetTitle": {
+    "description": "Title of the change-role sheet",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "roleSheetUserHint": "Normaler Account ohne Moderationsrechte.",
+  "@roleSheetUserHint": {
+    "description": "Role sheet: explanation below the role 'User'"
+  },
+  "roleSheetModeratorHint": "Prüft Meldungen, entfernt Inhalte und sperrt bis zu 30 Tage.",
+  "@roleSheetModeratorHint": {
+    "description": "Role sheet: explanation below the role 'Moderator'"
+  },
+  "roleSheetCurrent": "Aktuell",
+  "@roleSheetCurrent": {
+    "description": "Role sheet: badge on the role the user already has"
+  },
+  "roleSheetBannedHint": "Gesperrte Accounts können nicht befördert werden.",
+  "@roleSheetBannedHint": {
+    "description": "Role sheet: why 'Moderator' is disabled for a banned user"
+  },
+  "roleSheetReasonLabel": "Begründung (optional)",
+  "@roleSheetReasonLabel": {
+    "description": "Role sheet: label above the optional reason field"
+  },
+  "roleSheetReasonHint": "Erscheint im Moderations-Protokoll",
+  "@roleSheetReasonHint": {
+    "description": "Role sheet: hint inside the reason field"
   }
 }

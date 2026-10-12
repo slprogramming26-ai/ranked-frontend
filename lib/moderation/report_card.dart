@@ -29,12 +29,16 @@ class ReportCard extends StatelessWidget {
   /// Solange etwas laeuft, sind BEIDE Buttons gesperrt.
   final ReportCardAction? busyAction;
 
+  /// Tipp auf den Kopf (Avatar + Name) -> User-Detail. null = nicht tippbar.
+  final VoidCallback? onOpenUser;
+
   const ReportCard({
     super.key,
     required this.item,
     this.onDismiss,
     this.onTakeAction,
     this.busyAction,
+    this.onOpenUser,
   });
 
   /// Ein Button der Karte. Laeuft irgendeine Aktion, ist er gesperrt (onTap
@@ -80,7 +84,7 @@ class ReportCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Header(item: item),
+          _Header(item: item, onTap: onOpenUser),
           const SizedBox(height: 14),
           _PreviewSection(item: item),
           if (item.reasons.isNotEmpty) ...[
@@ -112,7 +116,8 @@ class ReportCard extends StatelessWidget {
 
 class _Header extends StatelessWidget {
   final ReportQueueItem item;
-  const _Header({required this.item});
+  final VoidCallback? onTap;
+  const _Header({required this.item, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -122,7 +127,7 @@ class _Header extends StatelessWidget {
     final last =
         DateFormat.MMMd(l.localeName).add_jm().format(item.lastReportedAt);
 
-    return Row(
+    final row = Row(
       children: [
         _AvatarWithType(url: user.avatarUrl, target: item.target),
         const SizedBox(width: 12),
@@ -164,7 +169,20 @@ class _Header extends StatelessWidget {
             ],
           ),
         ),
+        // Pfeil zeigt: der Kopf fuehrt zum User-Detail.
+        if (onTap != null)
+          Icon(
+            Icons.chevron_right_rounded,
+            color: AppColors.onSurfaceVariant,
+          ),
       ],
+    );
+
+    if (onTap == null) return row;
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: row,
     );
   }
 }

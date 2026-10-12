@@ -254,6 +254,12 @@ abstract class AppLocalizations {
   /// **'Melden'**
   String get profileMenuReport;
 
+  /// Eintrag im ⋮-Menü eines fremden Profils, nur für Mods/Admins; öffnet den User-Detail-Screen
+  ///
+  /// In de, this message translates to:
+  /// **'Moderation'**
+  String get profileMenuModeration;
+
   /// Snackbar nach erfolgreichem Blockieren
   ///
   /// In de, this message translates to:
@@ -2281,6 +2287,198 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Sperre aufgehoben'**
   String get profileActivityAccountUnbanned;
+
+  /// Fallback title of the moderator user detail screen when the username is not known yet
+  ///
+  /// In de, this message translates to:
+  /// **'Account'**
+  String get userDetailTitle;
+
+  /// User detail screen: the account has the same or a higher role (403) or is your own (400)
+  ///
+  /// In de, this message translates to:
+  /// **'Diesen Account darfst du nicht moderieren.'**
+  String get userDetailForbidden;
+
+  /// User detail screen: the account does not exist (404)
+  ///
+  /// In de, this message translates to:
+  /// **'Diesen Account gibt es nicht mehr.'**
+  String get userDetailNotFound;
+
+  /// User detail screen: error state / snackbar when loading failed
+  ///
+  /// In de, this message translates to:
+  /// **'Der Account konnte nicht geladen werden.'**
+  String get userDetailLoadFailed;
+
+  /// Role pill on the user detail screen
+  ///
+  /// In de, this message translates to:
+  /// **'User'**
+  String get userDetailRoleUser;
+
+  /// Role pill on the user detail screen
+  ///
+  /// In de, this message translates to:
+  /// **'Moderator'**
+  String get userDetailRoleModerator;
+
+  /// Role pill on the user detail screen
+  ///
+  /// In de, this message translates to:
+  /// **'Admin'**
+  String get userDetailRoleAdmin;
+
+  /// User detail screen: account creation date
+  ///
+  /// In de, this message translates to:
+  /// **'Mitglied seit {date}'**
+  String userDetailMemberSince(String date);
+
+  /// User detail screen: title of the red ban card for a temporary ban
+  ///
+  /// In de, this message translates to:
+  /// **'Gesperrt bis {date}'**
+  String userDetailBannedUntil(String date);
+
+  /// User detail screen: stat tile label, open reports against the user and their content
+  ///
+  /// In de, this message translates to:
+  /// **'Offene Meldungen'**
+  String get userDetailReportsPending;
+
+  /// User detail screen: stat tile label, all reports ever
+  ///
+  /// In de, this message translates to:
+  /// **'Meldungen gesamt'**
+  String get userDetailReportsTotal;
+
+  /// User detail screen: section title above the moderation log entries
+  ///
+  /// In de, this message translates to:
+  /// **'Letzte Maßnahmen'**
+  String get userDetailRecentActions;
+
+  /// User detail screen: empty state of the recent actions section
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Maßnahmen.'**
+  String get userDetailNoActions;
+
+  /// Log entry title: ban without known duration (old entries)
+  ///
+  /// In de, this message translates to:
+  /// **'Konto gesperrt'**
+  String get userDetailLogBan;
+
+  /// Log entry title: a moderator lifted a ban
+  ///
+  /// In de, this message translates to:
+  /// **'Sperre aufgehoben'**
+  String get userDetailLogUnban;
+
+  /// Log entry title: reports resolved as no violation
+  ///
+  /// In de, this message translates to:
+  /// **'Meldungen abgelehnt'**
+  String get userDetailLogDismissed;
+
+  /// Log entry title: reports resolved with action taken
+  ///
+  /// In de, this message translates to:
+  /// **'Meldungen erledigt'**
+  String get userDetailLogResolved;
+
+  /// Log entry title: an admin changed the user's role
+  ///
+  /// In de, this message translates to:
+  /// **'Rolle geändert: {oldRole} → {newRole}'**
+  String userDetailLogRoleChange(String oldRole, String newRole);
+
+  /// Log entry title: an admin restored removed content
+  ///
+  /// In de, this message translates to:
+  /// **'Inhalt wiederhergestellt'**
+  String get userDetailLogRestored;
+
+  /// Log entry title: action type this app version does not know yet
+  ///
+  /// In de, this message translates to:
+  /// **'Unbekannte Aktion'**
+  String get userDetailLogUnknown;
+
+  /// Log entry: which moderator did it
+  ///
+  /// In de, this message translates to:
+  /// **'von {username}'**
+  String userDetailLogBy(String username);
+
+  /// Log entry: the moderator's account no longer exists
+  ///
+  /// In de, this message translates to:
+  /// **'von gelöschtem Account'**
+  String get userDetailLogDeletedModerator;
+
+  /// Log entry: label above the text copy of the removed content
+  ///
+  /// In de, this message translates to:
+  /// **'Inhalt'**
+  String get userDetailLogSnapshotLabel;
+
+  /// Button in the user detail screen (admins only) and confirm button of the role sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Rolle ändern'**
+  String get userDetailChangeRole;
+
+  /// Snackbar after changing a user's role
+  ///
+  /// In de, this message translates to:
+  /// **'{username} ist jetzt {role}'**
+  String userDetailRoleChanged(String username, String role);
+
+  /// Title of the change-role sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Rolle von {username}'**
+  String roleSheetTitle(String username);
+
+  /// Role sheet: explanation below the role 'User'
+  ///
+  /// In de, this message translates to:
+  /// **'Normaler Account ohne Moderationsrechte.'**
+  String get roleSheetUserHint;
+
+  /// Role sheet: explanation below the role 'Moderator'
+  ///
+  /// In de, this message translates to:
+  /// **'Prüft Meldungen, entfernt Inhalte und sperrt bis zu 30 Tage.'**
+  String get roleSheetModeratorHint;
+
+  /// Role sheet: badge on the role the user already has
+  ///
+  /// In de, this message translates to:
+  /// **'Aktuell'**
+  String get roleSheetCurrent;
+
+  /// Role sheet: why 'Moderator' is disabled for a banned user
+  ///
+  /// In de, this message translates to:
+  /// **'Gesperrte Accounts können nicht befördert werden.'**
+  String get roleSheetBannedHint;
+
+  /// Role sheet: label above the optional reason field
+  ///
+  /// In de, this message translates to:
+  /// **'Begründung (optional)'**
+  String get roleSheetReasonLabel;
+
+  /// Role sheet: hint inside the reason field
+  ///
+  /// In de, this message translates to:
+  /// **'Erscheint im Moderations-Protokoll'**
+  String get roleSheetReasonHint;
 }
 
 class _AppLocalizationsDelegate
