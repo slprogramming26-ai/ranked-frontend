@@ -185,6 +185,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
   Future<void> _changeGroupPicture() async {
     if (_uploadingPicture) return;
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
 
     // Picker skaliert nativ runter (Backend lehnt >20 MP ab, siehe
     // about_me_step.dart). Den Rest macht sanitizeImageFile.
@@ -206,7 +207,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     if (!mounted) return;
     if (cleanPath == null) {
       setState(() => _uploadingPicture = false);
-      _showSnack(messenger, 'Bild konnte nicht verarbeitet werden.');
+      _showSnack(messenger, l10n.chatInfoPictureProcessFailed);
       return;
     }
 
@@ -224,8 +225,8 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
       _showSnack(
         messenger,
         result.statusCode == 403
-            ? 'Nur der Ersteller der Gruppe kann das Bild ändern.'
-            : 'Upload fehlgeschlagen. Versuch es erneut.',
+            ? l10n.chatInfoPictureOnlyCreator
+            : l10n.chatInfoPictureUploadFailed,
       );
       return;
     }
@@ -243,7 +244,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
       _avatarUrl = url;
       _uploadingPicture = false;
     });
-    _showSnack(messenger, 'Gruppenbild aktualisiert.', error: false);
+    _showSnack(messenger, l10n.chatInfoPictureUpdated, error: false);
   }
 
   void _showSnack(
@@ -278,6 +279,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
   Future<void> _showInviteCode() async {
     // Wie überall im Sheet: Messenger vor dem ersten await sichern.
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
 
     final code = await MessengerApiService.createGroupJoinCode(
       widget.conversation.groupChatId,
@@ -290,7 +292,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primary,
           content: Text(
-            'Code konnte nicht erstellt werden. Versuch es erneut.',
+            l10n.chatInfoInviteCodeFailed,
             style: GoogleFonts.inter(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
@@ -334,14 +336,15 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     // Wie im DM-Sheet: Messenger/Navigator vor dem ersten await sichern.
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
+    final l10n = context.l10n;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => ConfirmDialog(
         icon: Icons.logout_rounded,
-        title: context.l10n.chatInfoLeaveTitle(widget.conversation.title),
-        message: context.l10n.chatInfoLeaveMessage,
-        confirmLabel: context.l10n.chatInfoLeave,
+        title: l10n.chatInfoLeaveTitle(widget.conversation.title),
+        message: l10n.chatInfoLeaveMessage,
+        confirmLabel: l10n.chatInfoLeave,
       ),
     );
     if (confirmed != true) return;
@@ -369,9 +372,7 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
         behavior: SnackBarBehavior.floating,
         backgroundColor: ok ? AppColors.onSurface : AppColors.primary,
         content: Text(
-          ok
-              ? 'Du hast die Gruppe verlassen.'
-              : 'Verlassen fehlgeschlagen. Versuch es erneut.',
+          ok ? l10n.chatInfoLeftGroup : l10n.chatInfoLeaveFailed,
           style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
@@ -808,6 +809,7 @@ class _InviteCodeDialog extends StatelessWidget {
   void _copy(BuildContext context) {
     // Messenger VOR dem pop holen — danach hängt der Dialog-Context in der Luft.
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     Clipboard.setData(ClipboardData(text: '$code'));
     Navigator.pop(context);
     messenger.showSnackBar(
@@ -815,7 +817,7 @@ class _InviteCodeDialog extends StatelessWidget {
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.onSurface,
         content: Text(
-          'Code kopiert!',
+          l10n.chatInfoCodeCopied,
           style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,

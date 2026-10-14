@@ -226,31 +226,6 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
     _fetchData();
   }
 
-  String getTimeAgo(String createdAt) {
-    final dateTime = DateTime.parse(createdAt).toLocal();
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inSeconds < 60) {
-      return 'Gerade eben';
-    } else if (difference.inMinutes < 60) {
-      return 'vor ${difference.inMinutes} Min.';
-    } else if (difference.inHours < 24) {
-      return 'vor ${difference.inHours} Std.';
-    } else if (difference.inDays < 7) {
-      return 'vor ${difference.inDays} Tagen';
-    } else if (difference.inDays < 30) {
-      final weeks = (difference.inDays / 7).floor();
-      return 'vor $weeks Wochen';
-    } else if (difference.inDays < 365) {
-      final months = (difference.inDays / 30).floor();
-      return 'vor $months Monaten';
-    } else {
-      final years = (difference.inDays / 365).floor();
-      return 'vor $years Jahren';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final postProvider = Provider.of<PostProvider>(context);
@@ -336,7 +311,10 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
                   imageUrl: postData['post']['image_url'],
                   profilePictureUrl:
                       postData['post']['owner']['profile_picture_url'].toString(),
-                  timeDifference: getTimeAgo(postData['post']['created_at']),
+                  timeDifference: timeAgo(
+                    context.l10n,
+                    DateTime.parse(postData['post']['created_at']),
+                  ),
                   flag: postData['post']['flag'],
                   locationName: postData['post']['location']?['name'],
                   isMine: postData['is_mine'] ?? false,

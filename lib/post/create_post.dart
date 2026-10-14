@@ -239,8 +239,8 @@ class _CreatePostState extends State<CreatePost> {
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Bild konnte nicht verarbeitet werden'),
+                        SnackBar(
+                          content: Text(context.l10n.createPostImageProcessFailed),
                         ),
                       );
 
@@ -257,8 +257,8 @@ class _CreatePostState extends State<CreatePost> {
                       Navigator.pop(context);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Bild-Upload fehlgeschlagen'),
+                        SnackBar(
+                          content: Text(context.l10n.createPostImageUploadFailed),
                         ),
                       );
 
@@ -285,8 +285,8 @@ class _CreatePostState extends State<CreatePost> {
                     Navigator.pop(context);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Post konnte nicht erstellt werden'),
+                      SnackBar(
+                        content: Text(context.l10n.createPostFailed),
                       ),
                     );
                   }
@@ -296,7 +296,7 @@ class _CreatePostState extends State<CreatePost> {
                   if (!context.mounted) return;
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Etwas ist schiefgelaufen')),
+                    SnackBar(content: Text(context.l10n.createPostSomethingWrong)),
                   );
                 }
               },

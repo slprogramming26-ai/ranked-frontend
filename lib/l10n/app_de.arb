@@ -1860,5 +1860,150 @@
   "roleSheetReasonHint": "Erscheint im Moderations-Protokoll",
   "@roleSheetReasonHint": {
     "description": "Role sheet: hint inside the reason field"
+  },
+  "messengerGroupCreated": "Gruppe {id} erfolgreich erstellt!",
+  "@messengerGroupCreated": {
+    "description": "Snackbar nach Gruppe erstellen",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "messengerGroupJoined": "Gruppe {id} beigetreten!",
+  "@messengerGroupJoined": {
+    "description": "Snackbar nach Beitritt per Code-Dialog",
+    "placeholders": {
+      "id": {
+        "type": "int"
+      }
+    }
+  },
+  "chatInfoPictureProcessFailed": "Bild konnte nicht verarbeitet werden.",
+  "@chatInfoPictureProcessFailed": {
+    "description": "Gruppenbild: EXIF-Strip fehlgeschlagen"
+  },
+  "chatInfoPictureOnlyCreator": "Nur der Ersteller der Gruppe kann das Bild ändern.",
+  "@chatInfoPictureOnlyCreator": {
+    "description": "Gruppenbild: 403"
+  },
+  "chatInfoPictureUploadFailed": "Upload fehlgeschlagen. Versuch es erneut.",
+  "@chatInfoPictureUploadFailed": {
+    "description": "Gruppenbild: Upload-Fehler"
+  },
+  "chatInfoPictureUpdated": "Gruppenbild aktualisiert.",
+  "@chatInfoPictureUpdated": {
+    "description": "Gruppenbild: Erfolg"
+  },
+  "chatInfoInviteCodeFailed": "Code konnte nicht erstellt werden. Versuch es erneut.",
+  "@chatInfoInviteCodeFailed": {
+    "description": "Einladungs-Code: Fehler"
+  },
+  "chatInfoLeftGroup": "Du hast die Gruppe verlassen.",
+  "@chatInfoLeftGroup": {
+    "description": "Snackbar nach Gruppe verlassen"
+  },
+  "chatInfoLeaveFailed": "Verlassen fehlgeschlagen. Versuch es erneut.",
+  "@chatInfoLeaveFailed": {
+    "description": "Gruppe verlassen: Fehler"
+  },
+  "chatInfoCodeCopied": "Code kopiert!",
+  "@chatInfoCodeCopied": {
+    "description": "Einladungs-Code kopiert"
+  },
+  "chatGroupJoinedHint": "Gruppe beigetreten! Du findest sie in deiner Chatliste.",
+  "@chatGroupJoinedHint": {
+    "description": "Beitritt über Einladungs-Card im Chat"
+  },
+  "createPostImageProcessFailed": "Bild konnte nicht verarbeitet werden",
+  "@createPostImageProcessFailed": {
+    "description": "Create-Post: EXIF-Strip fehlgeschlagen"
+  },
+  "createPostImageUploadFailed": "Bild-Upload fehlgeschlagen",
+  "@createPostImageUploadFailed": {
+    "description": "Create-Post: Upload-Fehler"
+  },
+  "createPostFailed": "Post konnte nicht erstellt werden",
+  "@createPostFailed": {
+    "description": "Create-Post: Server-Fehler"
+  },
+  "createPostSomethingWrong": "Etwas ist schiefgelaufen",
+  "@createPostSomethingWrong": {
+    "description": "Create-Post: unerwarteter Fehler"
+  },
+  "messengerRequestsSubtitle": "{count, plural, =1{1 Person möchte dir schreiben} other{{count} Personen möchten dir schreiben}}",
+  "@messengerRequestsSubtitle": {
+    "description": "Chatliste: Unterzeile der Anfragen-Zeile",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rankingStreakDays": "{count, plural, =1{1 Tag} other{{count} Tage}}",
+  "@rankingStreakDays": {
+    "description": "Streak-Länge (Bento-Card + Result-Chip, dort uppercase)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rankingRatingsCount": "{count, plural, =1{1 RATING} other{{count} RATINGS}}",
+  "@rankingRatingsCount": {
+    "description": "Leaderboard-Zeile: Anzahl Ratings",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rankingPointsToNext": "{count, plural, =1{Noch 1 Punkt bis zum nächsten Platz} other{Noch {count} Punkte bis zum nächsten Platz}}",
+  "@rankingPointsToNext": {
+    "description": "Du-Zeile: Abstand zum nächsten Platz",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeJustNow": "gerade eben",
+  "@timeJustNow": {
+    "description": "Relative Zeit: < 1 Minute"
+  },
+  "timeMinutesAgo": "vor {count} Min.",
+  "@timeMinutesAgo": {
+    "description": "Relative Zeit: Minuten (Kurzform)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeHoursAgo": "vor {count} Std.",
+  "@timeHoursAgo": {
+    "description": "Relative Zeit: Stunden (Kurzform)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeDaysAgo": "vor {count} Tg.",
+  "@timeDaysAgo": {
+    "description": "Relative Zeit: Tage (Kurzform), ab 7 Tagen Datum",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timeToday": "Heute",
+  "@timeToday": {
+    "description": "Chat-Datumstrenner: heute"
+  },
+  "timeYesterday": "Gestern",
+  "@timeYesterday": {
+    "description": "Chat-Datumstrenner: gestern"
   }
 }

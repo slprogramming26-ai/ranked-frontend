@@ -115,7 +115,8 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
             username: Value('Gruppe $newGroupId'),
           ),
         );
-    _snack('Gruppe $newGroupId erfolgreich erstellt!');
+    if (!mounted) return;
+    _snack(context.l10n.messengerGroupCreated(newGroupId));
   }
 
   Future<void> _joinGroupWithCode(int code) async {
@@ -147,7 +148,8 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
             ),
           );
     }
-    _snack('Gruppe $groupId beigetreten!');
+    if (!mounted) return;
+    _snack(context.l10n.messengerGroupJoined(groupId));
   }
 
   void _snack(String text) {
@@ -459,9 +461,7 @@ class _RequestsRow extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      count == 1
-                          ? '1 Person möchte dir schreiben'
-                          : '$count Personen möchten dir schreiben',
+                      context.l10n.messengerRequestsSubtitle(count),
                       style: GoogleFonts.inter(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,

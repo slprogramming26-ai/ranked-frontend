@@ -148,14 +148,9 @@ class _StoryViewerState extends State<StoryViewer>
   }
 
   String _timeAgo(String? createdAt) {
-    if (createdAt == null) return '';
-    final dt = DateTime.tryParse(createdAt)?.toLocal();
+    final dt = DateTime.tryParse(createdAt ?? '');
     if (dt == null) return '';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'gerade eben';
-    if (diff.inMinutes < 60) return 'vor ${diff.inMinutes} Min.';
-    if (diff.inHours < 24) return 'vor ${diff.inHours} Std.';
-    return 'vor ${diff.inDays} T.';
+    return timeAgo(context.l10n, dt);
   }
 
   @override

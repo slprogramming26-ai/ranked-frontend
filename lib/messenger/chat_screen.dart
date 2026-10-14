@@ -184,7 +184,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     final isMe = msg.senderId == widget.conversation.myUserId;
                     return _MessageBubble(
                       text: msg.message,
-                      time: _formatTime(msg.createdAt),
+                      time: chatTime(context.l10n, msg.createdAt),
                       isMe: isMe,
                       groupedWithPrevious: entry.groupedWithPrevious,
                     );
@@ -281,7 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
       final day = DateTime(local.year, local.month, local.day);
       final newDay = lastDay == null || day != lastDay;
       if (newDay) {
-        items.add(_DateSeparator(_formatDay(day)));
+        items.add(_DateSeparator(chatDayLabel(context.l10n, day)));
         lastDay = day;
         lastSender = null;
       }
@@ -294,25 +294,6 @@ class _ChatScreenState extends State<ChatScreen> {
     return items;
   }
 
-  String _formatTime(DateTime dt) {
-    final local = dt.toLocal();
-    final h = local.hour.toString().padLeft(2, '0');
-    final m = local.minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
-
-  String _formatDay(DateTime day) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final diff = today.difference(day).inDays;
-    if (diff == 0) return 'Heute';
-    if (diff == 1) return 'Gestern';
-    const months = [
-      'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez',
-    ];
-    return '${day.day}. ${months[day.month - 1]} ${day.year}';
-  }
 }
 
 // -----------------------------------------------------------------------------
@@ -680,6 +661,7 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
     // Messenger/DB VOR dem ersten await sichern (Screen könnte weg sein).
     final messenger = ScaffoldMessenger.of(context);
     final db = context.read<AppDatabase>();
+    final l10n = context.l10n;
     setState(() => _state = _JoinState.loading);
 
     // Welche Gruppe hinter dem Code steckt, verrät erst die Server-Antwort.
@@ -693,7 +675,7 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
           behavior: SnackBarBehavior.floating,
           backgroundColor: AppColors.primary,
           content: Text(
-            'Beitritt fehlgeschlagen. Ist der Code noch gültig?',
+            l10n.messengerJoinFailed,
             style: GoogleFonts.inter(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,
@@ -729,7 +711,7 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.onSurface,
         content: Text(
-          'Gruppe beigetreten! Du findest sie in deiner Chatliste.',
+          l10n.chatGroupJoinedHint,
           style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,

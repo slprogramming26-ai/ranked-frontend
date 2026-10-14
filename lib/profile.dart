@@ -534,19 +534,8 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-  // "vor 5 Min." / "vor 3 Std." / "vor 2 Tg." / ab einer Woche das Datum.
-  // Der Server schickt UTC-Zeitstempel; die Differenz ist davon unabhängig
-  // (beide Seiten werden auf denselben absoluten Zeitpunkt bezogen), nur fürs
-  // Datum am Ende brauchen wir toLocal().
-  String _relativeTime(DateTime? dt) {
-    if (dt == null) return '';
-    final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1) return 'jetzt';
-    if (diff.inMinutes < 60) return 'vor ${diff.inMinutes} Min.';
-    if (diff.inHours < 24) return 'vor ${diff.inHours} Std.';
-    if (diff.inDays < 7) return 'vor ${diff.inDays} Tg.';
-    return DateFormat('dd.MM.yyyy').format(dt.toLocal());
-  }
+  String _relativeTime(DateTime? dt) =>
+      dt == null ? '' : timeAgo(context.l10n, dt);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 

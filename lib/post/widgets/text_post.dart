@@ -351,17 +351,11 @@ class _TextPostState extends State<TextPost>
       onDoubleTap: _handleDoubleTapLike,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        // Flache Karte: kein Rand/Schatten, damit der Inhalt die Flaeche ist
+        // und nicht der Rahmen drumherum.
         decoration: BoxDecoration(
           color: AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(32),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.02),
-              blurRadius: 30,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
         ),
         // Stack, damit die Burst-Animation über dem Inhalt zentriert liegt.
         child: Stack(
@@ -371,8 +365,18 @@ class _TextPostState extends State<TextPost>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(context),
-                _buildBody(),
-                _buildFooter(context),
+                _buildTitle(),
+                // Bild-Post: Aktionen direkt unters Bild, denn dort reagiert
+                // man (wie bei Insta). Text-Post: Aktionen bleiben unten.
+                if (widget.imageUrl != null) ...[
+                  // Randlos ueber die volle Kartenbreite (wie im Insta-Feed).
+                  FeedImage(url: widget.imageUrl!),
+                  _buildFooter(context),
+                  _buildContent(const EdgeInsets.fromLTRB(16, 0, 16, 14)),
+                ] else ...[
+                  _buildContent(const EdgeInsets.fromLTRB(16, 10, 16, 0)),
+                  _buildFooter(context),
+                ],
               ],
             ),
             _buildLikeBurst(),
@@ -416,64 +420,42 @@ class _TextPostState extends State<TextPost>
 
   Widget _buildHeader(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      leading: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHighest,
-              shape: BoxShape.circle,
-            ),
-            child: ClipOval(
-              child: widget.profilePictureUrl != null
-                  ? Image(
-                      // 44er-Avatar → 44 logische px Dekodier-Breite.
-                      image: netImage(
-                        context,
-                        widget.profilePictureUrl.toString(),
-                        logicalWidth: 44,
-                      ),
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          _avatarFallback(widget.owner_username),
-                      // Weich einblenden statt aufpoppen; aus dem Cache
-                      // (wasSync) sofort zeigen, sonst blendet jedes
-                      // Zurueckscrollen erneut.
-                      frameBuilder: (_, child, frame, wasSync) => wasSync
-                          ? child
-                          : AnimatedOpacity(
-                              opacity: frame != null ? 1 : 0,
-                              duration: const Duration(milliseconds: 250),
-                              child: child,
-                            ),
-                    )
-                  : _avatarFallback(widget.owner_username),
-            ),
-          ),
-          Positioned(
-            bottom: -2,
-            right: -2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.tertiaryContainer,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: AppColors.surfaceContainerLow,
-                  width: 2,
-                ),
-              ),
-              child: const Text(
-                "#1",
-                style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
+      // Rechts 8 statt 16: der ...-IconButton bringt selbst 8px Innenabstand
+      // mit, so sitzt das Icon optisch auf derselben 16er-Kante.
+      contentPadding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+      leading: Container(
+        width: 44,
+        height: 44,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerHighest,
+          shape: BoxShape.circle,
+        ),
+        child: ClipOval(
+          child: widget.profilePictureUrl != null
+              ? Image(
+                  // 44er-Avatar → 44 logische px Dekodier-Breite.
+                  image: netImage(
+                    context,
+                    widget.profilePictureUrl.toString(),
+                    logicalWidth: 44,
+                  ),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) =>
+                      _avatarFallback(widget.owner_username),
+                  // Weich einblenden statt aufpoppen; aus dem Cache
+                  // (wasSync) sofort zeigen, sonst blendet jedes
+                  // Zurueckscrollen erneut.
+                  frameBuilder: (_, child, frame, wasSync) => wasSync
+                      ? child
+                      : AnimatedOpacity(
+                          opacity: frame != null ? 1 : 0,
+                          duration: const Duration(milliseconds: 250),
+                          child: child,
+                        ),
+                )
+              : _avatarFallback(widget.owner_username),
+        ),
       ),
       title: Row(
         children: [
@@ -488,16 +470,15 @@ class _TextPostState extends State<TextPost>
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              // Reine Info, kein Zustand -> neutral (3-Ebenen-Regel).
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryContainer],
-                ),
+                color: AppColors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text(
+              child: Text(
                 "Du",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.onSurfaceVariant,
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                 ),
@@ -516,7 +497,7 @@ class _TextPostState extends State<TextPost>
         ].join(' • '),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: 10),
+        style: TextStyle(fontSize: 12),
       ),
       trailing: IconButton(
         icon: const Icon(Icons.more_horiz),
@@ -686,46 +667,39 @@ class _TextPostState extends State<TextPost>
     ),
   );
 
-  Widget _buildBody() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          child: Text(
-            widget.title,
-            style: GoogleFonts.plusJakartaSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+  Widget _buildTitle() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: Text(
+        widget.title,
+        style: GoogleFonts.plusJakartaSans(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
         ),
-        if (widget.imageUrl != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: FeedImage(url: widget.imageUrl!),
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Text(
-            widget.content,
-            style: TextStyle(color: AppColors.onSurfaceVariant),
-          ),
-        ),
-      ],
+      ),
+    );
+  }
+
+  // Padding kommt von aussen: je nach Post-Art steht der Text mal vor, mal
+  // nach der Aktionsleiste (siehe _buildPostCard).
+  Widget _buildContent(EdgeInsets padding) {
+    return Padding(
+      padding: padding,
+      child: Text(
+        widget.content,
+        style: TextStyle(color: AppColors.onSurfaceVariant),
+      ),
     );
   }
 
   Widget _buildFooter(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      // Rechts 8: wie im Header gleicht das der IconButton-Innenabstand aus.
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
       child: Row(
         children: [
           _buildHypeButton(context),
-          const SizedBox(width: 15),
+          const SizedBox(width: 8),
           IconButton(
             onPressed: () => showCommentSection(context),
             icon: Icon(
@@ -776,21 +750,15 @@ class _TextPostState extends State<TextPost>
       onTap: _toggleLike,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
-          // Geliked = voller Gradient, sonst dezenter Outline-Look.
-          gradient: liked
-              ? LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryContainer],
-                )
-              : null,
-          color: liked
-              ? null
-              : AppColors.surfaceContainerHighest.withValues(alpha: 0.4),
+          // Geliked = solides Rot (Zustand, wie das Insta-Herz), sonst neutral.
+          // Rot nur, wenn es etwas bedeutet (3-Ebenen-Regel).
+          color: liked ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
-          border: liked
-              ? null
-              : Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: liked ? AppColors.primary : AppColors.outlineVariant,
+          ),
           boxShadow: liked
               ? [
                   BoxShadow(
@@ -805,14 +773,14 @@ class _TextPostState extends State<TextPost>
           children: [
             Icon(
               Icons.bolt,
-              color: liked ? Colors.white : AppColors.primary,
+              color: liked ? Colors.white : AppColors.onSurfaceVariant,
               size: 18,
             ),
             const SizedBox(width: 4),
             Text(
               widget.likes.toString(),
               style: TextStyle(
-                color: liked ? Colors.white : AppColors.primary,
+                color: liked ? Colors.white : AppColors.onSurfaceVariant,
                 fontWeight: FontWeight.bold,
               ),
             ),

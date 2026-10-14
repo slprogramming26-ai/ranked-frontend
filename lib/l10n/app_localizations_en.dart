@@ -1424,4 +1424,125 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get roleSheetReasonHint => 'Shown in the moderation log';
+
+  @override
+  String messengerGroupCreated(int id) {
+    return 'Group $id created!';
+  }
+
+  @override
+  String messengerGroupJoined(int id) {
+    return 'Joined group $id!';
+  }
+
+  @override
+  String get chatInfoPictureProcessFailed => 'Couldn\'t process the image.';
+
+  @override
+  String get chatInfoPictureOnlyCreator =>
+      'Only the group\'s creator can change the picture.';
+
+  @override
+  String get chatInfoPictureUploadFailed => 'Upload failed. Please try again.';
+
+  @override
+  String get chatInfoPictureUpdated => 'Group picture updated.';
+
+  @override
+  String get chatInfoInviteCodeFailed =>
+      'Couldn\'t create a code. Please try again.';
+
+  @override
+  String get chatInfoLeftGroup => 'You left the group.';
+
+  @override
+  String get chatInfoLeaveFailed =>
+      'Couldn\'t leave the group. Please try again.';
+
+  @override
+  String get chatInfoCodeCopied => 'Code copied!';
+
+  @override
+  String get chatGroupJoinedHint =>
+      'Joined! You\'ll find the group in your chat list.';
+
+  @override
+  String get createPostImageProcessFailed => 'Couldn\'t process the image';
+
+  @override
+  String get createPostImageUploadFailed => 'Image upload failed';
+
+  @override
+  String get createPostFailed => 'Couldn\'t create the post';
+
+  @override
+  String get createPostSomethingWrong => 'Something went wrong';
+
+  @override
+  String messengerRequestsSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people want to message you',
+      one: '1 person wants to message you',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rankingStreakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rankingRatingsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count RATINGS',
+      one: '1 RATING',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rankingPointsToNext(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more points to the next rank',
+      one: '1 more point to the next rank',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timeJustNow => 'just now';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return '${count}m ago';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return '${count}h ago';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return '${count}d ago';
+  }
+
+  @override
+  String get timeToday => 'Today';
+
+  @override
+  String get timeYesterday => 'Yesterday';
 }

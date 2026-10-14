@@ -520,15 +520,6 @@ class _HistoryTile extends StatelessWidget {
     required this.onTap,
   });
 
-  String _formatRelative(DateTime date) {
-    final diff = DateTime.now().difference(date);
-    if (diff.inSeconds < 60) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
-    return '${(diff.inDays / 7).floor()}w ago';
-  }
-
   @override
   Widget build(BuildContext context) {
     final subtitle = [vibe1, vibe2]
@@ -594,7 +585,7 @@ class _HistoryTile extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _formatRelative(clickedAt),
+                          timeAgo(context.l10n, clickedAt),
                           style: GoogleFonts.inter(
                             fontSize: 11,
                             fontWeight: FontWeight.w500,

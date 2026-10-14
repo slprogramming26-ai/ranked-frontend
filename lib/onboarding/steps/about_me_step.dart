@@ -164,7 +164,7 @@ class _AboutMeStepState extends State<AboutMeStep> {
               style: GoogleFonts.inter(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFFA26769),
+                color: AppColors.onSurfaceVariant,
                 letterSpacing: 1.5,
               ),
             ),

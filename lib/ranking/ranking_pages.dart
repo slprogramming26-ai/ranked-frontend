@@ -365,7 +365,8 @@ class _SwipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateString = DateFormat('dd.MM.yyyy').format(createdAt);
+    final dateString =
+        DateFormat.yMd(context.l10n.localeName).format(createdAt);
     final progress = (horizontalThreshold.abs() / 100).clamp(0.0, 1.0);
     final isLike = horizontalThreshold > 0;
     final glowColor = isLike ? AppColors.primary : AppColors.secondary;
@@ -779,7 +780,7 @@ class _SwipeResultScreen extends StatelessWidget {
                       if (streak > 0)
                         _RewardChip(
                           icon: Icons.local_fire_department_rounded,
-                          label: streak == 1 ? '1 TAG' : '$streak TAGE',
+                          label: context.l10n.rankingStreakDays(streak).toUpperCase(),
                           bg: AppColors.primaryContainer,
                           fg: AppColors.primary,
                         ),

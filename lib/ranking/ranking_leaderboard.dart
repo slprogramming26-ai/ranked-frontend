@@ -187,9 +187,8 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                       bg: AppColors.primaryContainer,
                                       fgColor: const Color(0xFF4c0600),
                                       icon: Icons.local_fire_department,
-                                      value: streak == 1
-                                          ? '1 Tag'
-                                          : '$streak Tage',
+                                      value: context.l10n
+                                          .rankingStreakDays(streak),
                                       label: context.l10n.rankingStreakLabel,
                                     ),
                                   ),

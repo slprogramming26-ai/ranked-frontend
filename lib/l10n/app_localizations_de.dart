@@ -1442,4 +1442,128 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get roleSheetReasonHint => 'Erscheint im Moderations-Protokoll';
+
+  @override
+  String messengerGroupCreated(int id) {
+    return 'Gruppe $id erfolgreich erstellt!';
+  }
+
+  @override
+  String messengerGroupJoined(int id) {
+    return 'Gruppe $id beigetreten!';
+  }
+
+  @override
+  String get chatInfoPictureProcessFailed =>
+      'Bild konnte nicht verarbeitet werden.';
+
+  @override
+  String get chatInfoPictureOnlyCreator =>
+      'Nur der Ersteller der Gruppe kann das Bild ändern.';
+
+  @override
+  String get chatInfoPictureUploadFailed =>
+      'Upload fehlgeschlagen. Versuch es erneut.';
+
+  @override
+  String get chatInfoPictureUpdated => 'Gruppenbild aktualisiert.';
+
+  @override
+  String get chatInfoInviteCodeFailed =>
+      'Code konnte nicht erstellt werden. Versuch es erneut.';
+
+  @override
+  String get chatInfoLeftGroup => 'Du hast die Gruppe verlassen.';
+
+  @override
+  String get chatInfoLeaveFailed =>
+      'Verlassen fehlgeschlagen. Versuch es erneut.';
+
+  @override
+  String get chatInfoCodeCopied => 'Code kopiert!';
+
+  @override
+  String get chatGroupJoinedHint =>
+      'Gruppe beigetreten! Du findest sie in deiner Chatliste.';
+
+  @override
+  String get createPostImageProcessFailed =>
+      'Bild konnte nicht verarbeitet werden';
+
+  @override
+  String get createPostImageUploadFailed => 'Bild-Upload fehlgeschlagen';
+
+  @override
+  String get createPostFailed => 'Post konnte nicht erstellt werden';
+
+  @override
+  String get createPostSomethingWrong => 'Etwas ist schiefgelaufen';
+
+  @override
+  String messengerRequestsSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Personen möchten dir schreiben',
+      one: '1 Person möchte dir schreiben',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rankingStreakDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Tage',
+      one: '1 Tag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rankingRatingsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count RATINGS',
+      one: '1 RATING',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String rankingPointsToNext(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Noch $count Punkte bis zum nächsten Platz',
+      one: 'Noch 1 Punkt bis zum nächsten Platz',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get timeJustNow => 'gerade eben';
+
+  @override
+  String timeMinutesAgo(int count) {
+    return 'vor $count Min.';
+  }
+
+  @override
+  String timeHoursAgo(int count) {
+    return 'vor $count Std.';
+  }
+
+  @override
+  String timeDaysAgo(int count) {
+    return 'vor $count Tg.';
+  }
+
+  @override
+  String get timeToday => 'Heute';
+
+  @override
+  String get timeYesterday => 'Gestern';
 }

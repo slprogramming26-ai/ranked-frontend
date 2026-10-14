@@ -2623,6 +2623,156 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Erscheint im Moderations-Protokoll'**
   String get roleSheetReasonHint;
+
+  /// Snackbar nach Gruppe erstellen
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe {id} erfolgreich erstellt!'**
+  String messengerGroupCreated(int id);
+
+  /// Snackbar nach Beitritt per Code-Dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe {id} beigetreten!'**
+  String messengerGroupJoined(int id);
+
+  /// Gruppenbild: EXIF-Strip fehlgeschlagen
+  ///
+  /// In de, this message translates to:
+  /// **'Bild konnte nicht verarbeitet werden.'**
+  String get chatInfoPictureProcessFailed;
+
+  /// Gruppenbild: 403
+  ///
+  /// In de, this message translates to:
+  /// **'Nur der Ersteller der Gruppe kann das Bild ändern.'**
+  String get chatInfoPictureOnlyCreator;
+
+  /// Gruppenbild: Upload-Fehler
+  ///
+  /// In de, this message translates to:
+  /// **'Upload fehlgeschlagen. Versuch es erneut.'**
+  String get chatInfoPictureUploadFailed;
+
+  /// Gruppenbild: Erfolg
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppenbild aktualisiert.'**
+  String get chatInfoPictureUpdated;
+
+  /// Einladungs-Code: Fehler
+  ///
+  /// In de, this message translates to:
+  /// **'Code konnte nicht erstellt werden. Versuch es erneut.'**
+  String get chatInfoInviteCodeFailed;
+
+  /// Snackbar nach Gruppe verlassen
+  ///
+  /// In de, this message translates to:
+  /// **'Du hast die Gruppe verlassen.'**
+  String get chatInfoLeftGroup;
+
+  /// Gruppe verlassen: Fehler
+  ///
+  /// In de, this message translates to:
+  /// **'Verlassen fehlgeschlagen. Versuch es erneut.'**
+  String get chatInfoLeaveFailed;
+
+  /// Einladungs-Code kopiert
+  ///
+  /// In de, this message translates to:
+  /// **'Code kopiert!'**
+  String get chatInfoCodeCopied;
+
+  /// Beitritt über Einladungs-Card im Chat
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe beigetreten! Du findest sie in deiner Chatliste.'**
+  String get chatGroupJoinedHint;
+
+  /// Create-Post: EXIF-Strip fehlgeschlagen
+  ///
+  /// In de, this message translates to:
+  /// **'Bild konnte nicht verarbeitet werden'**
+  String get createPostImageProcessFailed;
+
+  /// Create-Post: Upload-Fehler
+  ///
+  /// In de, this message translates to:
+  /// **'Bild-Upload fehlgeschlagen'**
+  String get createPostImageUploadFailed;
+
+  /// Create-Post: Server-Fehler
+  ///
+  /// In de, this message translates to:
+  /// **'Post konnte nicht erstellt werden'**
+  String get createPostFailed;
+
+  /// Create-Post: unerwarteter Fehler
+  ///
+  /// In de, this message translates to:
+  /// **'Etwas ist schiefgelaufen'**
+  String get createPostSomethingWrong;
+
+  /// Chatliste: Unterzeile der Anfragen-Zeile
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Person möchte dir schreiben} other{{count} Personen möchten dir schreiben}}'**
+  String messengerRequestsSubtitle(int count);
+
+  /// Streak-Länge (Bento-Card + Result-Chip, dort uppercase)
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Tag} other{{count} Tage}}'**
+  String rankingStreakDays(int count);
+
+  /// Leaderboard-Zeile: Anzahl Ratings
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 RATING} other{{count} RATINGS}}'**
+  String rankingRatingsCount(int count);
+
+  /// Du-Zeile: Abstand zum nächsten Platz
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{Noch 1 Punkt bis zum nächsten Platz} other{Noch {count} Punkte bis zum nächsten Platz}}'**
+  String rankingPointsToNext(int count);
+
+  /// Relative Zeit: < 1 Minute
+  ///
+  /// In de, this message translates to:
+  /// **'gerade eben'**
+  String get timeJustNow;
+
+  /// Relative Zeit: Minuten (Kurzform)
+  ///
+  /// In de, this message translates to:
+  /// **'vor {count} Min.'**
+  String timeMinutesAgo(int count);
+
+  /// Relative Zeit: Stunden (Kurzform)
+  ///
+  /// In de, this message translates to:
+  /// **'vor {count} Std.'**
+  String timeHoursAgo(int count);
+
+  /// Relative Zeit: Tage (Kurzform), ab 7 Tagen Datum
+  ///
+  /// In de, this message translates to:
+  /// **'vor {count} Tg.'**
+  String timeDaysAgo(int count);
+
+  /// Chat-Datumstrenner: heute
+  ///
+  /// In de, this message translates to:
+  /// **'Heute'**
+  String get timeToday;
+
+  /// Chat-Datumstrenner: gestern
+  ///
+  /// In de, this message translates to:
+  /// **'Gestern'**
+  String get timeYesterday;
 }
 
 class _AppLocalizationsDelegate

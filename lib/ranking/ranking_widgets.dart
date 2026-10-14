@@ -414,7 +414,7 @@ class RankListTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '$ratings RATINGS',
+                  context.l10n.rankingRatingsCount(ratings),
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
@@ -478,18 +478,15 @@ class LeaderboardMeCard extends StatelessWidget {
       subline = context.l10n.rankingLeadingSubline;
     } else {
       headline = context.l10n.rankingMyRank(rank);
-      subline =
-          'Noch $toNext ${toNext == 1 ? 'Punkt' : 'Punkte'} bis zum nächsten Platz';
+      subline = context.l10n.rankingPointsToNext(toNext);
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      // Solid statt Gradient: die Karte klebt dauerhaft unten und soll dem
+      // Podium (Brand-Moment) nicht die Show stehlen.
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryContainer],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

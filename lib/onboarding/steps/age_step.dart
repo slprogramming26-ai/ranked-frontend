@@ -149,14 +149,14 @@ class _AgeStepState extends State<AgeStep> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFFA26769).withValues(alpha: 0.12),
+                color: AppColors.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.lock_clock_outlined,
-                    color: Color(0xFFA26769),
+                    color: AppColors.primary,
                     size: 20,
                   ),
                   const SizedBox(width: 10),
@@ -166,7 +166,7 @@ class _AgeStepState extends State<AgeStep> {
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: const Color(0xFFA26769),
+                        color: AppColors.primary,
                         height: 1.4,
                       ),
                     ),
