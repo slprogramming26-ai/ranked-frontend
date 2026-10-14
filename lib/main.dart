@@ -22,6 +22,7 @@ import 'story/story_create_screen.dart';
 import 'app_colors.dart';
 import 'search.dart';
 import 'theme_provider.dart';
+import 'locale_provider.dart';
 import "local_data/database.dart";
 import 'messenger/messenger_controller.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,9 +41,12 @@ Future<void> main() async {
   final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Dark-Mode-Wahl VOR dem ersten Frame laden (der native Splash steht noch),
-  // sonst startet die App hell und springt sichtbar auf dunkel um.
-  final themeProvider = await ThemeProvider.load();
+  // Dark-Mode- und Sprachwahl VOR dem ersten Frame laden (der native Splash
+  // steht noch), sonst startet die App hell/deutsch und springt sichtbar um.
+  // Record + .wait: beide laufen PARALLEL, und jeder behaelt seinen Typ
+  // (Future.wait mit einer Liste gaebe nur List<Object> zurueck).
+  final (themeProvider, localeProvider) =
+      await (ThemeProvider.load(), LocaleProvider.load()).wait;
 
   final db = AppDatabase();
 
@@ -53,6 +57,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: themeProvider),
+        ChangeNotifierProvider.value(value: localeProvider),
         Provider.value(value: db),
       ],
       child: const SessionScope(child: MyApp()),
@@ -116,10 +121,10 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    // Haengt an der Dark-Mode-Wahl: setzt vor jedem Build das globale Flag in
-    // AppColors und baut bei Umschaltung den kompletten Baum neu auf.
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, _) {
+    // Haengt an Dark-Mode- und Sprachwahl: setzt vor jedem Build das globale
+    // Flag in AppColors und baut bei Umschaltung den kompletten Baum neu auf.
+    return Consumer2<ThemeProvider, LocaleProvider>(
+      builder: (context, themeProvider, localeProvider, _) {
         AppColors.isDark = themeProvider.isDark;
         return MaterialApp(
           // onGenerateTitle statt title: der Titel kommt aus den ARBs und
@@ -127,10 +132,9 @@ class MyApp extends StatelessWidget {
           onGenerateTitle: (context) => context.l10n.appTitle,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          // VORERST fest auf Deutsch: der Rest der App ist noch hartkodiert,
-          // sonst waeren auf englischen Geraeten nur die migrierten Teile
-          // englisch. Wird spaeter durch den LocaleProvider ersetzt.
-          locale: const Locale('de'),
+          // null = Systemsprache, dann entscheidet der Callback darunter.
+          locale: localeProvider.locale,
+          localeListResolutionCallback: resolveAppLocale,
           theme: ThemeData(
             useMaterial3: true,
             brightness: themeProvider.isDark
@@ -154,11 +158,18 @@ class MyApp extends StatelessWidget {
             //
             // This works for code too, not just values: Most code changes can be
             // tested with just a hot reload.
+            // fromSeed toent alle Neutrals rot (-> Mauve/Lila). Darum die
+            // Text-/Linienfarben auf unsere neutralen AppColors ueberschreiben.
             colorScheme: ColorScheme.fromSeed(
               seedColor: AppColors.primary,
               brightness: themeProvider.isDark
                   ? Brightness.dark
                   : Brightness.light,
+            ).copyWith(
+              onSurface: AppColors.onSurface,
+              onSurfaceVariant: AppColors.onSurfaceVariant,
+              outline: AppColors.onSurfaceVariant,
+              outlineVariant: AppColors.outlineVariant,
             ),
           ),
           navigatorObservers: [routeObserver],

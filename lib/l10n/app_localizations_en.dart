@@ -665,6 +665,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDarkModeSubtitle => 'Dark appearance';
 
   @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageSystem => 'System language';
+
+  @override
+  String get settingsLanguageSystemHint => 'Follows your phone\'s language';
+
+  @override
   String get settingsSectionProfile => 'PROFILE';
 
   @override
@@ -1092,10 +1101,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moderationRemoveConfirm => 'Remove';
 
   @override
-  String get moderationAuditPlaceholder =>
-      'The log of all moderation actions will show up here soon.';
-
-  @override
   String moderationBanTitle(String username) {
     return 'Ban $username';
   }
@@ -1312,6 +1317,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get userDetailLogSnapshotLabel => 'Content';
+
+  @override
+  String auditLogAgainst(String username) {
+    return 'against $username';
+  }
+
+  @override
+  String get auditEmpty => 'No moderation actions yet.';
+
+  @override
+  String get auditEmptyFiltered => 'No entries for this filter.';
+
+  @override
+  String get auditRestore => 'Restore';
+
+  @override
+  String get auditRestoreTitle => 'Restore content?';
+
+  @override
+  String get auditRestoreMessage =>
+      'It will be visible to everyone again. The person will be notified.';
+
+  @override
+  String get auditRestored => 'Restored';
+
+  @override
+  String get auditRestoredNoLocation =>
+      'Restored, but without location (the location no longer exists)';
+
+  @override
+  String get auditRestoreGone =>
+      'Can\'t be restored anymore: already restored or the deadline has passed';
+
+  @override
+  String get auditRestoreConflictComment =>
+      'The post of this comment no longer exists. Restore the post first.';
+
+  @override
+  String get auditRestoreConflictStory =>
+      'The story has expired in the meantime.';
+
+  @override
+  String get auditRestoreConflictPicture =>
+      'The person has uploaded a new profile picture in the meantime.';
+
+  @override
+  String get auditRestoreConflict => 'This content can\'t be restored.';
+
+  @override
+  String get auditRestoreForbidden =>
+      'You\'re not allowed to moderate this person.';
+
+  @override
+  String get auditRestoreFailed => 'Restore failed';
+
+  @override
+  String get auditFilterAll => 'All';
+
+  @override
+  String get auditFilterBans => 'Bans';
+
+  @override
+  String get auditFilterRemovals => 'Removed';
+
+  @override
+  String get auditFilterResolved => 'Reports';
+
+  @override
+  String get auditFilterRoles => 'Roles';
+
+  @override
+  String get auditFilterRestored => 'Restored';
+
+  @override
+  String get auditLogDeletedTarget => 'against a deleted account';
 
   @override
   String get userDetailChangeRole => 'Change role';

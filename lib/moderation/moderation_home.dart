@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../app_colors.dart';
 import '../l10n/l10n.dart';
+import 'audit_log_view.dart';
 import 'report_queue_view.dart';
 import 'user_role.dart';
 
@@ -11,7 +12,6 @@ import 'user_role.dart';
 ///
 /// Zwei Bereiche: "Meldungen" (alle Mods) und "Protokoll" (nur Admin).
 /// Ein normaler Mod sieht keinen Umschalter, nur die Meldungen.
-/// "Protokoll" ist vorerst ein Platzhalter (Phase 6).
 class ModerationHome extends StatefulWidget {
   final UserRole role;
   const ModerationHome({super.key, required this.role});
@@ -82,10 +82,7 @@ class _ModerationHomeState extends State<ModerationHome> {
               // Ein Mod landet immer bei den Meldungen, egal was in _tab steht.
               child: (!isAdmin || _tab == _ModTab.reports)
                   ? ReportQueueView(role: widget.role)
-                  : _Placeholder(
-                      icon: Icons.history_rounded,
-                      text: l.moderationAuditPlaceholder,
-                    ),
+                  : const AuditLogView(),
             ),
           ],
         ),
@@ -166,34 +163,4 @@ class _SegmentedPill extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Icon + Text mittig, bis die echten Listen kommen.
-class _Placeholder extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _Placeholder({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 40, color: AppColors.onSurfaceVariant),
-              const SizedBox(height: 12),
-              Text(
-                text,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
 }

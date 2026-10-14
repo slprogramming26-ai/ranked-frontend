@@ -865,6 +865,18 @@
   "@settingsDarkModeSubtitle": {
     "description": "Dark mode setting subtitle"
   },
+  "settingsLanguage": "Sprache",
+  "@settingsLanguage": {
+    "description": "Language setting title + language sheet title"
+  },
+  "settingsLanguageSystem": "Systemsprache",
+  "@settingsLanguageSystem": {
+    "description": "Language option: follow the device language"
+  },
+  "settingsLanguageSystemHint": "Folgt der Sprache deines Handys",
+  "@settingsLanguageSystemHint": {
+    "description": "Language sheet: explanation under the system option"
+  },
   "settingsSectionProfile": "PROFIL",
   "@settingsSectionProfile": {
     "description": "Profile section label in settings"
@@ -1409,10 +1421,6 @@
   "@moderationRemoveConfirm": {
     "description": "Confirm button of the removal sheet"
   },
-  "moderationAuditPlaceholder": "Hier erscheint bald das Protokoll aller Moderations-Aktionen.",
-  "@moderationAuditPlaceholder": {
-    "description": "Placeholder until the audit log is built"
-  },
   "moderationBanTitle": "{username} sperren",
   "@moderationBanTitle": {
     "description": "Title of the ban sheet",
@@ -1710,6 +1718,99 @@
   "userDetailLogSnapshotLabel": "Inhalt",
   "@userDetailLogSnapshotLabel": {
     "description": "Log entry: label above the text copy of the removed content"
+  },
+  "auditLogAgainst": "gegen {username}",
+  "@auditLogAgainst": {
+    "description": "Audit log entry: which user the action was against",
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "auditEmpty": "Noch keine Moderations-Aktionen.",
+  "@auditEmpty": {
+    "description": "Audit log: empty state"
+  },
+  "auditEmptyFiltered": "Keine Einträge für diesen Filter.",
+  "@auditEmptyFiltered": {
+    "description": "Audit log: empty state while a filter is active"
+  },
+  "auditRestore": "Wiederherstellen",
+  "@auditRestore": {
+    "description": "Audit log: button to restore removed content"
+  },
+  "auditRestoreTitle": "Inhalt wiederherstellen?",
+  "@auditRestoreTitle": {
+    "description": "Audit log: restore confirm dialog title"
+  },
+  "auditRestoreMessage": "Der Inhalt ist danach wieder für alle sichtbar. Die Person wird benachrichtigt.",
+  "@auditRestoreMessage": {
+    "description": "Audit log: restore confirm dialog message"
+  },
+  "auditRestored": "Wiederhergestellt",
+  "@auditRestored": {
+    "description": "Audit log: snackbar + badge after a successful restore"
+  },
+  "auditRestoredNoLocation": "Wiederhergestellt, aber ohne Ort (der Ort existiert nicht mehr)",
+  "@auditRestoredNoLocation": {
+    "description": "Audit log: post restored, its location was deleted meanwhile"
+  },
+  "auditRestoreGone": "Nicht mehr wiederherstellbar: schon wiederhergestellt oder die Frist ist abgelaufen",
+  "@auditRestoreGone": {
+    "description": "Audit log: restore returned 404"
+  },
+  "auditRestoreConflictComment": "Der Post zu diesem Kommentar existiert nicht mehr. Stell zuerst den Post wieder her.",
+  "@auditRestoreConflictComment": {
+    "description": "Audit log: restore 409 for a comment"
+  },
+  "auditRestoreConflictStory": "Die Story ist inzwischen abgelaufen.",
+  "@auditRestoreConflictStory": {
+    "description": "Audit log: restore 409 for a story"
+  },
+  "auditRestoreConflictPicture": "Die Person hat inzwischen ein neues Profilbild hochgeladen.",
+  "@auditRestoreConflictPicture": {
+    "description": "Audit log: restore 409 for a profile picture"
+  },
+  "auditRestoreConflict": "Dieser Inhalt kann nicht wiederhergestellt werden.",
+  "@auditRestoreConflict": {
+    "description": "Audit log: restore 409, generic"
+  },
+  "auditRestoreForbidden": "Diese Person darfst du nicht moderieren.",
+  "@auditRestoreForbidden": {
+    "description": "Audit log: restore 403 (rank rule)"
+  },
+  "auditRestoreFailed": "Wiederherstellen fehlgeschlagen",
+  "@auditRestoreFailed": {
+    "description": "Audit log: restore failed (network etc.)"
+  },
+  "auditFilterAll": "Alle",
+  "@auditFilterAll": {
+    "description": "Audit log filter chip: no filter"
+  },
+  "auditFilterBans": "Sperren",
+  "@auditFilterBans": {
+    "description": "Audit log filter chip: bans and unbans"
+  },
+  "auditFilterRemovals": "Entfernt",
+  "@auditFilterRemovals": {
+    "description": "Audit log filter chip: removed posts/comments/stories/profile pictures"
+  },
+  "auditFilterResolved": "Meldungen",
+  "@auditFilterResolved": {
+    "description": "Audit log filter chip: resolved or dismissed reports"
+  },
+  "auditFilterRoles": "Rollen",
+  "@auditFilterRoles": {
+    "description": "Audit log filter chip: role changes"
+  },
+  "auditFilterRestored": "Wiederhergestellt",
+  "@auditFilterRestored": {
+    "description": "Audit log filter chip: restored content"
+  },
+  "auditLogDeletedTarget": "gegen gelöschten Account",
+  "@auditLogDeletedTarget": {
+    "description": "Audit log entry: the affected account no longer exists"
   },
   "userDetailChangeRole": "Rolle ändern",
   "@userDetailChangeRole": {

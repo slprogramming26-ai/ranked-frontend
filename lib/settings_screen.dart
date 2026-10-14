@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'app_colors.dart';
 import 'api_client.dart';
 import 'key_service.dart';
+import 'language_sheet.dart';
+import 'locale_provider.dart';
 import 'location_picker.dart';
 import 'moderation/blocked_accounts_screen.dart';
 import 'moderation/moderation_home.dart';
@@ -194,6 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
+    final language = context.watch<LocaleProvider>();
     // watch: Laedt das Profil noch, ist die Rolle erst "user" und die
     // Moderations-Kachel taucht auf, sobald die Daten da sind.
     final role = context.watch<ProfileProvider>().role;
@@ -265,6 +268,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         activeColor: AppColors.primary,
                         onChanged: (v) => theme.toggle(v),
                       ),
+                    ),
+                    const _TileDivider(),
+                    _SettingsTile(
+                      icon: Icons.translate_rounded,
+                      title: context.l10n.settingsLanguage,
+                      subtitle:
+                          appLanguageLabel(language.language, context.l10n),
+                      trailing: Icon(Icons.chevron_right,
+                          color: AppColors.onSurfaceVariant, size: 22),
+                      onTap: () async {
+                        final picked = await showLanguageSheet(
+                          context,
+                          current: language.language,
+                        );
+                        // null = weggewischt. Kein mounted-Check noetig:
+                        // language ist der Provider, nicht dieser Screen.
+                        if (picked != null) language.setLanguage(picked);
+                      },
                     ),
                   ],
                 ),

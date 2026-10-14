@@ -33,12 +33,14 @@ abstract class AppColors {
   static Color get surfaceContainerHighest =>
       _p(const Color(0xFFFFD2D3), const Color(0xFF3D302C));
 
+  // Text/Icons/Linien bewusst neutral (minimal warm), damit Farbe nur fuer
+  // Aktionen und Brand-Momente bleibt (wie Insta/TikTok).
   static Color get onSurface =>
-      _p(const Color(0xFF4D2124), const Color(0xFFF2E4E0));
+      _p(const Color(0xFF1C1918), const Color(0xFFF2EEED));
   static Color get onSurfaceVariant =>
-      _p(const Color(0xFF834C4F), const Color(0xFFC9A9A3));
+      _p(const Color(0xFF736E6C), const Color(0xFFA8A2A0));
   static Color get outlineVariant =>
-      _p(const Color(0xFFDF9C9E), const Color(0xFF5C4A45));
+      _p(const Color(0xFFD9D4D2), const Color(0xFF4A4442));
 
   static Color get tertiary =>
       _p(const Color(0xFF6C5A00), const Color(0xFFE0C84B));

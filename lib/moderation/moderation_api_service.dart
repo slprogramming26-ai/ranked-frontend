@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../api_client.dart';
 import '../user_api_service.dart';
 import 'admin_user_detail.dart';
+import 'moderation_log_entry.dart';
 import 'my_moderation_action.dart';
 import 'report_queue_item.dart';
 import 'report_reason.dart';
@@ -50,6 +51,55 @@ final class UserDetailNotFound extends UserDetailResult {
 /// Netz weg, 5xx, kaputtes JSON -> "Erneut versuchen".
 final class UserDetailFailed extends UserDetailResult {
   const UserDetailFailed();
+}
+
+/// Filter-Chips im Protokoll. Ein Chip kann mehrere Typen abdecken
+/// ("Entfernt" = alle 4 delete_*); leer = kein Filter.
+enum AuditFilter {
+  all([]),
+  bans([ModerationActionType.ban, ModerationActionType.unban]),
+  removals([
+    ModerationActionType.deletePost,
+    ModerationActionType.deleteComment,
+    ModerationActionType.deleteStory,
+    ModerationActionType.deleteProfilePicture,
+  ]),
+  resolved([ModerationActionType.resolve]),
+  roles([ModerationActionType.roleChange]),
+  restored([ModerationActionType.restoreContent]);
+
+  const AuditFilter(this.types);
+  final List<ModerationActionType> types;
+}
+
+/// Ergebnis von [ModerationApiService.restoreContent].
+sealed class RestoreResult {
+  const RestoreResult();
+}
+
+/// 200: der NEUE Log-Eintrag (restore_content) kommt mit.
+final class RestoreOk extends RestoreResult {
+  final ModerationLogEntry entry;
+  const RestoreOk(this.entry);
+}
+
+/// 404: nichts (mehr) im Archiv: schon wiederhergestellt oder Frist um.
+final class RestoreGone extends RestoreResult {
+  const RestoreGone();
+}
+
+/// 409: Archiv da, aber Wiederherstellen geht nicht (z.B. Post weg).
+final class RestoreConflict extends RestoreResult {
+  const RestoreConflict();
+}
+
+/// 403: Rangregel (Besitzer ist inzwischen gleich-/hoeherrangig).
+final class RestoreForbidden extends RestoreResult {
+  const RestoreForbidden();
+}
+
+final class RestoreFailed extends RestoreResult {
+  const RestoreFailed();
 }
 
 /// Alles unter /admin/... . Die Rechte prueft das Backend (403), die App
@@ -132,6 +182,67 @@ class ModerationApiService {
       // kein Netz / kaputtes JSON -> unten Failed
     }
     return const UserDetailFailed();
+  }
+
+  /// Audit-Log (nur Admin), neueste zuerst. Alle Filter kombinierbar.
+  /// null = Fehler, [] = Seite leer (= Ende erreicht).
+  static Future<List<ModerationLogEntry>?> getActions({
+    AuditFilter filter = AuditFilter.all,
+    int? moderatorId,
+    int? targetUserId,
+    int skip = 0,
+    int limit = 30,
+  }) async {
+    // Uri.replace statt String-Bauen: ein Listen-Wert wird zu mehrfachem
+    // ?action=delete_post&action=delete_comment..., und Uri kodiert sauber.
+    final uri = Uri.parse('$_baseUrl/admin/actions').replace(
+      queryParameters: <String, dynamic>{
+        if (filter.types.isNotEmpty)
+          'action': [for (final t in filter.types) t.apiValue],
+        if (moderatorId != null) 'moderator_id': '$moderatorId',
+        if (targetUserId != null) 'target_user_id': '$targetUserId',
+        'skip': '$skip',
+        'limit': '$limit',
+      },
+    );
+    try {
+      final response = await ApiClient.get(uri);
+      if (response.statusCode == 200) {
+        final data =
+            jsonDecode(utf8.decode(response.bodyBytes)) as List<dynamic>;
+        return data
+            .map((e) => ModerationLogEntry.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (_) {
+      // kein Netz / kaputtes JSON -> unten null
+    }
+    return null;
+  }
+
+  /// Nur Admin. Holt einen entfernten Inhalt aus dem Archiv zurueck.
+  static Future<RestoreResult> restoreContent(int actionId) async {
+    try {
+      final response = await ApiClient.post(
+        Uri.parse('$_baseUrl/admin/actions/$actionId/restore'),
+      );
+      switch (response.statusCode) {
+        case 200:
+          final data =
+              jsonDecode(utf8.decode(response.bodyBytes))
+                  as Map<String, dynamic>;
+          return RestoreOk(ModerationLogEntry.fromJson(data));
+        case 404:
+          return const RestoreGone();
+        case 409:
+          return const RestoreConflict();
+        case 403:
+          return const RestoreForbidden();
+      }
+    } catch (_) {
+      // kein Netz / kaputtes JSON -> unten Failed
+    }
+    return const RestoreFailed();
   }
 
   /// Erledigt ALLE offenen Meldungen zu einem Ziel.

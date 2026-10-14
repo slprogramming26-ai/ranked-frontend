@@ -1304,6 +1304,24 @@ abstract class AppLocalizations {
   /// **'Dunkles Erscheinungsbild'**
   String get settingsDarkModeSubtitle;
 
+  /// Language setting title + language sheet title
+  ///
+  /// In de, this message translates to:
+  /// **'Sprache'**
+  String get settingsLanguage;
+
+  /// Language option: follow the device language
+  ///
+  /// In de, this message translates to:
+  /// **'Systemsprache'**
+  String get settingsLanguageSystem;
+
+  /// Language sheet: explanation under the system option
+  ///
+  /// In de, this message translates to:
+  /// **'Folgt der Sprache deines Handys'**
+  String get settingsLanguageSystemHint;
+
   /// Profile section label in settings
   ///
   /// In de, this message translates to:
@@ -2060,12 +2078,6 @@ abstract class AppLocalizations {
   /// **'Entfernen'**
   String get moderationRemoveConfirm;
 
-  /// Placeholder until the audit log is built
-  ///
-  /// In de, this message translates to:
-  /// **'Hier erscheint bald das Protokoll aller Moderations-Aktionen.'**
-  String get moderationAuditPlaceholder;
-
   /// Title of the ban sheet
   ///
   /// In de, this message translates to:
@@ -2425,6 +2437,138 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Inhalt'**
   String get userDetailLogSnapshotLabel;
+
+  /// Audit log entry: which user the action was against
+  ///
+  /// In de, this message translates to:
+  /// **'gegen {username}'**
+  String auditLogAgainst(String username);
+
+  /// Audit log: empty state
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Moderations-Aktionen.'**
+  String get auditEmpty;
+
+  /// Audit log: empty state while a filter is active
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Einträge für diesen Filter.'**
+  String get auditEmptyFiltered;
+
+  /// Audit log: button to restore removed content
+  ///
+  /// In de, this message translates to:
+  /// **'Wiederherstellen'**
+  String get auditRestore;
+
+  /// Audit log: restore confirm dialog title
+  ///
+  /// In de, this message translates to:
+  /// **'Inhalt wiederherstellen?'**
+  String get auditRestoreTitle;
+
+  /// Audit log: restore confirm dialog message
+  ///
+  /// In de, this message translates to:
+  /// **'Der Inhalt ist danach wieder für alle sichtbar. Die Person wird benachrichtigt.'**
+  String get auditRestoreMessage;
+
+  /// Audit log: snackbar + badge after a successful restore
+  ///
+  /// In de, this message translates to:
+  /// **'Wiederhergestellt'**
+  String get auditRestored;
+
+  /// Audit log: post restored, its location was deleted meanwhile
+  ///
+  /// In de, this message translates to:
+  /// **'Wiederhergestellt, aber ohne Ort (der Ort existiert nicht mehr)'**
+  String get auditRestoredNoLocation;
+
+  /// Audit log: restore returned 404
+  ///
+  /// In de, this message translates to:
+  /// **'Nicht mehr wiederherstellbar: schon wiederhergestellt oder die Frist ist abgelaufen'**
+  String get auditRestoreGone;
+
+  /// Audit log: restore 409 for a comment
+  ///
+  /// In de, this message translates to:
+  /// **'Der Post zu diesem Kommentar existiert nicht mehr. Stell zuerst den Post wieder her.'**
+  String get auditRestoreConflictComment;
+
+  /// Audit log: restore 409 for a story
+  ///
+  /// In de, this message translates to:
+  /// **'Die Story ist inzwischen abgelaufen.'**
+  String get auditRestoreConflictStory;
+
+  /// Audit log: restore 409 for a profile picture
+  ///
+  /// In de, this message translates to:
+  /// **'Die Person hat inzwischen ein neues Profilbild hochgeladen.'**
+  String get auditRestoreConflictPicture;
+
+  /// Audit log: restore 409, generic
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Inhalt kann nicht wiederhergestellt werden.'**
+  String get auditRestoreConflict;
+
+  /// Audit log: restore 403 (rank rule)
+  ///
+  /// In de, this message translates to:
+  /// **'Diese Person darfst du nicht moderieren.'**
+  String get auditRestoreForbidden;
+
+  /// Audit log: restore failed (network etc.)
+  ///
+  /// In de, this message translates to:
+  /// **'Wiederherstellen fehlgeschlagen'**
+  String get auditRestoreFailed;
+
+  /// Audit log filter chip: no filter
+  ///
+  /// In de, this message translates to:
+  /// **'Alle'**
+  String get auditFilterAll;
+
+  /// Audit log filter chip: bans and unbans
+  ///
+  /// In de, this message translates to:
+  /// **'Sperren'**
+  String get auditFilterBans;
+
+  /// Audit log filter chip: removed posts/comments/stories/profile pictures
+  ///
+  /// In de, this message translates to:
+  /// **'Entfernt'**
+  String get auditFilterRemovals;
+
+  /// Audit log filter chip: resolved or dismissed reports
+  ///
+  /// In de, this message translates to:
+  /// **'Meldungen'**
+  String get auditFilterResolved;
+
+  /// Audit log filter chip: role changes
+  ///
+  /// In de, this message translates to:
+  /// **'Rollen'**
+  String get auditFilterRoles;
+
+  /// Audit log filter chip: restored content
+  ///
+  /// In de, this message translates to:
+  /// **'Wiederhergestellt'**
+  String get auditFilterRestored;
+
+  /// Audit log entry: the affected account no longer exists
+  ///
+  /// In de, this message translates to:
+  /// **'gegen gelöschten Account'**
+  String get auditLogDeletedTarget;
 
   /// Button in the user detail screen (admins only) and confirm button of the role sheet
   ///

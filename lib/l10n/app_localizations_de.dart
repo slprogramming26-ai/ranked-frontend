@@ -673,6 +673,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get settingsDarkModeSubtitle => 'Dunkles Erscheinungsbild';
 
   @override
+  String get settingsLanguage => 'Sprache';
+
+  @override
+  String get settingsLanguageSystem => 'Systemsprache';
+
+  @override
+  String get settingsLanguageSystemHint => 'Folgt der Sprache deines Handys';
+
+  @override
   String get settingsSectionProfile => 'PROFIL';
 
   @override
@@ -1106,10 +1115,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get moderationRemoveConfirm => 'Entfernen';
 
   @override
-  String get moderationAuditPlaceholder =>
-      'Hier erscheint bald das Protokoll aller Moderations-Aktionen.';
-
-  @override
   String moderationBanTitle(String username) {
     return '$username sperren';
   }
@@ -1328,6 +1333,82 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get userDetailLogSnapshotLabel => 'Inhalt';
+
+  @override
+  String auditLogAgainst(String username) {
+    return 'gegen $username';
+  }
+
+  @override
+  String get auditEmpty => 'Noch keine Moderations-Aktionen.';
+
+  @override
+  String get auditEmptyFiltered => 'Keine Einträge für diesen Filter.';
+
+  @override
+  String get auditRestore => 'Wiederherstellen';
+
+  @override
+  String get auditRestoreTitle => 'Inhalt wiederherstellen?';
+
+  @override
+  String get auditRestoreMessage =>
+      'Der Inhalt ist danach wieder für alle sichtbar. Die Person wird benachrichtigt.';
+
+  @override
+  String get auditRestored => 'Wiederhergestellt';
+
+  @override
+  String get auditRestoredNoLocation =>
+      'Wiederhergestellt, aber ohne Ort (der Ort existiert nicht mehr)';
+
+  @override
+  String get auditRestoreGone =>
+      'Nicht mehr wiederherstellbar: schon wiederhergestellt oder die Frist ist abgelaufen';
+
+  @override
+  String get auditRestoreConflictComment =>
+      'Der Post zu diesem Kommentar existiert nicht mehr. Stell zuerst den Post wieder her.';
+
+  @override
+  String get auditRestoreConflictStory =>
+      'Die Story ist inzwischen abgelaufen.';
+
+  @override
+  String get auditRestoreConflictPicture =>
+      'Die Person hat inzwischen ein neues Profilbild hochgeladen.';
+
+  @override
+  String get auditRestoreConflict =>
+      'Dieser Inhalt kann nicht wiederhergestellt werden.';
+
+  @override
+  String get auditRestoreForbidden =>
+      'Diese Person darfst du nicht moderieren.';
+
+  @override
+  String get auditRestoreFailed => 'Wiederherstellen fehlgeschlagen';
+
+  @override
+  String get auditFilterAll => 'Alle';
+
+  @override
+  String get auditFilterBans => 'Sperren';
+
+  @override
+  String get auditFilterRemovals => 'Entfernt';
+
+  @override
+  String get auditFilterResolved => 'Meldungen';
+
+  @override
+  String get auditFilterRoles => 'Rollen';
+
+  @override
+  String get auditFilterRestored => 'Wiederhergestellt';
+
+  @override
+  String get auditLogDeletedTarget => 'gegen gelöschten Account';
 
   @override
   String get userDetailChangeRole => 'Rolle ändern';

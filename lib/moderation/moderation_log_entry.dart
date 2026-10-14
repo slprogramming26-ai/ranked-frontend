@@ -17,6 +17,12 @@ enum ModerationActionType {
   const ModerationActionType(this.apiValue);
   final String apiValue;
 
+  /// Die 4 Entfernen-Typen. Nur die kann ein Admin wiederherstellen.
+  bool get isRemoval => switch (this) {
+    deletePost || deleteComment || deleteStory || deleteProfilePicture => true,
+    _ => false,
+  };
+
   static ModerationActionType? fromApi(Object? raw) {
     for (final t in values) {
       if (t.apiValue == raw) return t;
@@ -58,6 +64,10 @@ class ModerationLogEntry {
   /// Bewusst roh, die UI pickt sich raus, was sie braucht.
   final Map<String, dynamic> extra;
 
+  /// Liegt der Inhalt noch im Archiv (nicht wiederhergestellt, Frist nicht
+  /// um)? Kommt vom Backend, nur in GET /admin/actions verlaesslich.
+  final bool restorable;
+
   const ModerationLogEntry({
     required this.id,
     required this.type,
@@ -68,15 +78,31 @@ class ModerationLogEntry {
     this.reason,
     this.contentSnapshot,
     this.extra = const {},
+    this.restorable = false,
   });
+
+  /// Nach erfolgreichem Restore: gleiche Zeile, nur nicht mehr wiederherstellbar.
+  ModerationLogEntry markRestored() => ModerationLogEntry(
+    id: id,
+    type: type,
+    createdAt: createdAt,
+    moderator: moderator,
+    targetUser: targetUser,
+    targetId: targetId,
+    reason: reason,
+    contentSnapshot: contentSnapshot,
+    extra: extra,
+    restorable: false,
+  );
 
   factory ModerationLogEntry.fromJson(Map<String, dynamic> json) {
     final rawModerator = json['moderator'] as Map<String, dynamic>?;
     final rawTarget = json['target_user'] as Map<String, dynamic>?;
+    final type = ModerationActionType.fromApi(json['action']);
 
     return ModerationLogEntry(
       id: json['id'] as int,
-      type: ModerationActionType.fromApi(json['action']),
+      type: type,
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
       moderator: rawModerator == null ? null : ReportedUser.fromJson(rawModerator),
       targetUser: rawTarget == null ? null : ReportedUser.fromJson(rawTarget),
@@ -86,6 +112,9 @@ class ModerationLogEntry {
       // extra ist im Backend Optional -> null wird zur leeren Map,
       // dann muss die UI nicht ueberall auf null pruefen.
       extra: (json['extra'] as Map<String, dynamic>?) ?? const {},
+      // Fehlt das Feld (Backend noch alt), lieber den Button zeigen und
+      // 404/409 als Snackbar melden, als ihn still zu verstecken.
+      restorable: json['restorable'] as bool? ?? (type?.isRemoval ?? false),
     );
   }
 }
