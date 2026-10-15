@@ -1049,8 +1049,128 @@ abstract class AppLocalizations {
   /// Titel der Create-Post-Screen
   ///
   /// In de, this message translates to:
-  /// **'Post erstellen'**
+  /// **'Neuer Post'**
   String get createPostTitle;
+
+  /// Create-Post: Absende-Pille in der AppBar
+  ///
+  /// In de, this message translates to:
+  /// **'Posten'**
+  String get createPostSubmit;
+
+  /// Create-Post: Hint im Titel-Feld
+  ///
+  /// In de, this message translates to:
+  /// **'Titel'**
+  String get createPostTitleHint;
+
+  /// Create-Post: Hint im Text-Feld
+  ///
+  /// In de, this message translates to:
+  /// **'Was gibt\'s Neues?'**
+  String get createPostContentHint;
+
+  /// Create-Post: Tooltip Galerie-Icon
+  ///
+  /// In de, this message translates to:
+  /// **'Aus Galerie wählen'**
+  String get createPostGallery;
+
+  /// Create-Post: Tooltip Kamera-Icon
+  ///
+  /// In de, this message translates to:
+  /// **'Foto aufnehmen'**
+  String get createPostCamera;
+
+  /// Create-Post: Accessibility-Label X am Bild
+  ///
+  /// In de, this message translates to:
+  /// **'Bild entfernen'**
+  String get createPostRemoveImage;
+
+  /// Create-Post: Ueberschrift Kategorie-Chips
+  ///
+  /// In de, this message translates to:
+  /// **'Kategorie'**
+  String get createPostCategory;
+
+  /// Create-Post: Hinweis unter der Kategorie-Ueberschrift
+  ///
+  /// In de, this message translates to:
+  /// **'Optional – zählt für die Kategorie-Rankings'**
+  String get createPostCategoryHint;
+
+  /// Create-Post: Kategorie-Chip (Backend-ID productivity)
+  ///
+  /// In de, this message translates to:
+  /// **'Produktivität'**
+  String get createPostCategoryProductivity;
+
+  /// Create-Post: Kategorie-Chip (Backend-ID creativity)
+  ///
+  /// In de, this message translates to:
+  /// **'Kreativität'**
+  String get createPostCategoryCreativity;
+
+  /// Create-Post: Kategorie-Chip (Backend-ID engagement)
+  ///
+  /// In de, this message translates to:
+  /// **'Engagement'**
+  String get createPostCategoryEngagement;
+
+  /// Create-Post: Standort-Untertitel bei Override
+  ///
+  /// In de, this message translates to:
+  /// **'Nur für diesen Post'**
+  String get createPostLocationOnlyThisPost;
+
+  /// Create-Post: Standort-Untertitel beim Heimatort
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Standort'**
+  String get createPostLocationYours;
+
+  /// Create-Post: Standort-Untertitel ohne Ort
+  ///
+  /// In de, this message translates to:
+  /// **'Optional hinzufügen'**
+  String get createPostLocationAdd;
+
+  /// Create-Post: Standort-Titel ohne Ort
+  ///
+  /// In de, this message translates to:
+  /// **'Kein Standort'**
+  String get createPostLocationNone;
+
+  /// Create-Post: Tooltip X am Standort-Override
+  ///
+  /// In de, this message translates to:
+  /// **'Zurück zu deinem Standort'**
+  String get createPostLocationReset;
+
+  /// Create-Post: Titel im Lade-Dialog beim Posten
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Post geht raus'**
+  String get createPostSendingTitle;
+
+  /// Create-Post: Lade-Dialog Nachricht 1
+  ///
+  /// In de, this message translates to:
+  /// **'Bild wird hochgeladen...'**
+  String get createPostSendingUpload;
+
+  /// Create-Post: Lade-Dialog Nachricht 2
+  ///
+  /// In de, this message translates to:
+  /// **'Post wird erstellt...'**
+  String get createPostSendingCreate;
+
+  /// Create-Post: Lade-Dialog Nachricht 3
+  ///
+  /// In de, this message translates to:
+  /// **'Gleich geschafft...'**
+  String get createPostSendingAlmost;
 
   /// Titel des Location-Picker-Sheets
   ///
@@ -1748,47 +1868,29 @@ abstract class AppLocalizations {
   /// **'Neue Story'**
   String get storyCreateTitle;
 
-  /// Hero text in create screen
+  /// Hint in the viewfinder area of the create screen
   ///
   /// In de, this message translates to:
-  /// **'Teile deinen Moment'**
-  String get storyShareMoment;
+  /// **'Foto aufnehmen oder aus der Galerie wählen'**
+  String get storyPickHint;
 
-  /// Description text in create screen
-  ///
-  /// In de, this message translates to:
-  /// **'Erstelle in Sekunden eine Story für deine Follower.'**
-  String get storyCreateDescription;
-
-  /// Badge text above button row
+  /// Small hint below the pick hint
   ///
   /// In de, this message translates to:
   /// **'24H sichtbar'**
   String get storyVisibleTime;
 
-  /// Label of gallery source card
+  /// Label below the gallery button
   ///
   /// In de, this message translates to:
   /// **'Galerie'**
   String get storySourceGallery;
 
-  /// Subtitle of gallery source card
-  ///
-  /// In de, this message translates to:
-  /// **'Bild wählen'**
-  String get storySourceGallerySubtitle;
-
-  /// Label of camera source card
+  /// Accessibility label of the shutter button
   ///
   /// In de, this message translates to:
   /// **'Kamera'**
   String get storySourceCamera;
-
-  /// Subtitle of camera source card
-  ///
-  /// In de, this message translates to:
-  /// **'Live aufnehmen'**
-  String get storySourceCameraSubtitle;
 
   /// Button text while uploading
   ///
@@ -1799,8 +1901,14 @@ abstract class AppLocalizations {
   /// Button text for sharing story
   ///
   /// In de, this message translates to:
-  /// **'Story teilen'**
+  /// **'Teilen'**
   String get storyShareButton;
+
+  /// Header of the story preview stage
+  ///
+  /// In de, this message translates to:
+  /// **'Vorschau'**
+  String get storyPreviewTitle;
 
   /// Title of the suspended screen
   ///

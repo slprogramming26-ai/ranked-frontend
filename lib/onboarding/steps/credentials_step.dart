@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
+import '../onboarding_text_field.dart';
 
 class CredentialsStep extends StatefulWidget {
   // Die Controller leben im Flow-State (collect-first): Der Flow liest die
@@ -199,54 +200,29 @@ class _CredentialsStepState extends State<CredentialsStep> {
     Widget? suffix,
     TextInputType? keyboardType,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscure,
-        keyboardType: keyboardType,
-        style: TextStyle(
-          color: AppColors.onSurface,
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
-        ),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
-            fontWeight: FontWeight.w500,
-          ),
-          prefixIcon: icon != null
-              ? Icon(icon,
-                  color: AppColors.primary.withValues(alpha: 0.6), size: 20)
-              : prefixText != null
-                  ? Padding(
-                      padding: const EdgeInsets.only(left: 16, right: 8),
-                      child: Text(
-                        prefixText,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 18,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    )
-                  : null,
-          prefixIconConstraints: const BoxConstraints(minWidth: 48),
-          suffixIcon: suffix,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          filled: true,
-          fillColor: Colors.transparent,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        ),
-      ),
+    // Optik kommt komplett aus OnboardingTextField (gleich wie das Bio-Feld),
+    // hier wird nur noch das Prefix (Icon oder "@") gebaut.
+    return OnboardingTextField(
+      controller: controller,
+      hint: hint,
+      obscure: obscure,
+      keyboardType: keyboardType,
+      suffix: suffix,
+      prefix: icon != null
+          ? Icon(icon, color: AppColors.primary.withValues(alpha: 0.6), size: 20)
+          : prefixText != null
+          ? Padding(
+              padding: const EdgeInsets.only(left: 16, right: 8),
+              child: Text(
+                prefixText,
+                style: GoogleFonts.plusJakartaSans(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 18,
+                  color: AppColors.primary,
+                ),
+              ),
+            )
+          : null,
     );
   }
 }

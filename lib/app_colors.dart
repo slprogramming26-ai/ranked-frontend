@@ -24,14 +24,17 @@ abstract class AppColors {
 
   static Color get surface =>
       _p(const Color(0xFFFFF4F3), const Color(0xFF14100F));
+  // surface + Low bleiben rosa (Identitaet). Die hoeheren Ebenen (Chips,
+  // Avatare, Eingabefelder) sind entsaettigt-warm, sonst stapelt sich Rosa
+  // auf Rosa und wirkt mauve.
   static Color get surfaceContainer =>
-      _p(const Color(0xFFFFE1E1), const Color(0xFF2A211F));
+      _p(const Color(0xFFF8E8E6), const Color(0xFF26211F));
   static Color get surfaceContainerLow =>
       _p(const Color(0xFFFFEDEC), const Color(0xFF1E1817));
   static Color get surfaceContainerHigh =>
-      _p(const Color(0xFFFFDADA), const Color(0xFF332825));
+      _p(const Color(0xFFF3E3E1), const Color(0xFF2E2826));
   static Color get surfaceContainerHighest =>
-      _p(const Color(0xFFFFD2D3), const Color(0xFF3D302C));
+      _p(const Color(0xFFEEDDDB), const Color(0xFF37302E));
 
   // Text/Icons/Linien bewusst neutral (minimal warm), damit Farbe nur fuer
   // Aktionen und Brand-Momente bleibt (wie Insta/TikTok).
@@ -54,10 +57,8 @@ abstract class AppColors {
   static Color get secondaryFixed =>
       _p(const Color(0xFFDDE4E6), const Color(0xFF3A4042));
 
-  // Floating-Nav-Bar (Glas-Optik): Light bleibt weiss, Dark wird dunkles Glas.
-  // Opacity wird an der Aufrufstelle draufgelegt.
-  static Color get navGlass =>
-      _p(Colors.white, const Color(0xFF241C1B));
-  static Color get navBorder =>
-      _p(Colors.white, const Color(0xFF3D302C));
-}
+  // Eingabefelder: Light weiss (hebt sich vom rosa Hintergrund ab), Dark eine
+  // Stufe heller als der Hintergrund. Vorher hart Colors.white -> im Dark
+  // Mode war helle Schrift auf weissem Feld unlesbar.
+  static Color get inputFill =>
+      _p(Colors.white, const Color(0xFF241C1B));}

@@ -10,7 +10,7 @@ import '../profile.dart';
 import 'package:ranked/l10n/l10n.dart';
 import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
-import 'ranking_widgets.dart' show GradientButton, PopIn;
+import 'ranking_widgets.dart' show PrimaryButton, PopIn;
 
 // ─── RankingPages: Tinder-Style Swipe ─────────────────────────────────────────
 class RankingPages extends StatefulWidget {
@@ -94,7 +94,7 @@ class _RankingPagesState extends State<RankingPages> {
     // Punkte/Streak haben sich durch die Session geaendert -> forceRefresh.
     Provider.of<ProfileProvider>(context, listen: false)
         .fetchUser(forceRefresh: true);
-    Streak.markRankedToday();
+    provider.markRankedToday();
 
     Navigator.pushReplacement(
       context,
@@ -259,15 +259,9 @@ class _SessionHeader extends StatelessWidget {
                   margin:
                       EdgeInsets.only(right: i == totalCards - 1 ? 0 : 6),
                   decoration: BoxDecoration(
-                    gradient: done
-                        ? LinearGradient(
-                            colors: [
-                              AppColors.primary,
-                              AppColors.primaryContainer,
-                            ],
-                          )
-                        : null,
-                    color: done ? null : AppColors.surfaceContainerHighest,
+                    color: done
+                        ? AppColors.primary
+                        : AppColors.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -826,7 +820,7 @@ class _SwipeResultScreen extends StatelessWidget {
                 dy: 0,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 40),
-                  child: GradientButton(
+                  child: PrimaryButton(
                     label: context.l10n.rankingResultDone,
                     isLoading: false,
                     onPressed: () => Navigator.pop(context),
@@ -945,7 +939,7 @@ class _SwipeErrorScreen extends StatelessWidget {
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(bottom: 40),
-                child: GradientButton(
+                child: PrimaryButton(
                   label: context.l10n.rankingBackButton,
                   isLoading: false,
                   onPressed: () => Navigator.pop(context),

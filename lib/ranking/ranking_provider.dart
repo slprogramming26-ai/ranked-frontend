@@ -16,16 +16,38 @@ class RankingProvider extends ChangeNotifier {
   Map<String, dynamic>? _leaderboardMe;
   bool _hasFetchedLeaderboard = false;
   bool _isLoadingLeaderboard = false;
+  // "Heute schon gerankt?" — eine Quelle fuer Leaderboard-Button UND die
+  // Flamme am Ranking-Tab. Startet mit true, damit vor dem Laden keine Flamme
+  // kurz aufblitzt.
+  bool _rankedToday = true;
+
+  RankingProvider() {
+    loadRankedToday();
+  }
 
   bool get isLoading => _isLoading;
   List<Map<String, dynamic>> get leaderboardData => _leaderboardData;
   Map<String, dynamic>? get leaderboardMe => _leaderboardMe;
   bool get hasFetchedLeaderboard => _hasFetchedLeaderboard;
   bool get isLoadingLeaderboard => _isLoadingLeaderboard;
+  bool get rankedToday => _rankedToday;
 
-  Future<bool> getDidRanking() async {
+  // Liest den Stand aus SharedPreferences. Billig, darf oft aufgerufen werden
+  // (z.B. bei jedem Tab-Wechsel) — so kippt die Flamme auch nach Mitternacht.
+  Future<void> loadRankedToday() async {
     final prefs = await SharedPreferences.getInstance();
-    return Streak.didActivityToday(prefs);
+    final value = Streak.didActivityToday(prefs);
+    if (value == _rankedToday) return; // nichts geaendert -> kein Rebuild
+    _rankedToday = value;
+    notifyListeners();
+  }
+
+  // Nach einer abgeschlossenen Swipe-Session: speichern + sofort melden,
+  // damit Flamme und Button ohne Neuladen umspringen.
+  Future<void> markRankedToday() async {
+    await Streak.markRankedToday();
+    _rankedToday = true;
+    notifyListeners();
   }
 
   void trueLoading() {

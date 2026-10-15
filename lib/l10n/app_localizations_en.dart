@@ -525,7 +525,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storyRowYourPulse => 'Your Pulse';
 
   @override
-  String get createPostTitle => 'Create Post';
+  String get createPostTitle => 'New post';
+
+  @override
+  String get createPostSubmit => 'Post';
+
+  @override
+  String get createPostTitleHint => 'Title';
+
+  @override
+  String get createPostContentHint => 'What\'s new?';
+
+  @override
+  String get createPostGallery => 'Choose from gallery';
+
+  @override
+  String get createPostCamera => 'Take photo';
+
+  @override
+  String get createPostRemoveImage => 'Remove image';
+
+  @override
+  String get createPostCategory => 'Category';
+
+  @override
+  String get createPostCategoryHint =>
+      'Optional – counts toward category rankings';
+
+  @override
+  String get createPostCategoryProductivity => 'Productivity';
+
+  @override
+  String get createPostCategoryCreativity => 'Creativity';
+
+  @override
+  String get createPostCategoryEngagement => 'Engagement';
+
+  @override
+  String get createPostLocationOnlyThisPost => 'Only for this post';
+
+  @override
+  String get createPostLocationYours => 'Your location';
+
+  @override
+  String get createPostLocationAdd => 'Add (optional)';
+
+  @override
+  String get createPostLocationNone => 'No location';
+
+  @override
+  String get createPostLocationReset => 'Back to your location';
+
+  @override
+  String get createPostSendingTitle => 'Sending your post';
+
+  @override
+  String get createPostSendingUpload => 'Uploading image...';
+
+  @override
+  String get createPostSendingCreate => 'Creating your post...';
+
+  @override
+  String get createPostSendingAlmost => 'Almost there...';
 
   @override
   String get locationPickerTitle => 'Choose location';
@@ -905,11 +966,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storyCreateTitle => 'New story';
 
   @override
-  String get storyShareMoment => 'Share your moment';
-
-  @override
-  String get storyCreateDescription =>
-      'Create a story for your followers in seconds.';
+  String get storyPickHint => 'Take a photo or choose one from your gallery';
 
   @override
   String get storyVisibleTime => 'Visible for 24H';
@@ -918,19 +975,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storySourceGallery => 'Gallery';
 
   @override
-  String get storySourceGallerySubtitle => 'Choose image';
-
-  @override
   String get storySourceCamera => 'Camera';
-
-  @override
-  String get storySourceCameraSubtitle => 'Take photo';
 
   @override
   String get storyUploadingButton => 'Sharing...';
 
   @override
-  String get storyShareButton => 'Share story';
+  String get storyShareButton => 'Share';
+
+  @override
+  String get storyPreviewTitle => 'Preview';
 
   @override
   String get suspendedTitle => 'Account suspended';

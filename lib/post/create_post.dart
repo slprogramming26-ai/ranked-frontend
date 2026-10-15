@@ -6,8 +6,8 @@ import '../app_colors.dart';
 import '../l10n/l10n.dart';
 import '../app_loading.dart';
 import '../location_picker.dart';
+import '../net_image.dart';
 import '../profile.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../image_sanitizer.dart';
@@ -23,6 +23,8 @@ class CreatePost extends StatefulWidget {
 class _CreatePostState extends State<CreatePost> {
   late TextEditingController titleController;
   late TextEditingController contentController;
+  // Damit ein Tipp auf die freie Flaeche der Composer-Karte ins Textfeld geht.
+  final _contentFocus = FocusNode();
   late final AppDatabase _db;
   File? _image;
 
@@ -65,6 +67,7 @@ class _CreatePostState extends State<CreatePost> {
   void dispose() {
     titleController.dispose();
     contentController.dispose();
+    _contentFocus.dispose();
     _db.deletePostDraft();
     super.dispose();
   }
@@ -132,730 +135,487 @@ class _CreatePostState extends State<CreatePost> {
     'Engagement': false,
   };
 
+  // Radio-Verhalten: hoechstens eine Kategorie. Antippen der aktiven waehlt
+  // sie ab, Antippen einer anderen schaltet direkt um.
   void _toggleIcon(String name) {
-    final isActive = iconActivated[name] ?? false;
-    final activeCount = iconActivated.values.where((v) => v).length;
-
-    if (activeCount >= 1 && !isActive) return;
-
+    final wasActive = iconActivated[name] ?? false;
     setState(() {
-      iconActivated[name] = !isActive;
+      iconActivated.updateAll((_, _) => false);
+      iconActivated[name] = !wasActive;
     });
   }
 
-  double _getOpacityForTag(String title) {
-    bool isActive = iconActivated[title] ?? false;
-    bool anyTagActive = iconActivated.values.any((isActive) => isActive);
-    if (isActive) return 1.0;
-    if (anyTagActive) return 0.5;
-    return 1.0;
-  }
+  // Unveraendert aus dem frueheren onPressed des Post-Buttons herausgezogen
+  // (nur verschoben, damit die AppBar lesbar bleibt).
+  Future<void> _submit() async {
+    try {
+      String? imageUrl;
+      AppLoadingDialog.show(
+        context,
+        title: context.l10n.createPostSendingTitle,
+        messages: [
+          context.l10n.createPostSendingUpload,
+          context.l10n.createPostSendingCreate,
+          context.l10n.createPostSendingAlmost,
+        ],
+        trailing: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (i) => _Dot(delay: i * 200)),
+        ),
+      );
+      if (_image != null) {
+        // Metadaten raus + Komprimierung im Hintergrund-Isolate –
+        // UI/Dialog bleibt flüssig. compute() schickt NUR den
+        // Record ins Isolate, keine Closure die den Widget-Baum
+        // einfängt (sonst „unsendable").
+        final cleanPath = await compute(sanitizeImageFile, (
+          path: _image!.path,
+          maxSize: 1080,
+          quality: 85,
+        ));
 
-  static const _kPremiumShadow = [
-    BoxShadow(
-      color: Color(0x0DB41B00),
-      blurRadius: 30,
-      offset: Offset(0, 10),
-      spreadRadius: -5,
-    ),
-    BoxShadow(
-      color: Color(0x05000000),
-      blurRadius: 15,
-      offset: Offset(0, 4),
-      spreadRadius: -5,
-    ),
-  ];
+        if (!mounted) return;
+
+        // Kein Fallback auf die Originaldatei: die trägt noch
+        // GPS/Kameradaten. Lieber den Post abbrechen als den
+        // Standort des Users hochladen.
+        if (cleanPath == null) {
+          Navigator.pop(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.createPostImageProcessFailed)),
+          );
+
+          return;
+        }
+
+        imageUrl = await PostApiService.uploadPostImage(File(cleanPath));
+
+        if (!mounted) return;
+
+        if (imageUrl == null) {
+          Navigator.pop(context);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.createPostImageUploadFailed)),
+          );
+
+          return;
+        }
+      }
+
+      final success = await PostApiService.createPost(
+        titleController.text,
+        contentController.text,
+        imageUrl,
+        iconActivated.entries
+            .where((e) => e.value)
+            .map((e) => e.key)
+            .firstOrNull
+            ?.toLowerCase(),
+        locationId: _overrideLocation?['id'] as int?,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      if (success) {
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.createPostFailed)));
+      }
+    } catch (_) {
+      // Unerwarteter Fehler: Dialog schließen, damit die UI nicht
+      // hängen bleibt, und dem User kurz Bescheid geben.
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.l10n.createPostSomethingWrong)),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFAF9),
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white.withValues(alpha: 0.6),
+        backgroundColor: AppColors.surface,
         elevation: 0,
+        scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(
-            height: 1,
-            color: AppColors.outlineVariant.withValues(alpha: 0.1),
-          ),
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 8),
-          child: IconButton(
-            icon: Icon(
-              Icons.close,
-              color: AppColors.onSurface.withValues(alpha: 0.7),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.close, color: AppColors.onSurface),
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           context.l10n.createPostTitle,
-          style: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w800,
-            color: AppColors.primary,
-            fontSize: 20,
-            letterSpacing: -0.5,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            color: AppColors.onSurface,
           ),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 16.0, top: 8, bottom: 8),
-            child: ElevatedButton(
-              onPressed: () async {
-                try {
-                  String? imageUrl;
-                  AppLoadingDialog.show(
-                    context,
-                    title: 'Sending your Pulse',
-                    messages: const [
-                      'Uploading media...',
-                      'Creating your post...',
-                      'Almost there...',
-                    ],
-                    trailing: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(3, (i) => _Dot(delay: i * 200)),
-                    ),
-                  );
-                  if (_image != null) {
-                    // Metadaten raus + Komprimierung im Hintergrund-Isolate –
-                    // UI/Dialog bleibt flüssig. compute() schickt NUR den
-                    // Record ins Isolate, keine Closure die den Widget-Baum
-                    // einfängt (sonst „unsendable").
-                    final cleanPath = await compute(
-                      sanitizeImageFile,
-                      (path: _image!.path, maxSize: 1080, quality: 85),
-                    );
-
-                    if (!context.mounted) return;
-
-                    // Kein Fallback auf die Originaldatei: die trägt noch
-                    // GPS/Kameradaten. Lieber den Post abbrechen als den
-                    // Standort des Users hochladen.
-                    if (cleanPath == null) {
-                      Navigator.pop(context);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(context.l10n.createPostImageProcessFailed),
-                        ),
-                      );
-
-                      return;
-                    }
-
-                    imageUrl = await PostApiService.uploadPostImage(
-                      File(cleanPath),
-                    );
-
-                    if (!context.mounted) return;
-
-                    if (imageUrl == null) {
-                      Navigator.pop(context);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(context.l10n.createPostImageUploadFailed),
-                        ),
-                      );
-
-                      return;
-                    }
-                  }
-
-                  final success = await PostApiService.createPost(
-                    titleController.text,
-                    contentController.text,
-                    imageUrl,
-                    iconActivated.entries
-                        .where((e) => e.value)
-                        .map((e) => e.key)
-                        .firstOrNull
-                        ?.toLowerCase(),
-                    locationId: _overrideLocation?['id'] as int?,
-                  );
-
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
-
-                  if (success) {
-                    Navigator.pop(context);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(context.l10n.createPostFailed),
-                      ),
-                    );
-                  }
-                } catch (_) {
-                  // Unerwarteter Fehler: Dialog schließen, damit die UI nicht
-                  // hängen bleibt, und dem User kurz Bescheid geben.
-                  if (!context.mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(context.l10n.createPostSomethingWrong)),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: const StadiumBorder(),
-                elevation: 4,
-                shadowColor: AppColors.primary.withValues(alpha: 0.3),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 0,
-                ),
-              ),
-              child: Text(
-                'Post',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+            padding: const EdgeInsets.only(right: 12),
+            child: _PostPill(
+              label: context.l10n.createPostSubmit,
+              onTap: _submit,
+            ),
+          ),
+        ],
+      ),
+      // SliverFillRemaining(hasScrollBody: false): der Inhalt ist MINDESTENS
+      // so hoch wie der sichtbare Bereich (-> Expanded darf den Rest fuellen)
+      // und darf laenger werden (-> scrollt dann ganz normal). So bleibt bei
+      // einem leeren Post keine leere untere Haelfte stehen.
+      body: CustomScrollView(
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _buildComposer()),
+                  const SizedBox(height: 12),
+                  _buildCategorySection(),
+                  const SizedBox(height: 12),
+                  _buildLocationRow(),
+                ],
               ),
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. MEDIA UPLOAD AREA
-            AspectRatio(
-              aspectRatio: 4 / 5,
-              child: _image == null
-                  ? CustomPaint(
-                      painter: _DashedBorderPainter(
-                        color: AppColors.outlineVariant.withValues(alpha: 0.4),
-                        strokeWidth: 2,
-                        borderRadius: 28,
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.02),
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 96,
-                              height: 96,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(24),
-                                boxShadow: _kPremiumShadow,
-                              ),
-                              child: Icon(
-                                Icons.add_a_photo_outlined,
-                                color: AppColors.primary,
-                                size: 44,
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            Text(
-                              'Drop your Pulse',
-                              style: GoogleFonts.plusJakartaSans(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 22,
-                                letterSpacing: -0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 48,
-                              ),
-                              child: Text(
-                                'Share a photo or video to start climbing the rankings.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: AppColors.onSurfaceVariant.withValues(
-                                    alpha: 0.8,
-                                  ),
-                                  fontSize: 13,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 32),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                GestureDetector(
-                                  onTap: pickImageFromGallery,
-                                  child: _buildMediaButton(
-                                    Icons.image_outlined,
-                                    'Library',
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                GestureDetector(
-                                  onTap: pickImageFromCamera,
-                                  child: _buildMediaButton(
-                                    Icons.videocam_outlined,
-                                    'Camera',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(28),
-                      child: Image.file(
-                        _image!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: double.infinity,
-                      ),
-                    ),
-            ),
+    );
+  }
 
-            const SizedBox(height: 24),
+  // Karte im Stil der Text-Posts im Feed (flach, surfaceContainerLow, r16).
+  // Material statt Container mit Farbe: sonst verdeckt die Farbe den
+  // InkWell-Ripple (z.B. beim Antippen der Standort-Karte).
+  Widget _card({required Widget child}) {
+    return Material(
+      color: AppColors.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(16),
+      clipBehavior: Clip.antiAlias,
+      child: child,
+    );
+  }
 
-            // 2. CAPTION CARD
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: AppColors.outlineVariant.withValues(alpha: 0.1),
-                ),
-                boxShadow: _kPremiumShadow,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceContainerHigh,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.08),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              Icons.person,
-                              color: AppColors.onSurfaceVariant,
-                              size: 24,
-                            ),
-                          ),
-                          Positioned(
-                            bottom: -2,
-                            right: -2,
-                            child: Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 14),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Ich',
-                            style: GoogleFonts.plusJakartaSans(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              height: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Creator',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurfaceVariant.withValues(
-                                alpha: 0.6,
-                              ),
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: titleController,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Post title...',
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      hintStyle: TextStyle(
-                        color: AppColors.outlineVariant.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  TextField(
-                    controller: contentController,
-                    maxLines: 5,
-                    onChanged: (_) => setState(() {}),
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: AppColors.onSurface,
-                      height: 1.55,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Tell your story...',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      hintStyle: TextStyle(
-                        color: AppColors.outlineVariant.withValues(alpha: 0.7),
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Divider(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.15),
-                    height: 1,
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      _buildCaptionAction(Icons.alternate_email),
-                      const SizedBox(width: 20),
-                      _buildCaptionAction(Icons.tag),
-                      const SizedBox(width: 20),
-                      _buildCaptionAction(Icons.mood_outlined),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${contentController.text.length}/2200',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.outlineVariant,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+  // Kleines getoentes Icon-Badge vor Kategorie/Standort -> Farbakzent,
+  // ohne die Flaechen selbst einzufaerben.
+  Widget _sectionIcon(IconData icon) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 18, color: AppColors.primary),
+    );
+  }
 
-            const SizedBox(height: 32),
+  // Threads/X-Stil: Avatar links, rechts daneben Name, Felder und Anhang.
+  // Die Karte fuellt den freien Platz; unten sitzt die Medien-Toolbar.
+  Widget _buildComposer() {
+    // select -> nur neu bauen, wenn sich Bild oder Name aendern.
+    final picUrl = context.select<ProfileProvider, String?>(
+      (p) => p.userdata['profile_picture_url']?.toString(),
+    );
+    final username = context.select<ProfileProvider, String>(
+      (p) => p.userdata['username']?.toString() ?? '',
+    );
+    final image = _image;
 
-            // 3. TAGS SECTION
-            Row(
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.bolt, color: AppColors.primary, size: 20),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Tag your Pulse',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                    letterSpacing: -0.5,
+                _ComposerAvatar(picUrl: picUrl, username: username),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        username,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      TextField(
+                        controller: titleController,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                        decoration: _bareInput(
+                          context.l10n.createPostTitleHint,
+                        ),
+                      ),
+                      TextField(
+                        controller: contentController,
+                        focusNode: _contentFocus,
+                        // maxLines null -> Feld waechst mit dem Text mit, gescrollt
+                        // wird der ganze Screen (wie bei Threads/X).
+                        minLines: 1,
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: TextStyle(
+                          fontSize: 15,
+                          height: 1.45,
+                          color: AppColors.onSurface,
+                        ),
+                        decoration: _bareInput(
+                          context.l10n.createPostContentHint,
+                        ),
+                      ),
+                      if (image != null) ...[
+                        const SizedBox(height: 10),
+                        _buildAttachedImage(image),
+                      ],
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 2, bottom: 16),
-              child: Text(
-                'Categorize your post to compete in specific leaderboards.',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
+          ),
+          // Freie Flaeche der Karte: Tippen setzt den Cursor ins Textfeld
+          // (sonst fuehlt sich der leere Bereich "tot" an).
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _contentFocus.requestFocus,
+              child: const SizedBox(width: double.infinity, height: 24),
+            ),
+          ),
+          // Medien-Toolbar unten in der Karte, Icons in primary (Aktion).
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.photo_library_outlined),
+                  color: AppColors.primary,
+                  tooltip: context.l10n.createPostGallery,
+                  onPressed: pickImageFromGallery,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.photo_camera_outlined),
+                  color: AppColors.primary,
+                  tooltip: context.l10n.createPostCamera,
+                  onPressed: pickImageFromCamera,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Randloses Eingabefeld: kein Rahmen, kein Fuell-Hintergrund, Hint grau.
+  InputDecoration _bareInput(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: AppColors.onSurfaceVariant),
+      border: InputBorder.none,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(vertical: 6),
+    );
+  }
+
+  // Angehaengtes Bild in Originalproportion (max. 420 hoch, sonst cover),
+  // oben rechts ein X zum Entfernen.
+  Widget _buildAttachedImage(File image) {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 420),
+            child: Image.file(image, width: double.infinity, fit: BoxFit.cover),
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 8,
+          child: Material(
+            color: Colors.black.withValues(alpha: 0.55),
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => setState(() => _image = null),
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Icon(
+                  Icons.close,
+                  size: 18,
+                  color: Colors.white,
+                  semanticLabel: context.l10n.createPostRemoveImage,
                 ),
               ),
             ),
-            _buildCategoryItem(
-              Icons.rocket_launch_outlined,
-              'Productivity',
-              'Climb the efficiency ladder',
-            ),
-            _buildCategoryItem(
-              Icons.palette_outlined,
-              'Creativity',
-              'Express the inner vision',
-            ),
-            _buildCategoryItem(
-              Icons.forum_outlined,
-              'Engagement',
-              'Drive the conversation',
-            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-            const SizedBox(height: 24),
+  // Kategorie als Chip-Reihe: Ueberschrift + kurzer Hinweis, darunter die
+  // drei Chips. Die Map-Keys ('Productivity' ...) sind die IDs fuers Backend
+  // und den Entwurf -> nur die ANZEIGE wird uebersetzt.
+  Widget _buildCategorySection() {
+    final l10n = context.l10n;
+    final categories = [
+      (
+        'Productivity',
+        Icons.rocket_launch_outlined,
+        l10n.createPostCategoryProductivity,
+      ),
+      ('Creativity', Icons.palette_outlined, l10n.createPostCategoryCreativity),
+      ('Engagement', Icons.forum_outlined, l10n.createPostCategoryEngagement),
+    ];
 
-            // 4. LOCATION CARD
-            _buildLocationCard(),
-
-            const SizedBox(height: 32),
+    return _card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _sectionIcon(Icons.local_offer_outlined),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.createPostCategory,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        l10n.createPostCategoryHint,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final (id, icon, label) in categories)
+                  _CategoryChip(
+                    icon: icon,
+                    label: label,
+                    active: iconActivated[id] ?? false,
+                    onTap: () => _toggleIcon(id),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLocationCard() {
+  // Standort als antippbare Karte (oeffnet den Location-Picker).
+  Widget _buildLocationRow() {
+    final l10n = context.l10n;
     final override = _overrideLocation;
     final String subtitle;
     if (override != null) {
-      subtitle = 'Nur für diesen Post';
+      subtitle = l10n.createPostLocationOnlyThisPost;
     } else if (_defaultLocationName != null) {
-      subtitle = 'Dein Standort';
+      subtitle = l10n.createPostLocationYours;
     } else {
-      subtitle = 'Optional hinzufügen';
+      subtitle = l10n.createPostLocationAdd;
     }
     final title =
-        override?['name'] as String? ?? _defaultLocationName ?? 'Kein Standort';
+        override?['name'] as String? ??
+        _defaultLocationName ??
+        l10n.createPostLocationNone;
 
-    return GestureDetector(
-      onTap: _pickLocation,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.1),
-          ),
-          boxShadow: _kPremiumShadow,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.location_on_outlined,
-                color: AppColors.onSurfaceVariant,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (override != null)
-              // Override zuruecknehmen -> Post erbt wieder den Heimatort.
-              IconButton(
-                icon: Icon(
-                  Icons.close,
-                  size: 20,
-                  color: AppColors.onSurfaceVariant,
-                ),
-                tooltip: 'Zurück zu deinem Standort',
-                onPressed: () => setState(() => _overrideLocation = null),
-              )
-            else
-              Icon(
-                Icons.chevron_right,
-                color: AppColors.onSurfaceVariant,
-                size: 22,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCaptionAction(IconData icon) {
-    return Icon(
-      icon,
-      color: AppColors.onSurfaceVariant.withValues(alpha: 0.7),
-      size: 20,
-    );
-  }
-
-  Widget _buildMediaButton(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: AppColors.onSurface),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: GoogleFonts.plusJakartaSans(
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryItem(IconData icon, String title, String subtitle) {
-    bool isActive = iconActivated[title] ?? false;
-
-    return GestureDetector(
-      onTap: () => _toggleIcon(title),
-      child: AnimatedOpacity(
-        opacity: _getOpacityForTag(title),
-        duration: const Duration(milliseconds: 250),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: isActive
-                  ? AppColors.primary.withValues(alpha: 0.25)
-                  : AppColors.outlineVariant.withValues(alpha: 0.12),
-            ),
-            boxShadow: isActive ? _kPremiumShadow : [],
-          ),
+    return _card(
+      child: InkWell(
+        onTap: _pickLocation,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : AppColors.surfaceContainerHigh,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(icon, color: AppColors.primary, size: 22),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.plusJakartaSans(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                      color: isActive ? AppColors.primary : AppColors.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return RotationTransition(
-                    turns: Tween<double>(
-                      begin: -0.25,
-                      end: 0.0,
-                    ).animate(animation),
-                    child: FadeTransition(opacity: animation, child: child),
-                  );
-                },
-                child: isActive
-                    ? Icon(
-                        Icons.check_circle_rounded,
-                        key: const ValueKey('checkIcon'),
-                        color: AppColors.primary,
-                        size: 26,
-                      )
-                    : Icon(
-                        Icons.add_circle_outline_rounded,
-                        key: const ValueKey('addIcon'),
-                        color: AppColors.outlineVariant,
-                        size: 26,
+              _sectionIcon(Icons.location_on_outlined),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
                       ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              if (override != null)
+                // Override zuruecknehmen -> Post erbt wieder den Heimatort.
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  color: AppColors.onSurfaceVariant,
+                  tooltip: l10n.createPostLocationReset,
+                  onPressed: () => setState(() => _overrideLocation = null),
+                )
+              else
+                // Gleiche Breite wie der IconButton -> Text springt nicht.
+                SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: Icon(
+                    Icons.chevron_right,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
             ],
           ),
         ),
@@ -864,53 +624,140 @@ class _CreatePostState extends State<CreatePost> {
   }
 }
 
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double borderRadius;
+/// Kategorie-Chip im Stil der Hype-Pille: aktiv = solid primary + weiss,
+/// inaktiv = transparent mit outlineVariant-Rand. Rand ist IMMER da (aktiv in
+/// primary), damit der Chip beim Umschalten nicht die Groesse aendert.
+class _CategoryChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
 
-  const _DashedBorderPainter({
-    required this.color,
-    required this.strokeWidth,
-    required this.borderRadius,
+  const _CategoryChip({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
   });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    const dashWidth = 10.0;
-    const dashSpace = 7.0;
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            strokeWidth / 2,
-            strokeWidth / 2,
-            size.width - strokeWidth,
-            size.height - strokeWidth,
+  Widget build(BuildContext context) {
+    final fg = active ? Colors.white : AppColors.onSurface;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: active ? AppColors.primary : AppColors.outlineVariant,
           ),
-          Radius.circular(borderRadius),
         ),
-      );
-
-    for (final metric in path.computeMetrics()) {
-      double distance = 0;
-      while (distance < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(distance, distance + dashWidth),
-          paint,
-        );
-        distance += dashWidth + dashSpace;
-      }
-    }
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: active ? Colors.white : AppColors.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+}
+
+/// Kompakte "Posten"-Pille in der AppBar (solid primary, kein Schatten) –
+/// gleiche Form wie die Teilen-Pille in der Story-Vorschau.
+class _PostPill extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+
+  const _PostPill({required this.label, required this.onTap});
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    return Center(
+      child: Material(
+        color: AppColors.primary,
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Eigener Avatar im Composer: abgerundetes Quadrat wie in der Story-Reihe,
+/// Fallback = erster Buchstabe des Namens.
+class _ComposerAvatar extends StatelessWidget {
+  final String? picUrl;
+  final String username;
+
+  const _ComposerAvatar({required this.picUrl, required this.username});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = picUrl;
+    final hasPic = url != null && url.isNotEmpty && url != 'null';
+    final letter = username.isNotEmpty ? username[0].toUpperCase() : '?';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: hasPic
+            ? Image(
+                image: netImage(context, url, logicalWidth: 40),
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _fallback(letter),
+              )
+            : _fallback(letter),
+      ),
+    );
+  }
+
+  Widget _fallback(String letter) {
+    return Container(
+      color: AppColors.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: Text(
+        letter,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+          color: AppColors.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
 }
 
 class _Dot extends StatefulWidget {
@@ -953,7 +800,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) => Container(
+      builder: (_, _) => Container(
         margin: const EdgeInsets.symmetric(horizontal: 3),
         transform: Matrix4.translationValues(0, _anim.value, 0),
         width: 8,

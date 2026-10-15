@@ -675,9 +675,89 @@
   "@storyRowYourPulse": {
     "description": "Label für den Button zum Erstellen einer Story"
   },
-  "createPostTitle": "Post erstellen",
+  "createPostTitle": "Neuer Post",
   "@createPostTitle": {
     "description": "Titel der Create-Post-Screen"
+  },
+  "createPostSubmit": "Posten",
+  "@createPostSubmit": {
+    "description": "Create-Post: Absende-Pille in der AppBar"
+  },
+  "createPostTitleHint": "Titel",
+  "@createPostTitleHint": {
+    "description": "Create-Post: Hint im Titel-Feld"
+  },
+  "createPostContentHint": "Was gibt's Neues?",
+  "@createPostContentHint": {
+    "description": "Create-Post: Hint im Text-Feld"
+  },
+  "createPostGallery": "Aus Galerie wählen",
+  "@createPostGallery": {
+    "description": "Create-Post: Tooltip Galerie-Icon"
+  },
+  "createPostCamera": "Foto aufnehmen",
+  "@createPostCamera": {
+    "description": "Create-Post: Tooltip Kamera-Icon"
+  },
+  "createPostRemoveImage": "Bild entfernen",
+  "@createPostRemoveImage": {
+    "description": "Create-Post: Accessibility-Label X am Bild"
+  },
+  "createPostCategory": "Kategorie",
+  "@createPostCategory": {
+    "description": "Create-Post: Ueberschrift Kategorie-Chips"
+  },
+  "createPostCategoryHint": "Optional – zählt für die Kategorie-Rankings",
+  "@createPostCategoryHint": {
+    "description": "Create-Post: Hinweis unter der Kategorie-Ueberschrift"
+  },
+  "createPostCategoryProductivity": "Produktivität",
+  "@createPostCategoryProductivity": {
+    "description": "Create-Post: Kategorie-Chip (Backend-ID productivity)"
+  },
+  "createPostCategoryCreativity": "Kreativität",
+  "@createPostCategoryCreativity": {
+    "description": "Create-Post: Kategorie-Chip (Backend-ID creativity)"
+  },
+  "createPostCategoryEngagement": "Engagement",
+  "@createPostCategoryEngagement": {
+    "description": "Create-Post: Kategorie-Chip (Backend-ID engagement)"
+  },
+  "createPostLocationOnlyThisPost": "Nur für diesen Post",
+  "@createPostLocationOnlyThisPost": {
+    "description": "Create-Post: Standort-Untertitel bei Override"
+  },
+  "createPostLocationYours": "Dein Standort",
+  "@createPostLocationYours": {
+    "description": "Create-Post: Standort-Untertitel beim Heimatort"
+  },
+  "createPostLocationAdd": "Optional hinzufügen",
+  "@createPostLocationAdd": {
+    "description": "Create-Post: Standort-Untertitel ohne Ort"
+  },
+  "createPostLocationNone": "Kein Standort",
+  "@createPostLocationNone": {
+    "description": "Create-Post: Standort-Titel ohne Ort"
+  },
+  "createPostLocationReset": "Zurück zu deinem Standort",
+  "@createPostLocationReset": {
+    "description": "Create-Post: Tooltip X am Standort-Override"
+  },
+  "createPostSendingTitle": "Dein Post geht raus",
+  "@createPostSendingTitle": {
+    "description": "Create-Post: Titel im Lade-Dialog beim Posten"
+  },
+  "createPostSendingUpload": "Bild wird hochgeladen...",
+  "@createPostSendingUpload": {
+    "description": "Create-Post: Lade-Dialog Nachricht 1"
+  },
+  "createPostSendingCreate": "Post wird erstellt...",
+  "@createPostSendingCreate": {
+    "description": "Create-Post: Lade-Dialog Nachricht 2"
+  },
+  "createPostSendingAlmost": "Gleich geschafft...",
+  "@createPostSendingAlmost": {
+    "description": "Create-Post: Lade-Dialog Nachricht 3"
   },
   "locationPickerTitle": "Ort wählen",
   "@locationPickerTitle": {
@@ -1181,41 +1261,33 @@
   "@storyCreateTitle": {
     "description": "Header in create screen"
   },
-  "storyShareMoment": "Teile deinen Moment",
-  "@storyShareMoment": {
-    "description": "Hero text in create screen"
-  },
-  "storyCreateDescription": "Erstelle in Sekunden eine Story für deine Follower.",
-  "@storyCreateDescription": {
-    "description": "Description text in create screen"
+  "storyPickHint": "Foto aufnehmen oder aus der Galerie wählen",
+  "@storyPickHint": {
+    "description": "Hint in the viewfinder area of the create screen"
   },
   "storyVisibleTime": "24H sichtbar",
   "@storyVisibleTime": {
-    "description": "Badge text above button row"
+    "description": "Small hint below the pick hint"
   },
   "storySourceGallery": "Galerie",
   "@storySourceGallery": {
-    "description": "Label of gallery source card"
-  },
-  "storySourceGallerySubtitle": "Bild wählen",
-  "@storySourceGallerySubtitle": {
-    "description": "Subtitle of gallery source card"
+    "description": "Label below the gallery button"
   },
   "storySourceCamera": "Kamera",
   "@storySourceCamera": {
-    "description": "Label of camera source card"
-  },
-  "storySourceCameraSubtitle": "Live aufnehmen",
-  "@storySourceCameraSubtitle": {
-    "description": "Subtitle of camera source card"
+    "description": "Accessibility label of the shutter button"
   },
   "storyUploadingButton": "Wird geteilt...",
   "@storyUploadingButton": {
     "description": "Button text while uploading"
   },
-  "storyShareButton": "Story teilen",
+  "storyShareButton": "Teilen",
   "@storyShareButton": {
     "description": "Button text for sharing story"
+  },
+  "storyPreviewTitle": "Vorschau",
+  "@storyPreviewTitle": {
+    "description": "Header of the story preview stage"
   },
   "suspendedTitle": "Konto gesperrt",
   "@suspendedTitle": {

@@ -66,7 +66,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
       children: [
         _IconBadge(
           icon: Icons.lock_reset_rounded,
-          gradient: [AppColors.primary, AppColors.primaryContainer],
+          background: AppColors.primary,
           iconColor: Colors.white,
         ),
         const SizedBox(height: 20),
@@ -144,7 +144,7 @@ class _BackupPasswordDialogState extends State<_BackupPasswordDialog> {
             ),
           ),
         const SizedBox(height: 24),
-        _GradientButton(
+        _PrimaryButton(
           label: context.l10n.keyRestoreButton,
           onPressed: _controller.text.isEmpty ? null : _submit,
         ),
@@ -191,10 +191,7 @@ Future<bool> showResetChatsDialog(BuildContext context) async {
       children: [
         _IconBadge(
           icon: Icons.warning_amber_rounded,
-          gradient: [
-            Colors.redAccent.withValues(alpha: 0.15),
-            Colors.redAccent.withValues(alpha: 0.15),
-          ],
+          background: Colors.redAccent.withValues(alpha: 0.15),
           iconColor: Colors.redAccent,
         ),
         const SizedBox(height: 20),
@@ -278,11 +275,11 @@ class _DialogShell extends StatelessWidget {
 
 class _IconBadge extends StatelessWidget {
   final IconData icon;
-  final List<Color> gradient;
+  final Color background;
   final Color iconColor;
   const _IconBadge({
     required this.icon,
-    required this.gradient,
+    required this.background,
     required this.iconColor,
   });
 
@@ -292,14 +289,7 @@ class _IconBadge extends StatelessWidget {
       child: Container(
         width: 64,
         height: 64,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: gradient,
-          ),
-        ),
+        decoration: BoxDecoration(shape: BoxShape.circle, color: background),
         child: Icon(icon, size: 30, color: iconColor),
       ),
     );
@@ -400,10 +390,10 @@ class _ConsequenceRow extends StatelessWidget {
 }
 
 // Wie der "Login to Feed"-Button. onPressed null = ausgegraut.
-class _GradientButton extends StatelessWidget {
+class _PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
-  const _GradientButton({required this.label, required this.onPressed});
+  const _PrimaryButton({required this.label, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -414,9 +404,7 @@ class _GradientButton extends StatelessWidget {
       child: Container(
         height: 56,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primary, AppColors.primaryContainer],
-          ),
+          color: AppColors.primary,
           borderRadius: BorderRadius.circular(20),
           boxShadow: enabled
               ? [

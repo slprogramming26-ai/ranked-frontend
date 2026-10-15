@@ -285,12 +285,7 @@ class _TextPostState extends State<TextPost>
                     Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary,
-                            AppColors.primaryContainer,
-                          ],
-                        ),
+                        color: AppColors.primary,
                       ),
                       // Eigener Consumer nur fuer den Button: der braucht ein
                       // ref zum Neuladen, soll aber nicht bei jeder Aenderung

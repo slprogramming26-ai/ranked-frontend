@@ -101,11 +101,7 @@ class SuspendedScreen extends StatelessWidget {
           height: 76,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [AppColors.primary, AppColors.primaryContainer],
-            ),
+            color: AppColors.primary,
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withValues(alpha: 0.25),
@@ -159,15 +155,13 @@ class SuspendedScreen extends StatelessWidget {
     );
   }
 
-  // Gleicher Gradient-Button wie im Login-Formular.
+  // Gleicher Button wie im Login-Formular.
   Widget _backButton(String text) {
     return Container(
       width: double.infinity,
       height: 60,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryContainer],
-        ),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

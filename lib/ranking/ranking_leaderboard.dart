@@ -18,7 +18,6 @@ class RankingEnabledView extends StatefulWidget {
 
 class _RankingEnabledViewState extends State<RankingEnabledView> {
   final bool _isLoading = false;
-  bool didRanking = true;
 
   @override
   void initState() {
@@ -26,24 +25,17 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = Provider.of<RankingProvider>(context, listen: false);
       provider.fetchLeaderboard();
-      _refreshDidRanking();
+      provider.loadRankedToday();
     });
-  }
-
-  // Holt den "heute schon gerankt?"-Status und baut die UI neu auf (setState!).
-  // Wird beim Öffnen UND nach Rückkehr vom Swipen aufgerufen.
-  Future<void> _refreshDidRanking() async {
-    final ranked = await Provider.of<RankingProvider>(
-      context,
-      listen: false,
-    ).getDidRanking();
-    if (mounted) setState(() => didRanking = ranked);
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<RankingProvider>(context);
     final leaderboard = provider.leaderboardData;
+    // Kommt jetzt aus dem Provider (vorher lokaler State) — die Nav-Bar
+    // braucht denselben Wert fuer die Flamme.
+    final didRanking = provider.rankedToday;
     // Persönliche Stats für die Bento-Cards — beide Quellen liegen schon in
     // den Providern (ProfileProvider.userdata bzw. leaderboard.me), kein
     // zusätzlicher Request.
@@ -70,8 +62,9 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
           ),
         ),
         actions: [
-          // Streak als Gradient-Pill statt loser Icon+Zahl. Center verhindert,
-          // dass die Pill auf volle AppBar-Hoehe gestreckt wird.
+          // Streak als Pill statt loser Icon+Zahl. Solid statt Gradient, weil
+          // sie dauerhaft in der AppBar steht. Center verhindert, dass die
+          // Pill auf volle AppBar-Hoehe gestreckt wird.
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
@@ -79,11 +72,7 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryContainer],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(50),
                   boxShadow: [
                     BoxShadow(
@@ -220,8 +209,10 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                                       ),
                                     ),
 
-                              // Bottom padding for FAB
-                              const SizedBox(height: 120),
+                              // Platz fuer den Sticky-Block unten ("Du"-Karte
+                              // + Button, ~160px), damit der letzte Eintrag
+                              // frei scrollbar ist.
+                              const SizedBox(height: 180),
                             ],
                           ),
                         ),
@@ -233,7 +224,9 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 100,
+                    // Body endet jetzt ueber der Nav-Bar (kein extendBody
+                    // mehr) -> direkt unten andocken.
+                    bottom: 0,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -256,7 +249,9 @@ class _RankingEnabledViewState extends State<RankingEnabledView> {
                               ),
                             );
                             // Zurück vom Swipen -> evtl. gerade gewertet -> Lock neu prüfen.
-                            await _refreshDidRanking();
+                            // (markRankedToday meldet das schon selbst; das hier
+                            // ist nur die Absicherung.)
+                            await provider.loadRankedToday();
                           },
                         ),
                       ],

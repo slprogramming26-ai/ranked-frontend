@@ -135,7 +135,7 @@ class _RankingHomeState extends State<RankingHome> {
                     ),
                     const Spacer(),
                     // Activate Button
-                    GradientButton(
+                    PrimaryButton(
                       label: context.l10n.rankingOptinButton,
                       isLoading: _isLoading,
                       onPressed: () async {

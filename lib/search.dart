@@ -104,7 +104,13 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      // Ohne explizite Farbe nimmt die AppBar colorScheme.surface aus
+      // fromSeed (fast weiss) statt unserem AppColors.surface.
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+      ),
       backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Padding(
@@ -114,7 +120,15 @@ class _SearchPageState extends State<SearchPage> {
               SearchAnchor(
                 searchController: _searchController,
                 isFullScreen: false,
+                // Standard: View ist fix 2/3 Bildschirmhoehe (min. 240), egal
+                // wie viel drinsteht. shrinkWrap + minHeight 0 -> so hoch wie
+                // der Inhalt (nur Hinweis = klein), nach oben weiter max. 2/3.
+                // minWidth 0, damit die Breite exakt der Suchleiste folgt
+                // (Default waere min. 360).
+                shrinkWrap: true,
+                viewConstraints: const BoxConstraints(minHeight: 0),
                 viewBackgroundColor: AppColors.surface,
+                viewSurfaceTintColor: Colors.transparent,
                 viewElevation: 2,
                 viewHintText: context.l10n.searchPlaceholder,
                 viewLeading: IconButton(

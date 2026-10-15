@@ -10,6 +10,7 @@ import 'widgets/text_post.dart';
 import 'widgets/feed_skeleton.dart';
 import 'widgets/feed_entrance.dart';
 import '../app_colors.dart';
+import '../profile.dart';
 import '../location_picker.dart';
 import '../user_api_service.dart';
 import 'package:ranked/story/story_create_screen.dart';
@@ -279,7 +280,7 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
                         child: CircularProgressIndicator(color: AppColors.primary),
                       ),
                     )
-                  : const SizedBox(height: 100);
+                  : const SizedBox(height: 16);
             }
 
             final postData = postProvider.posts[index - 1];
@@ -490,6 +491,13 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
         }
         final owners = grouped.values.toList();
 
+        // Eigene Stories nach vorne: die stecken in der "Du"-Kachel statt als
+        // zweiter Ring weiter hinten. Im Viewer laufen sie damit auch zuerst.
+        final myIndex = owners.indexWhere((s) => s.first['is_mine'] == true);
+        if (myIndex > 0) owners.insert(0, owners.removeAt(myIndex));
+        final bool hasMine = myIndex >= 0;
+        final int firstOther = hasMine ? 1 : 0;
+
         // Nur der allererste Auftritt der Ringe wird gestaffelt animiert.
         // Flag ohne setState setzen ist hier ok: es soll erst beim NAECHSTEN
         // Build false sein, dieser Build laeuft mit dem alten Wert weiter.
@@ -501,7 +509,11 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
             children: [
-              _buildAddPulse(),
+              _buildMyStory(
+                context, // hier = Builder-Context des Consumers
+                hasStories: hasMine,
+                onOpen: () => _openStoryViewer(owners, 0),
+              ),
               if (storyProvider.isLoading && owners.isEmpty)
                 // Platzhalter-Ringe während des ersten Ladens — EINE
                 // Puls-Hülle um alle, damit sie synchron atmen.
@@ -512,11 +524,14 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
                   ),
                 )
               else
-                ...List.generate(owners.length, (i) {
+                ...List.generate(owners.length - firstOther, (j) {
+                  // i = Index in owners (fuer den Viewer), j = Position in
+                  // der Reihe (fuers Stagger-Delay).
+                  final i = j + firstOther;
                   final stories = owners[i];
                   return FeedEntrance(
                     animate: animateStories,
-                    delayMs: i * 60,
+                    delayMs: j * 60,
                     child: ShowStoryAvatar(
                       stories: stories,
                       onTap: () => _openStoryViewer(owners, i),
@@ -539,52 +554,30 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
     );
   }
 
-  Widget _buildAddPulse() {
-    return Column(
-      children: [
-        InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const StoryCreateScreen()),
-            );
-          },
-          child: Container(
-            width: 64,
-            height: 64,
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primary.withValues(alpha: 0.25),
-                width: 1.5,
-              ),
-            ),
-            child: Center(
-              child: Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 18),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          context.l10n.storyRowYourPulse,
-          style: GoogleFonts.plusJakartaSans(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-      ],
+  // Avatar + Name kommen aus dem ProfileProvider (dort liegt der eigene User
+  // eh schon). select -> nur neu bauen, wenn sich Bild oder Name aendern.
+  // buildContext = der Context des Consumer-Builders: select darf nur mit
+  // einem Context benutzt werden, der gerade baut (nicht der State-Context).
+  Widget _buildMyStory(
+    BuildContext buildContext, {
+    required bool hasStories,
+    required VoidCallback onOpen,
+  }) {
+    final picUrl = buildContext.select<ProfileProvider, String?>(
+      (p) => p.userdata['profile_picture_url']?.toString(),
+    );
+    final username = buildContext.select<ProfileProvider, String>(
+      (p) => p.userdata['username']?.toString() ?? '',
+    );
+    return MyStoryAvatar(
+      picUrl: picUrl,
+      username: username,
+      hasStories: hasStories,
+      onOpen: onOpen,
+      onAdd: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const StoryCreateScreen()),
+      ),
     );
   }
 }

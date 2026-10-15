@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:ui';
 import '../app_colors.dart';
 import '../net_image.dart';
 import 'package:ranked/l10n/l10n.dart';
@@ -794,46 +793,33 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface.withValues(alpha: 0.7),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.08),
-                blurRadius: 40,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
-          child: Opacity(
-            // rankedToday -> ausgegraut + null onPressed = wirklich deaktiviert.
-            opacity: rankedToday ? 0.5 : 1.0,
-            child: GradientButton(
-              label: rankedToday
-                  ? context.l10n.rankingAlreadyRankedButton
-                  : context.l10n.rankingGetPartnerButton,
-              isLoading: isLoading,
-              onPressed: rankedToday ? null : onPressed,
-            ),
-          ),
+    // Flach wie die Nav-Bar darunter: solider Hintergrund, kein Blur/Schatten.
+    return Container(
+      color: AppColors.surface,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      child: Opacity(
+        // rankedToday -> ausgegraut + null onPressed = wirklich deaktiviert.
+        opacity: rankedToday ? 0.5 : 1.0,
+        child: PrimaryButton(
+          label: rankedToday
+              ? context.l10n.rankingAlreadyRankedButton
+              : context.l10n.rankingGetPartnerButton,
+          isLoading: isLoading,
+          onPressed: rankedToday ? null : onPressed,
         ),
       ),
     );
   }
 }
 
-// ─── Gradient Button ──────────────────────────────────────────────────────────
-class GradientButton extends StatelessWidget {
+// ─── Primary Button ───────────────────────────────────────────────────────────
+// Solides Rot: Aktion = Ebene 2 der 3-Ebenen-Regel, Gradient bleibt Brand-Momenten.
+class PrimaryButton extends StatelessWidget {
   final String label;
   final bool isLoading;
   final VoidCallback? onPressed;
 
-  const GradientButton({
+  const PrimaryButton({
     super.key,
     required this.label,
     required this.isLoading,
@@ -845,11 +831,7 @@ class GradientButton extends StatelessWidget {
     return Container(
       height: 60,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryContainer],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(

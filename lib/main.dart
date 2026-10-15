@@ -27,7 +27,7 @@ import "local_data/database.dart";
 import 'messenger/messenger_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'login_screen.dart';
-import 'floating_nav.dart';
+import 'app_nav_bar.dart';
 import 'splash_screen.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:ranked/route_observer.dart';
@@ -443,7 +443,6 @@ class _MyHomePageState extends State<MyHomePage> {
       return Scaffold(
         key: const ValueKey('home'),
         backgroundColor: AppColors.surface,
-        extendBody: true,
         // IndexedStack haelt alle bereits gebauten Tabs im Baum und zeigt nur
         // den aktiven — die anderen behalten ihren State, werden aber nicht
         // gemalt. Unbesuchte Tabs sind nur leere Platzhalter.
@@ -453,10 +452,13 @@ class _MyHomePageState extends State<MyHomePage> {
             for (final screen in _screens) screen ?? const SizedBox.shrink(),
           ],
         ),
-        bottomNavigationBar: FloatingNavBar(
+        bottomNavigationBar: AppNavBar(
           currentIndex: _currentIndex,
           onTabSelected: (i) {
             context.read<ImpressionTracker>().setGate(ImpressionGate.tab ,open: i == 0);
+            // Billiger Prefs-Check: so verschwindet/erscheint die Streak-
+            // Flamme auch, wenn die App ueber Mitternacht offen war.
+            context.read<RankingProvider>().loadRankedToday();
             setState(() => _currentIndex = i);
           },
         ),

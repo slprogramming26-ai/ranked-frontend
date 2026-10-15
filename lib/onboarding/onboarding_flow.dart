@@ -374,9 +374,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           width: double.infinity,
           height: 65,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryContainer],
-            ),
+            color: AppColors.primary,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(

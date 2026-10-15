@@ -67,12 +67,7 @@ class VibeStep extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: isActive
-              ? LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryContainer],
-                )
-              : null,
-          color: isActive ? null : AppColors.surfaceContainerLow,
+          color: isActive ? AppColors.primary : AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Column(
@@ -88,7 +83,7 @@ class VibeStep extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isActive ? Colors.white : Colors.black,
+                color: isActive ? Colors.white : AppColors.onSurface,
                 fontWeight: FontWeight.bold,
               ),
             ),

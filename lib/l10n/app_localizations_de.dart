@@ -532,7 +532,68 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storyRowYourPulse => 'Dein Pulse';
 
   @override
-  String get createPostTitle => 'Post erstellen';
+  String get createPostTitle => 'Neuer Post';
+
+  @override
+  String get createPostSubmit => 'Posten';
+
+  @override
+  String get createPostTitleHint => 'Titel';
+
+  @override
+  String get createPostContentHint => 'Was gibt\'s Neues?';
+
+  @override
+  String get createPostGallery => 'Aus Galerie wählen';
+
+  @override
+  String get createPostCamera => 'Foto aufnehmen';
+
+  @override
+  String get createPostRemoveImage => 'Bild entfernen';
+
+  @override
+  String get createPostCategory => 'Kategorie';
+
+  @override
+  String get createPostCategoryHint =>
+      'Optional – zählt für die Kategorie-Rankings';
+
+  @override
+  String get createPostCategoryProductivity => 'Produktivität';
+
+  @override
+  String get createPostCategoryCreativity => 'Kreativität';
+
+  @override
+  String get createPostCategoryEngagement => 'Engagement';
+
+  @override
+  String get createPostLocationOnlyThisPost => 'Nur für diesen Post';
+
+  @override
+  String get createPostLocationYours => 'Dein Standort';
+
+  @override
+  String get createPostLocationAdd => 'Optional hinzufügen';
+
+  @override
+  String get createPostLocationNone => 'Kein Standort';
+
+  @override
+  String get createPostLocationReset => 'Zurück zu deinem Standort';
+
+  @override
+  String get createPostSendingTitle => 'Dein Post geht raus';
+
+  @override
+  String get createPostSendingUpload => 'Bild wird hochgeladen...';
+
+  @override
+  String get createPostSendingCreate => 'Post wird erstellt...';
+
+  @override
+  String get createPostSendingAlmost => 'Gleich geschafft...';
 
   @override
   String get locationPickerTitle => 'Ort wählen';
@@ -918,11 +979,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storyCreateTitle => 'Neue Story';
 
   @override
-  String get storyShareMoment => 'Teile deinen Moment';
-
-  @override
-  String get storyCreateDescription =>
-      'Erstelle in Sekunden eine Story für deine Follower.';
+  String get storyPickHint => 'Foto aufnehmen oder aus der Galerie wählen';
 
   @override
   String get storyVisibleTime => '24H sichtbar';
@@ -931,19 +988,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get storySourceGallery => 'Galerie';
 
   @override
-  String get storySourceGallerySubtitle => 'Bild wählen';
-
-  @override
   String get storySourceCamera => 'Kamera';
-
-  @override
-  String get storySourceCameraSubtitle => 'Live aufnehmen';
 
   @override
   String get storyUploadingButton => 'Wird geteilt...';
 
   @override
-  String get storyShareButton => 'Story teilen';
+  String get storyShareButton => 'Teilen';
+
+  @override
+  String get storyPreviewTitle => 'Vorschau';
 
   @override
   String get suspendedTitle => 'Konto gesperrt';

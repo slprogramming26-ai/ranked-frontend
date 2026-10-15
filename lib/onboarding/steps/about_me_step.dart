@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
+import '../onboarding_text_field.dart';
 
 class AboutMeStep extends StatefulWidget {
   // Collect-first: Das Bild wird hier nur lokal gemerkt — der Upload braucht
@@ -171,60 +172,10 @@ class _AboutMeStepState extends State<AboutMeStep> {
           ),
           const SizedBox(height: 8),
 
-          // --- Textarea with shadow effect ---
-          Stack(
-            children: [
-              // Offset shadow layer
-              Positioned(
-                top: 4,
-                left: 4,
-                right: -4,
-                bottom: -4,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-              // Actual TextField
-              TextField(
-                controller: _bioController,
-                maxLines: 6,
-                decoration: InputDecoration(
-                  hintText: context.l10n.onboardingAboutMeBioHint,
-                  hintStyle: TextStyle(
-                    color: AppColors.outlineVariant,
-                    fontSize: 13,
-                    height: 1.6,
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.all(16),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: AppColors.surfaceContainerHighest,
-                      width: 1.5,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: AppColors.surfaceContainerHighest,
-                      width: 1.5,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: AppColors.primary,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          OnboardingTextField(
+            controller: _bioController,
+            hint: context.l10n.onboardingAboutMeBioHint,
+            maxLines: 6,
           ),
 
           const SizedBox(height: 32),
