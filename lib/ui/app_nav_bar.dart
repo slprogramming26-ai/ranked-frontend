@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'post/create_post.dart';
+import '../post/create_post.dart';
 import 'app_colors.dart';
-import 'profile.dart';
-import 'ranking/ranking_provider.dart';
+import '../profile/profile.dart';
+import '../ranking/ranking_provider.dart';
 
 /// Flache Bar unten ueber die volle Breite: neutraler Hintergrund, duenne
 /// Linie oben, kein Blur/Schatten (der Blur ueber scrollendem Inhalt war

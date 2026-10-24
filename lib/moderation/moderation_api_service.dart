@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import '../api_client.dart';
-import '../user_api_service.dart';
+import '../core/api_client.dart';
+import '../core/user_api_service.dart';
 import 'admin_user_detail.dart';
 import 'moderation_log_entry.dart';
 import 'my_moderation_action.dart';

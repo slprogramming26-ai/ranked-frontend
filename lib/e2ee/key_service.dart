@@ -9,8 +9,8 @@ import 'package:sodium/sodium.dart';
 import 'package:sodium/sodium_sumo.dart'
     show SodiumSumo, SodiumSumoInit, CryptoPwhashAlgorithm;
 
-import 'api_client.dart';
-import 'api_config.dart';
+import '../core/api_client.dart';
+import '../core/api_config.dart';
 import 'key_backup.dart';
 
 // Ergebnis eines Rekey-Versuchs (POST /keys/group/{id}/rekey).

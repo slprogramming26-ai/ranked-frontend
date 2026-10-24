@@ -7,10 +7,10 @@ import 'package:provider/provider.dart';
 // deshalb steht an jeder Riverpod-Stelle sichtbar rp. davor.
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
 import 'dart:ui';
-import '../../app_colors.dart';
+import '../../ui/app_colors.dart';
 import '../../l10n/l10n.dart';
 import '../../local_data/database.dart';
-import '../../net_image.dart';
+import '../../ui/net_image.dart';
 import '../../messenger/messenger_controller.dart';
 import '../../moderation/report_sheet.dart';
 import '../../moderation/report_target.dart';

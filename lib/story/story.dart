@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 
-import '../api_client.dart';
-import '../api_config.dart';
+import '../core/api_client.dart';
+import '../core/api_config.dart';
 
 class StoryApiService {
 

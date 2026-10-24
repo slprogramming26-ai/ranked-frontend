@@ -2,15 +2,15 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'post_api_service.dart';
 import 'package:flutter/material.dart';
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import '../l10n/l10n.dart';
-import '../app_loading.dart';
-import '../location_picker.dart';
-import '../net_image.dart';
-import '../profile.dart';
+import '../ui/app_loading.dart';
+import '../ui/location_picker.dart';
+import '../ui/net_image.dart';
+import '../profile/profile.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../image_sanitizer.dart';
+import '../core/image_sanitizer.dart';
 import 'package:ranked/local_data/database.dart';
 
 class CreatePost extends StatefulWidget {

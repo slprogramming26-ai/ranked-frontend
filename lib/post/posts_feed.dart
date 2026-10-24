@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:ranked/search.dart';
+import 'package:ranked/search/search.dart';
 import '../l10n/l10n.dart';
 import 'post_provider.dart';
 import 'post_api_service.dart';
@@ -9,17 +9,17 @@ import 'widgets/story_avatar.dart';
 import 'widgets/text_post.dart';
 import 'widgets/feed_skeleton.dart';
 import 'widgets/feed_entrance.dart';
-import '../app_colors.dart';
-import '../profile.dart';
-import '../location_picker.dart';
-import '../user_api_service.dart';
+import '../ui/app_colors.dart';
+import '../profile/profile.dart';
+import '../ui/location_picker.dart';
+import '../core/user_api_service.dart';
 import 'package:ranked/story/story_create_screen.dart';
 import 'package:ranked/story/story_viewer.dart';
 import 'package:ranked/story/story.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'impression_tracker.dart';
 import 'widgets/impression_wrapper.dart';
-import 'package:ranked/route_observer.dart';
+import 'package:ranked/core/route_observer.dart';
 
 class PostsFeed extends StatefulWidget {
   const PostsFeed({super.key});

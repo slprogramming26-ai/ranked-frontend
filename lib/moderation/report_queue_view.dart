@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import '../l10n/l10n.dart';
 import '../post/widgets/collapse_out.dart';
-import '../confirm_dialog.dart';
+import '../ui/confirm_dialog.dart';
 import 'action_sheet.dart';
 import 'ban_sheet.dart';
 import 'moderation_api_service.dart';

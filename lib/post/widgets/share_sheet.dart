@@ -4,11 +4,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../app_colors.dart';
+import '../../ui/app_colors.dart';
 import '../../l10n/l10n.dart';
 import '../../local_data/database.dart';
 import '../../messenger/messenger_controller.dart';
-import '../../net_image.dart';
+import '../../ui/net_image.dart';
 // Noetig fuer die Extension-Methoden auf dem Service (sendDirectMessage,
 // sendGroupMessage, isConnected, reconnect) — die leben in Part-Dateien
 // dieser Library und sind sonst nicht im Scope.

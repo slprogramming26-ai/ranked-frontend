@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'package:ranked/api_client.dart';
+import 'package:ranked/core/api_client.dart';
 import 'package:uuid/uuid.dart';
 
 /// Die drei unabhaengigen Gruende, aus denen der Feed gerade nicht gezaehlt

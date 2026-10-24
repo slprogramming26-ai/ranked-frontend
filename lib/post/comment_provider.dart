@@ -25,7 +25,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../ref_cache_for.dart';
+import '../core/ref_cache_for.dart';
 import 'post_api_service.dart';
 
 /// Die Kommentare EINES Posts.

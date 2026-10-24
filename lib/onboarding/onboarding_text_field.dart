@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 
 /// Das eine Eingabefeld im Onboarding (Bio, E-Mail, Username, Passwort):
 /// helle Flaeche mit duennem Rand, der beim Fokus rot wird.

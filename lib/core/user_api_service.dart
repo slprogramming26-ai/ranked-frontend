@@ -4,13 +4,13 @@ import 'dart:io';
 import 'token_storage.dart';
 import 'api_client.dart';
 import 'api_config.dart';
-import 'code_request_result.dart';
-import 'login_result.dart';
-import 'moderation/report_reason.dart';
-import 'moderation/report_target.dart';
-import 'moderation/suspension.dart';
-import 'reset_result.dart';
-import 'verify_result.dart';
+import '../auth/code_request_result.dart';
+import '../auth/login_result.dart';
+import '../moderation/report_reason.dart';
+import '../moderation/report_target.dart';
+import '../moderation/suspension.dart';
+import '../auth/reset_result.dart';
+import '../auth/verify_result.dart';
 
 class UserApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP

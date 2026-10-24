@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import '../l10n/l10n.dart';
 import 'moderation_sheet_parts.dart';
 

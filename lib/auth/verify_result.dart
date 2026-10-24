@@ -1,4 +1,4 @@
-import 'moderation/suspension.dart';
+import '../moderation/suspension.dart';
 
 /// Was bei UserApiService.verify herauskommt (POST /users/verify).
 /// sealed wie LoginResult: ein vergessener Fall im switch ist ein

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../profile.dart';
-import '../user_api_service.dart';
+import '../profile/profile.dart';
+import '../core/user_api_service.dart';
 import 'package:provider/provider.dart';
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import 'package:ranked/l10n/l10n.dart';
 import 'ranking_widgets.dart';
 import 'ranking_leaderboard.dart';

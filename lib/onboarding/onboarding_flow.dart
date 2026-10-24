@@ -1,25 +1,25 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-import '../image_sanitizer.dart';
+import '../core/image_sanitizer.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/main.dart';
 import 'package:ranked/l10n/l10n.dart';
-import '../app_colors.dart';
-import '../app_loading.dart';
-import '../login_result.dart';
-import '../password_policy.dart';
-import '../token_storage.dart';
-import '../user_api_service.dart';
-import '../verify_email_screen.dart';
+import '../ui/app_colors.dart';
+import '../ui/app_loading.dart';
+import '../auth/login_result.dart';
+import '../auth/password_policy.dart';
+import '../core/token_storage.dart';
+import '../core/user_api_service.dart';
+import '../auth/verify_email_screen.dart';
 import 'steps/about_me_step.dart';
 import 'steps/age_step.dart';
 import 'steps/credentials_step.dart';
 import 'steps/vibe_step.dart';
 import 'steps/welcome_step.dart';
-import 'package:ranked/key_setup.dart';
+import 'package:ranked/e2ee/key_setup.dart';
 
 class OnboardingFlow extends StatefulWidget {
   const OnboardingFlow({super.key});

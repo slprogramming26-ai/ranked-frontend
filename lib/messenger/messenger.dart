@@ -7,12 +7,12 @@ import 'package:ranked/messenger/conversation.dart';
 import 'package:ranked/local_data/database.dart';
 import 'messenger_api_service.dart';
 import 'messenger_controller.dart';
-import '../profile.dart';
+import '../profile/profile.dart';
 import 'chat_requests.dart';
 import 'chat_screen.dart';
-import '../app_colors.dart';
-import '../net_image.dart';
-import '../user_api_service.dart';
+import '../ui/app_colors.dart';
+import '../ui/net_image.dart';
+import '../core/user_api_service.dart';
 import 'package:ranked/l10n/l10n.dart';
 
 class MessengerHomescreen extends StatefulWidget {

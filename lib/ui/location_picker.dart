@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
-import 'l10n/l10n.dart';
-import 'user_api_service.dart';
+import '../l10n/l10n.dart';
+import '../core/user_api_service.dart';
 
 /// Oeffnet den Location-Picker als Bottom-Sheet und liefert den gewaehlten
 /// Ort als `{id, name}`-Map zurueck — oder `null`, wenn der User das Sheet

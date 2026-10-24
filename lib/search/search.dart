@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ranked/user_api_service.dart';
-import 'app_colors.dart';
-import 'net_image.dart';
-import 'profile.dart';
-import 'local_data/database.dart';
+import 'package:ranked/core/user_api_service.dart';
+import '../ui/app_colors.dart';
+import '../ui/net_image.dart';
+import '../profile/profile.dart';
+import '../local_data/database.dart';
 import 'package:provider/provider.dart';
-import 'l10n/l10n.dart';
+import '../l10n/l10n.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});

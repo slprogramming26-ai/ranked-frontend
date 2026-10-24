@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../app_colors.dart';
-import '../profile.dart';
+import '../ui/app_colors.dart';
+import '../profile/profile.dart';
 import 'package:ranked/l10n/l10n.dart';
 import 'ranking_provider.dart';
 import 'ranking_pages.dart';

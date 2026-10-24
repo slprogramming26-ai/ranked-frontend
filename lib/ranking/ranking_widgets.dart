@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../app_colors.dart';
-import '../net_image.dart';
+import '../ui/app_colors.dart';
+import '../ui/net_image.dart';
 import 'package:ranked/l10n/l10n.dart';
 
 // ─── PopIn: Fade/Slide/Scale-Einblendung mit Verzoegerung ─────────────────────

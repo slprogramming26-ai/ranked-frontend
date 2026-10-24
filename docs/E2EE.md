@@ -36,7 +36,7 @@ Alle Krypto-Funktionen kommen aus libsodium (Paket `sodium`). Argon2 gibt es nur
 
 | Was | Wo |
 |---|---|
-| Speichern / Laden / Löschen | `lib/key_service.dart`: `ensureKeypair`, `getSecretKey`, `hasLocalKeypair`, `loadLocalPublicKey`, `storeKeypair`, `deleteKeypair` |
+| Speichern / Laden / Löschen | `lib/e2ee/key_service.dart`: `ensureKeypair`, `getSecretKey`, `hasLocalKeypair`, `loadLocalPublicKey`, `storeKeypair`, `deleteKeypair` |
 | Pubkey hoch / runter | `uploadPublicKey` (PUT `/keys/`), `fetchPartnerPublicKey`, `fetchOwnPublicKey` (GET `/keys/{id}`) |
 | Storage-Keys | `e2ee_priv_<userId>`, `e2ee_pub_<userId>` |
 
@@ -85,11 +85,11 @@ Alle Krypto-Funktionen kommen aus libsodium (Paket `sodium`). Argon2 gibt es nur
 
 | Was | Wo |
 |---|---|
-| Datenklassen | `lib/key_backup.dart` → `BackupSecretType`, `KeyBackup`, `UnwrapResult`, `FetchBackupResult` |
+| Datenklassen | `lib/e2ee/key_backup.dart` → `BackupSecretType`, `KeyBackup`, `UnwrapResult`, `FetchBackupResult` |
 | Krypto + REST | `key_service.dart` → `wrapKeyBackup`, `unwrapKeyBackup`, `uploadBackup`, `fetchBackup` |
-| Ablauf beim Login | `lib/key_setup.dart` → `afterLogin`, `afterRegistration`, `retryWithPassword`, `startFresh` |
-| Login-Einbau + Dialoge | `lib/login_screen.dart` → `_handleLogin`, `_resolveKeySetup`; `lib/key_restore_dialogs.dart` |
-| Passwort vergessen | `lib/forgot_password_screen.dart` (Code + neues Passwort); `login_screen.dart` → `_openForgotPassword`, Feld `_passwordJustReset`; `key_setup.dart` → `_syncBackup` (siehe 4.) |
+| Ablauf beim Login | `lib/e2ee/key_setup.dart` → `afterLogin`, `afterRegistration`, `retryWithPassword`, `startFresh` |
+| Login-Einbau + Dialoge | `lib/auth/login_screen.dart` → `_handleLogin`, `_resolveKeySetup`; `lib/e2ee/key_restore_dialogs.dart` |
+| Passwort vergessen | `lib/auth/forgot_password_screen.dart` (Code + neues Passwort); `login_screen.dart` → `_openForgotPassword`, Feld `_passwordJustReset`; `key_setup.dart` → `_syncBackup` (siehe 4.) |
 | Registrierung | `onboarding/onboarding_flow.dart` → `_handleNextStep` ruft `afterRegistration` best-effort vor dem Home-Wechsel (scheitert es, holt der nächste Login alles nach) |
 | Abgleich zur Laufzeit | `messenger_controller.dart` → `_checkOwnPublicKey` (veraltet → Logout + Hinweis über `KeySetup.setLogoutNotice`) |
 | Tests | `test/key_backup_test.dart` |

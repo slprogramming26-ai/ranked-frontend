@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'api_config.dart';
-import 'moderation/suspension.dart';
+import '../moderation/suspension.dart';
 import 'token_storage.dart';
 
 class ApiClient {

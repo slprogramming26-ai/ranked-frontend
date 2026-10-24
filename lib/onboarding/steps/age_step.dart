@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/l10n/l10n.dart';
-import '../../app_colors.dart';
+import '../../ui/app_colors.dart';
 
 class AgeStep extends StatefulWidget {
   // DSGVO-Check: Das Alter wird nur einmal ans Backend geschickt (createUser)

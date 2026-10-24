@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/l10n/l10n.dart';
-import '../../app_colors.dart';
-import '../../password_policy.dart';
+import '../../ui/app_colors.dart';
+import '../../auth/password_policy.dart';
 import '../onboarding_text_field.dart';
 
 class CredentialsStep extends StatefulWidget {

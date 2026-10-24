@@ -4,8 +4,8 @@
 
 import 'package:flutter/material.dart';
 
-import 'app_colors.dart';
-import 'l10n/l10n.dart';
+import '../ui/app_colors.dart';
+import '../l10n/l10n.dart';
 
 // Ergebnis des Passwort-Dialogs: entweder ein Passwort zum erneuten Versuchen
 // oder der Wunsch, die Chats zurueckzusetzen. null (Dialog weg) = Abbruch.

@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 import 'package:pro_image_editor/designs/grounded/grounded_design.dart';
 
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 
 /// Zentrale Editor-Konfiguration für Stories im "ranked"-Look.
 ///

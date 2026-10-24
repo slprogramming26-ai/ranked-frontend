@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import '../l10n/l10n.dart';
-import '../net_image.dart';
+import '../ui/net_image.dart';
 import 'report_queue_item.dart';
 import 'report_reason.dart';
 import 'report_target.dart';

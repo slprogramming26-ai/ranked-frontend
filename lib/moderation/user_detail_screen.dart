@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:ranked/moderation/role_sheet.dart';
 
-import '../app_colors.dart';
-import '../confirm_dialog.dart';
+import '../ui/app_colors.dart';
+import '../ui/confirm_dialog.dart';
 import '../l10n/l10n.dart';
-import '../net_image.dart';
+import '../ui/net_image.dart';
 import 'admin_user_detail.dart';
 import 'log_card.dart';
 import 'moderation_api_service.dart';

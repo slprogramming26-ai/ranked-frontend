@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/l10n/l10n.dart';
-import '../../app_colors.dart';
+import '../../ui/app_colors.dart';
 
 // Zustandslos: Auswahl-Map und Toggle-Callback kommen vom OnboardingFlow,
 // damit die gewaehlten Vibes dort fuer addUserDetails verfuegbar bleiben.

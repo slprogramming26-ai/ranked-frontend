@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_colors.dart';
+import '../ui/app_colors.dart';
 import 'code_input.dart';
 import 'code_request_result.dart';
-import 'l10n/l10n.dart';
-import 'moderation/suspended_screen.dart';
-import 'moderation/suspension.dart';
-import 'user_api_service.dart';
+import '../l10n/l10n.dart';
+import '../moderation/suspended_screen.dart';
+import '../moderation/suspension.dart';
+import '../core/user_api_service.dart';
 import 'verify_result.dart';
 
 /// Code-Eingabe nach der Registrierung bzw. nach einem Login mit

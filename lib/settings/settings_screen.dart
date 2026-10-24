@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'app_colors.dart';
-import 'api_client.dart';
-import 'key_service.dart';
+import '../ui/app_colors.dart';
+import '../core/api_client.dart';
+import '../e2ee/key_service.dart';
 import 'language_sheet.dart';
 import 'locale_provider.dart';
-import 'location_picker.dart';
-import 'moderation/blocked_accounts_screen.dart';
-import 'moderation/moderation_home.dart';
-import 'moderation/my_moderation_screen.dart';
-import 'profile.dart';
+import '../ui/location_picker.dart';
+import '../moderation/blocked_accounts_screen.dart';
+import '../moderation/moderation_home.dart';
+import '../moderation/my_moderation_screen.dart';
+import '../profile/profile.dart';
 import 'theme_provider.dart';
-import 'user_api_service.dart';
-import 'l10n/l10n.dart';
+import '../core/user_api_service.dart';
+import '../l10n/l10n.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

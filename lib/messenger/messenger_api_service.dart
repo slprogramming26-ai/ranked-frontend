@@ -24,12 +24,12 @@ import 'package:sodium/sodium.dart';
 import 'package:uuid/uuid.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/io.dart';
-import 'package:ranked/key_service.dart';
-import '../token_storage.dart';
-import '../api_client.dart';
-import '../api_config.dart';
+import 'package:ranked/e2ee/key_service.dart';
+import '../core/token_storage.dart';
+import '../core/api_client.dart';
+import '../core/api_config.dart';
 import '../local_data/database.dart';
-import '../user_api_service.dart';
+import '../core/user_api_service.dart';
 
 // ChatEvent & Co. wieder mit exportieren, damit Importer dieser Datei (UI,
 // conversation.dart) die Typen weiterhin ohne extra Import sehen.

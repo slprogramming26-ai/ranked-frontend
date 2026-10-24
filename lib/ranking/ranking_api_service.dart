@@ -1,6 +1,6 @@
 import 'dart:convert';
-import '../api_client.dart';
-import '../api_config.dart';
+import '../core/api_client.dart';
+import '../core/api_config.dart';
 
 class RankingApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP

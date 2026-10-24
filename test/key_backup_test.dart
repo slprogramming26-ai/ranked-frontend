@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ranked/key_backup.dart';
-import 'package:ranked/key_service.dart';
+import 'package:ranked/e2ee/key_backup.dart';
+import 'package:ranked/e2ee/key_service.dart';
 import 'package:sodium/sodium.dart';
 
 void main() {

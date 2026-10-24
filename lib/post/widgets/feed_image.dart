@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../app_colors.dart';
-import '../../net_image.dart';
+import '../../ui/app_colors.dart';
+import '../../ui/net_image.dart';
 
 /// Netzwerkbild fuer den Feed ohne "Aufpopp"-Effekt:
 ///  - Waehrend des Ladens reserviert ein 16:10-Platzhalter die Flaeche

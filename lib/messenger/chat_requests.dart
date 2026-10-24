@@ -11,9 +11,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import '../local_data/database.dart';
-import '../net_image.dart';
+import '../ui/net_image.dart';
 import 'chat_screen.dart';
 import 'conversation.dart';
 import 'messenger_controller.dart';

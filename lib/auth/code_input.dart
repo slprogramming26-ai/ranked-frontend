@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_colors.dart';
+import '../ui/app_colors.dart';
 
 /// 6-stelliger Code als Kaestchen (E-Mail bestaetigen, Passwort vergessen).
 ///

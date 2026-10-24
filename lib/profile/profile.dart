@@ -7,13 +7,13 @@ import 'package:ranked/moderation/report_sheet.dart';
 import 'package:ranked/moderation/report_target.dart';
 import 'package:ranked/moderation/user_detail_screen.dart';
 import 'package:ranked/moderation/user_role.dart';
-import 'package:ranked/user_api_service.dart';
-import 'app_colors.dart';
-import 'net_image.dart';
-import 'ranking/ranking_api_service.dart';
-import 'settings_screen.dart';
-import 'l10n/l10n.dart';
-import 'confirm_dialog.dart';
+import 'package:ranked/core/user_api_service.dart';
+import '../ui/app_colors.dart';
+import '../ui/net_image.dart';
+import '../ranking/ranking_api_service.dart';
+import '../settings/settings_screen.dart';
+import '../l10n/l10n.dart';
+import '../ui/confirm_dialog.dart';
 
 
 class ProfileProvider extends ChangeNotifier {

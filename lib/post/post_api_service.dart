@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-import '../api_client.dart';
-import '../api_config.dart';
+import '../core/api_client.dart';
+import '../core/api_config.dart';
 
 /// Wird von [PostApiService.getPosts] geworfen, wenn der lokale Feed
 /// angefragt wird, der User aber keinen Ort gesetzt hat (Backend: 400).

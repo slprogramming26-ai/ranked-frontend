@@ -5,11 +5,11 @@ import 'package:provider/provider.dart';
 import 'chat_info_sheet.dart';
 import 'conversation.dart';
 import 'messenger_api_service.dart';
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import '../local_data/database.dart';
-import '../net_image.dart';
+import '../ui/net_image.dart';
 import '../post/post_api_service.dart';
-import '../user_api_service.dart';
+import '../core/user_api_service.dart';
 import 'package:ranked/l10n/l10n.dart';
 
 /// Erkennt einen geteilten Post-Link der Form `ranked://post/<id>`.

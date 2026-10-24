@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_colors.dart';
-import 'l10n/app_localizations.dart';
-import 'l10n/l10n.dart';
+import '../ui/app_colors.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n.dart';
 import 'locale_provider.dart';
 
 /// Anzeigename einer Sprachwahl. Deutsch/English stehen bewusst NICHT in

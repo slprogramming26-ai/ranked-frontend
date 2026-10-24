@@ -16,9 +16,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ranked/local_data/database.dart';
 import 'messenger_api_service.dart';
-import '../api_client.dart';
-import '../key_service.dart';
-import '../key_setup.dart';
+import '../core/api_client.dart';
+import '../e2ee/key_service.dart';
+import '../e2ee/key_setup.dart';
 
 class MessengerController extends ChangeNotifier with WidgetsBindingObserver {
   MessengerApiService? _service;

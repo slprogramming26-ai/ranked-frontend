@@ -1,4 +1,4 @@
-import 'moderation/suspension.dart';
+import '../moderation/suspension.dart';
 
 /// Was bei UserApiService.login herauskommt.
 ///

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:ranked/l10n/l10n.dart';
-import '../../app_colors.dart';
+import '../../ui/app_colors.dart';
 import '../onboarding_text_field.dart';
 
 class AboutMeStep extends StatefulWidget {

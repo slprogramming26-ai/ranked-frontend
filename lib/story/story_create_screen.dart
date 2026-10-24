@@ -6,13 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:pro_image_editor/pro_image_editor.dart';
 
-import '../app_colors.dart';
+import '../ui/app_colors.dart';
 import '../l10n/l10n.dart';
-import '../app_loading.dart';
-import '../image_sanitizer.dart';
+import '../ui/app_loading.dart';
+import '../core/image_sanitizer.dart';
 import '../local_data/database.dart';
-import '../net_image.dart';
-import '../profile.dart';
+import '../ui/net_image.dart';
+import '../profile/profile.dart';
 import 'story.dart';
 import 'story_editor_configs.dart';
 

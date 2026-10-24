@@ -4,14 +4,14 @@ import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'app_colors.dart';
+import '../ui/app_colors.dart';
 import 'code_input.dart';
 import 'code_request_result.dart';
-import 'l10n/l10n.dart';
-import 'onboarding/onboarding_text_field.dart';
+import '../l10n/l10n.dart';
+import '../onboarding/onboarding_text_field.dart';
 import 'password_policy.dart';
 import 'reset_result.dart';
-import 'user_api_service.dart';
+import '../core/user_api_service.dart';
 
 /// Was der Screen bei Erfolg zurueckgibt: damit loggt der Login-Screen
 /// direkt ein (reset liefert selbst keine Token).

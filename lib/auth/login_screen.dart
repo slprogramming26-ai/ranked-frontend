@@ -1,15 +1,15 @@
 
 import 'package:flutter/material.dart';
-import 'package:ranked/api_client.dart';
+import 'package:ranked/core/api_client.dart';
 import 'package:ranked/l10n/l10n.dart';
 import 'forgot_password_screen.dart';
 import 'login_result.dart';
-import 'user_api_service.dart';
-import 'onboarding/onboarding_flow.dart';
-import 'app_colors.dart';
-import 'key_restore_dialogs.dart';
-import 'key_setup.dart';
-import 'token_storage.dart';
+import '../core/user_api_service.dart';
+import '../onboarding/onboarding_flow.dart';
+import '../ui/app_colors.dart';
+import '../e2ee/key_restore_dialogs.dart';
+import '../e2ee/key_setup.dart';
+import '../core/token_storage.dart';
 import 'verify_email_screen.dart';
 import 'package:ranked/moderation/suspended_screen.dart';
 import 'package:ranked/moderation/suspension.dart';

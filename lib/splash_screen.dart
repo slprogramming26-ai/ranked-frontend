@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
-import 'app_colors.dart';
+import 'ui/app_colors.dart';
 
 /// Branded Start-Splash: laeuft, solange der Token-Check beim App-Start
 /// unterwegs ist (loggedIn == null in main.dart).

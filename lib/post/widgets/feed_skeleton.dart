@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../app_colors.dart';
+import '../../ui/app_colors.dart';
 
 /// Wiederverwendbare Puls-Huelle fuer Skeletons: laesst alles darunter weich
 /// zwischen 45% und 100% Deckkraft atmen (gleiche Technik wie das

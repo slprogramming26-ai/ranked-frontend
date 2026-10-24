@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../app_colors.dart';
-import '../../confirm_dialog.dart';
+import '../../ui/app_colors.dart';
+import '../../ui/confirm_dialog.dart';
 import '../../l10n/l10n.dart';
 import '../../moderation/report_sheet.dart';
 import '../../moderation/report_target.dart';
