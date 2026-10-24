@@ -56,7 +56,13 @@ class KeySetup {
   }
 
   // Nach erfolgreichem Login, VOR onLoginSuccess/_startMessenger.
-  static Future<KeySetupResult> afterLogin(int userId, String password) async {
+  // passwordChanged: Login direkt nach "Passwort vergessen" -> das Backup ist
+  // evtl. noch mit dem alten Passwort verpackt (siehe _syncBackup).
+  static Future<KeySetupResult> afterLogin(
+    int userId,
+    String password, {
+    bool passwordChanged = false,
+  }) async {
     final uid = userId.toString();
     try {
       // Ohne echte Server-Antwort koennen wir nichts sicher entscheiden.
@@ -68,8 +74,8 @@ class KeySetup {
       if (await KeyService.hasLocalKeypair(uid)) {
         final localPub = await KeyService.loadLocalPublicKey(uid);
         if (serverPub == null || serverPub == localPub) {
-          // Aktuell. Nur das Backup nachholen, falls es fehlt (Bestandsnutzer).
-          await _backfillIfMissing(uid, password);
+          // Aktuell. Nur das Backup nachholen (fehlt / altes Passwort).
+          await _syncBackup(uid, password, passwordChanged: passwordChanged);
           return KeySetupResult.ready();
         }
         // Server hat eine NEUERE Generation (startFresh auf anderem Geraet)
@@ -104,7 +110,7 @@ class KeySetup {
   // Nach der Registrierung: neuer Account hat garantiert weder Pubkey noch
   // Backup, also kein Fetch. Wirft bei Fehlern — der Aufrufer behandelt das
   // best-effort (Pubkey laedt der MessengerController hoch, das Backup holt
-  // _backfillIfMissing beim naechsten Login nach).
+  // _syncBackup beim naechsten Login nach).
   static Future<void> afterRegistration(int userId, String password) =>
       _createFresh(userId.toString(), password);
 
@@ -215,12 +221,36 @@ class KeySetup {
     }
   }
 
-  // Bestandsnutzer mit lokalem Key, aber ohne Backup: beim Login nachholen.
-  // Best-effort — scheitert es, versuchen wir es beim naechsten Login wieder.
-  static Future<void> _backfillIfMissing(String uid, String password) async {
-    // Nur bei einem echten 404 — bei found steht schon eins da.
+  // Lokaler Key ist aktuell -> Backup mit dem aktuellen Login-Passwort
+  // hochladen, wenn
+  //   - gar keins da ist (Bestandsnutzer ohne Backup), oder
+  //   - das Passwort gerade zurueckgesetzt wurde: das Backup ist dann noch
+  //     mit dem ALTEN verpackt, und das kennt der Nutzer nicht mehr. Ohne
+  //     Neu-Verpacken fragte das naechste Geraet genau danach -> Chats weg.
+  //     Entschluesseln muessen wir das alte Backup dafuer nicht: wir
+  //     verpacken einfach den lokalen Key neu (passt ja zum Server-Pubkey).
+  // Ein eigenes Backup-Passwort (custom) haengt nicht am Login -> bleibt.
+  //
+  // Best-effort. Bekannte Luecke: scheitert der Upload direkt nach einem
+  // Reset, holt das niemand nach (spaetere Logins kommen ohne
+  // passwordChanged). Sicher erkennen ginge nur per Probe-Entpacken bei
+  // JEDEM Login (~1 s Argon2) -> bewusst nicht.
+  static Future<void> _syncBackup(
+    String uid,
+    String password, {
+    required bool passwordChanged,
+  }) async {
     final fetched = await KeyService.fetchBackup();
-    if (fetched.status != FetchBackupStatus.none) return;
+    // Kein default: kommt ein neuer Status dazu, meckert der Compiler.
+    final needsUpload = switch (fetched.status) {
+      FetchBackupStatus.none => true,
+      FetchBackupStatus.found =>
+        passwordChanged &&
+            fetched.backup!.secretType == BackupSecretType.loginPassword,
+      // Wir wissen nicht, was auf dem Server liegt -> nichts anfassen.
+      FetchBackupStatus.rateLimited || FetchBackupStatus.error => false,
+    };
+    if (!needsUpload) return;
     final SecureKey? privKey = await KeyService.getSecretKey(uid);
     final pubKey = await KeyService.loadLocalPublicKey(uid);
     if (privKey == null || pubKey == null) return;
@@ -231,7 +261,7 @@ class KeySetup {
       pubKeyB64: pubKey,
     );
     if (!await KeyService.uploadBackup(backup)) {
-      debugPrint('[E2EE] Backup-Backfill fehlgeschlagen (User $uid)');
+      debugPrint('[E2EE] Backup-Sync fehlgeschlagen (User $uid)');
     }
   }
 }

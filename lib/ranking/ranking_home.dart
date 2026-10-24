@@ -133,6 +133,18 @@ class _RankingHomeState extends State<RankingHome> {
                         height: 1.5,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    // Ersetzt den frueheren Hinweis unter "Kategorie" im
+                    // Create-Post: hier lernt man die Regeln ohnehin kennen.
+                    Text(
+                      context.l10n.rankingOptinCategoryInfo,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
                     const Spacer(),
                     // Activate Button
                     PrimaryButton(

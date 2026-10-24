@@ -3,10 +3,11 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 
 import '../api_client.dart';
+import '../api_config.dart';
 
 class StoryApiService {
 
-  static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   static Future<List<Map<String, dynamic>>> getStories() async {
     final response = await ApiClient.get(Uri.parse("$baseUrl/stories/"));

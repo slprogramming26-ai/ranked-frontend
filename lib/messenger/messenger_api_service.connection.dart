@@ -9,6 +9,9 @@ const _pingInterval = Duration(seconds: 20);
 // Auto-Reconnect-Backoff waechst 1,2,4,8,16s und wird hier gedeckelt.
 const _maxBackoff = Duration(seconds: 30);
 
+// Server-Close-Code "account suspended" (PROTOCOL.md § 4.1 / § 6.3).
+const _closeSuspended = 4003;
+
 extension MessengerConnection on MessengerApiService {
   bool get isConnected => _channel != null;
 
@@ -102,12 +105,21 @@ extension MessengerConnection on MessengerApiService {
   }
 
   // Verbindung ist (ungewollt) abgerissen: aufraeumen und — sofern wir nicht
-  // selbst geschlossen haben — einen Reconnect einplanen.
+  // selbst geschlossen haben — einen Reconnect einplanen. Ausnahme 4003
+  // (Account gesperrt): NIE reconnecten, sondern per REST die Sperr-Details
+  // holen -> ApiClient loest Zwangs-Logout + Sperr-Screen aus.
   void _handleDrop() {
+    final code = _channel?.closeCode; // VOR dem Nullen auslesen!
     _channelSub?.cancel();
     _channelSub = null;
     _channel = null;
-    if (_manuallyClosed) return; // gewolltes Schliessen -> nichts tun
+    if (_manuallyClosed) return;
+    if (code == _closeSuspended) {
+      _manuallyClosed = true; // stoppt Backoff UND den Timer-Callback
+      _reconnectAttempts = 0;
+      unawaited(ApiClient.checkSuspension());
+      return;
+    }
     _scheduleReconnect();
   }
 

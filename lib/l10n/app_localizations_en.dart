@@ -370,6 +370,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingCredentialsPasswordHint => 'Password';
 
   @override
+  String onboardingCredentialsPasswordMin(int min) {
+    return 'At least $min characters';
+  }
+
+  @override
+  String onboardingCredentialsPasswordMax(int max) {
+    return 'At most $max characters';
+  }
+
+  @override
   String get onboardingCredentialsLegal =>
       'By signing up, you agree to our Community Guidelines';
 
@@ -537,20 +547,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get createPostContentHint => 'What\'s new?';
 
   @override
-  String get createPostGallery => 'Choose from gallery';
+  String get createPostGallery => 'Gallery';
 
   @override
-  String get createPostCamera => 'Take photo';
+  String get createPostCamera => 'Camera';
 
   @override
   String get createPostRemoveImage => 'Remove image';
 
   @override
   String get createPostCategory => 'Category';
-
-  @override
-  String get createPostCategoryHint =>
-      'Optional – counts toward category rankings';
 
   @override
   String get createPostCategoryProductivity => 'Productivity';
@@ -605,7 +611,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get rankingOptinDescription =>
-      'Enable ranking and let the community rate you daily — Productivity, Creativity & Engagement.';
+      'Enable ranking and let the community rate you daily.';
+
+  @override
+  String get rankingOptinCategoryInfo =>
+      'Pick a category when you post – Productivity, Creativity or Engagement. It counts toward the category rankings.';
 
   @override
   String get rankingOptinButton => 'ACTIVATE';
@@ -1599,4 +1609,79 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timeYesterday => 'Yesterday';
+
+  @override
+  String get verifyTitle => 'Confirm your email';
+
+  @override
+  String verifySubtitle(String email) {
+    return 'We sent a 6-digit code to $email.';
+  }
+
+  @override
+  String get verifyButton => 'Confirm';
+
+  @override
+  String get verifyResend => 'Resend code';
+
+  @override
+  String verifyResendIn(int seconds) {
+    return 'New code in ${seconds}s';
+  }
+
+  @override
+  String get verifyResent => 'A new code is on its way.';
+
+  @override
+  String get verifySpamHint => 'Nothing arrived? Check your spam folder too.';
+
+  @override
+  String get verifyCodeInvalid =>
+      'Wrong or expired code. Request a new one if needed.';
+
+  @override
+  String get verifyTooManyRequests =>
+      'Too many attempts. Wait a moment and try again.';
+
+  @override
+  String get verifyCooldown =>
+      'Please wait a moment before requesting a new code.';
+
+  @override
+  String get verifyError => 'Something went wrong. Please try again.';
+
+  @override
+  String get resetEmailInvalid => 'Please enter a valid email address.';
+
+  @override
+  String get resetPasswordLength =>
+      'Your new password needs 8 to 128 characters.';
+
+  @override
+  String get resetDailyLimit =>
+      'Too many failed attempts today. Please try again tomorrow.';
+
+  @override
+  String get resetTitle => 'Forgot your password?';
+
+  @override
+  String get resetEmailSubtitle =>
+      'Enter your email address. We\'ll send you a code to set a new password.';
+
+  @override
+  String get resetSendButton => 'Send code';
+
+  @override
+  String get resetCodeTitle => 'New password';
+
+  @override
+  String resetCodeSubtitle(String email) {
+    return 'Enter the code we sent to $email and choose a new password.';
+  }
+
+  @override
+  String get resetNewPasswordHint => 'New password (min. 8 characters)';
+
+  @override
+  String get resetButton => 'Change password';
 }

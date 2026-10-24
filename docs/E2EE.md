@@ -1,6 +1,6 @@
 # E2EE im Messenger — Übersicht
 
-Stand: 26.09.2026 (Key-Backup Schritt 3a). Nachschlagewerk: Was gibt es, wozu, wo liegt es.
+Stand: 23.10.2026 (Key-Backup + „Passwort vergessen“). Nachschlagewerk: Was gibt es, wozu, wo liegt es.
 
 ## Das Grundprinzip in einem Bild
 
@@ -89,6 +89,7 @@ Alle Krypto-Funktionen kommen aus libsodium (Paket `sodium`). Argon2 gibt es nur
 | Krypto + REST | `key_service.dart` → `wrapKeyBackup`, `unwrapKeyBackup`, `uploadBackup`, `fetchBackup` |
 | Ablauf beim Login | `lib/key_setup.dart` → `afterLogin`, `afterRegistration`, `retryWithPassword`, `startFresh` |
 | Login-Einbau + Dialoge | `lib/login_screen.dart` → `_handleLogin`, `_resolveKeySetup`; `lib/key_restore_dialogs.dart` |
+| Passwort vergessen | `lib/forgot_password_screen.dart` (Code + neues Passwort); `login_screen.dart` → `_openForgotPassword`, Feld `_passwordJustReset`; `key_setup.dart` → `_syncBackup` (siehe 4.) |
 | Registrierung | `onboarding/onboarding_flow.dart` → `_handleNextStep` ruft `afterRegistration` best-effort vor dem Home-Wechsel (scheitert es, holt der nächste Login alles nach) |
 | Abgleich zur Laufzeit | `messenger_controller.dart` → `_checkOwnPublicKey` (veraltet → Logout + Hinweis über `KeySetup.setLogoutNotice`) |
 | Tests | `test/key_backup_test.dart` |
@@ -100,7 +101,7 @@ Alle Krypto-Funktionen kommen aus libsodium (Paket `sodium`). Argon2 gibt es nur
 ```
 Server-Pubkey holen (Fehler → error)
 Lokaler Key da?
- ├─ Server leer oder gleich → ggf. Backup nachholen → ready
+ ├─ Server leer oder gleich → _syncBackup (fehlt / altes Passwort) → ready
  └─ Server anders → lokaler Key veraltet → löschen, weiter unten
 Backup holen:
  ├─ found → entpacken, Pubkey muss zum Server passen → ready
@@ -115,9 +116,72 @@ Backup holen:
 2. **Der eigene Pubkey auf dem Server ist die aktuelle Schlüssel-Generation.** Ein vorhandener Server-Pubkey wird **nie still überschrieben**. Das passiert nur beim allerersten Key (Server 404) oder bei `startFresh` nach Bestätigung durch den User.
 3. **Im Zweifel abbrechen, nie neu erzeugen.** Netzwerkfehler ≠ 404.
 
-**`startFresh` = Notausgang** („Chats zurücksetzen“), für Passwort-Reset, vergessenes Backup-Passwort oder ein kaputtes Backup. Ohne ihn wäre der User ausgesperrt. Andere Geräte merken den Wechsel am Pubkey-Vergleich und melden sich neu an.
+**`startFresh` = Notausgang** („Chats zurücksetzen“), für Passwort-Reset auf einem **fremden** Gerät (siehe 4.), vergessenes Backup-Passwort oder ein kaputtes Backup. Ohne ihn wäre der User ausgesperrt. Andere Geräte merken den Wechsel am Pubkey-Vergleich und melden sich neu an.
 
 Reihenfolge in `_createFresh`: **erst Backup, dann Pubkey**. Scheitert das Backup, bleibt der alte Pubkey stehen.
+
+---
+
+## 4. Passwort vergessen: was passiert mit den Chats?
+
+### Das Bild: ein Tresor auf dem Server
+
+Stell dir das Backup als **Tresor** vor:
+- **Im Tresor** liegt der Private Key, also der Schlüssel zu allen Chats.
+- **Das Schloss** ist das Login-Passwort (bei `secret_type = login_password`).
+- **Der Server** bewahrt den Tresor nur auf. Er kann ihn nicht öffnen, das ist der Sinn von E2EE.
+
+Beim Passwort-Reset ändert der Server nur das **Login**-Passwort. **Das Schloss am Tresor kann er nicht austauschen**, denn dafür müsste er ihn öffnen. Der Tresor geht also weiter nur mit dem **alten** Passwort auf, und genau das hat der User vergessen.
+
+### Die zwei Fälle
+
+**Fall A: Reset auf dem Handy, das der User sowieso benutzt (der Normalfall).**
+Der Private Key liegt dort noch lokal, er überlebt ja den Logout (siehe 0.). Die App macht beim Login nach dem Reset:
+
+```
+1. Login mit neuem Passwort klappt
+2. Lokaler Key da und passt zum Server → Chats sofort lesbar
+3. _syncBackup: "Passwort wurde gerade zurückgesetzt?"
+   → ja → lokalen Key in einen NEUEN Tresor mit dem NEUEN Passwort packen
+        → hochladen, der alte Tresor wird überschrieben
+```
+
+Den alten Tresor müssen wir dafür **nicht öffnen**. Wir haben den Inhalt ja schon auf dem Handy und packen ihn einfach neu ein. Ergebnis: Ein späteres neues Handy kommt mit dem neuen Passwort an die Chats.
+
+**Fall B: Reset auf einem Gerät ohne lokalen Key** (neues Handy, App neu installiert).
+Hier gibt es keinen Inhalt zum Neu-Einpacken. Die App versucht den Tresor mit dem neuen Passwort und scheitert. Dann fragt der Dialog nach dem alten Passwort:
+- Fällt es dem User wieder ein → Tresor geht auf → `_restore` packt ihn gleich mit dem neuen Passwort neu ein.
+- Sonst bleibt nur „Chats zurücksetzen“ (`startFresh`). Die alten Nachrichten sind dann für dieses Gerät verloren. **Das lässt sich nicht verhindern**: Könnte der Server den Tresor ohne Passwort öffnen, wäre es keine Ende-zu-Ende-Verschlüsselung.
+
+### Wie die App weiß, dass gerade ein Reset war
+
+```
+ForgotPasswordScreen      Code + neues Passwort → Server sagt OK (204)
+        │                  gibt (E-Mail, neues Passwort) zurück
+        ▼
+LoginScreen               füllt die Felder, setzt _passwordJustReset = true,
+        │                  loggt automatisch ein
+        ▼
+KeySetup.afterLogin       bekommt passwordChanged: true
+        │
+        ▼
+_syncBackup               packt das Backup neu ein (Fall A)
+```
+
+- `_passwordJustReset` ist ein **Feld** im LoginScreen und kein Parameter. Scheitert der automatische Login (z.B. kein Netz), tippt der User nochmal auf „Einloggen“, und das Flag ist dann immer noch da.
+- Es wird erst gelöscht, wenn das Key-Setup `ready` meldet.
+
+### Was `_syncBackup` genau entscheidet
+
+| Was liegt auf dem Server? | Neu hochladen? | Warum |
+|---|---|---|
+| gar kein Backup | ja | Bestandsnutzer von vor dem Backup-Feature: Backup nachholen |
+| Backup + gerade Reset + Typ `login_password` | ja | Fall A: Schloss ist noch das alte Passwort |
+| Backup, normaler Login | nein | passt schon |
+| Backup mit eigenem Backup-Passwort (`custom`) | nein | hängt nicht am Login-Passwort, also nicht anfassen |
+| Fehler / 429 | nein | wir wissen nicht, was dort liegt, also nichts überschreiben (Regel 3) |
+
+Außerdem wichtig: Der Reset löscht im Backend **alle Refresh-Tokens**. Andere eingeloggte Geräte fliegen beim nächsten Token-Refresh raus und müssen sich mit dem neuen Passwort anmelden.
 
 ---
 
@@ -132,7 +196,8 @@ Reihenfolge in `_createFresh`: **erst Backup, dann Pubkey**. Scheitert das Backu
 | 5 | Variante `login_password`: Der Server sieht beim Login das Passwort. Das Backup schützt also gegen ein DB-Leak, nicht gegen einen böswilligen Server. | bekannt | Später optionales eigenes Backup-Passwort (`custom`) in den Settings. |
 | 6 | Keine Forward Secrecy (statische Keys, kein Double Ratchet). Ein geleakter Private Key öffnet alle alten Nachrichten. | bekannt | Bewusst nicht geplant, zu komplex für den Nutzen. |
 | 7 | Gruppen: Der Epochen-Key ist geteilt, der Absender ist nicht kryptografisch signiert. Mitglieder (und der Server über `sender_id`) könnten sich als jemand anders ausgeben. | bekannt | Bewusst nicht geplant. |
-| 8 | Passwort ändern → Backup neu verpacken | — | Schritt 4 |
+| 8 | Passwort **ändern** (in den Settings, mit altem Passwort) → Backup neu verpacken. Gibt es noch nicht. Für „Passwort **vergessen**“ ist es erledigt, siehe 4. | — | Kommt mit „Passwort ändern“ in den Settings, dort einfach `passwordChanged: true` nutzen |
+| 9 | Scheitert der Backup-Upload direkt nach einem Reset (Netz weg genau in dem Moment), holt ihn später niemand nach. Ein neues Gerät fragt dann nach dem alten Passwort. | niedrig | Bewusst hingenommen. Sicher erkennen ginge nur per Probe-Entpacken bei **jedem** Login (~1 s Argon2). |
 
 ## Glossar
 
@@ -145,3 +210,4 @@ Reihenfolge in `_createFresh`: **erst Backup, dann Pubkey**. Scheitert das Backu
 - **Epoche:** Version des Gruppen-Keys. Eine neue gibt es bei jedem Mitgliederwechsel.
 - **Argon2id / KEK:** macht aus einem Passwort langsam einen Schlüssel (Key Encryption Key), damit Durchprobieren teuer wird.
 - **TOFU:** Trust On First Use. Den ersten gesehenen Key eines Partners merken und bei Änderung warnen.
+- **Neu verpacken (Rewrap):** denselben Private Key mit einem anderen Passwort neu verschlüsseln. Der Key selbst bleibt gleich, also bleiben alle Chats lesbar. Nur das „Schloss“ wechselt.

@@ -470,6 +470,20 @@
   "@onboardingCredentialsPasswordHint": {
     "description": "Platzhalter im Password-Feld"
   },
+  "onboardingCredentialsPasswordMin": "Mindestens {min} Zeichen",
+  "@onboardingCredentialsPasswordMin": {
+    "description": "Regel-Zeile unter dem Passwortfeld der Registrierung",
+    "placeholders": {
+      "min": {"type": "int"}
+    }
+  },
+  "onboardingCredentialsPasswordMax": "Höchstens {max} Zeichen",
+  "@onboardingCredentialsPasswordMax": {
+    "description": "Regel-Zeile, wenn das Passwort zu lang ist",
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
   "onboardingCredentialsLegal": "Mit der Registrierung stimmst du unseren Community-Richtlinien zu",
   "@onboardingCredentialsLegal": {
     "description": "Rechtlicher Text am Ende der Credentials-Seite"
@@ -691,13 +705,13 @@
   "@createPostContentHint": {
     "description": "Create-Post: Hint im Text-Feld"
   },
-  "createPostGallery": "Aus Galerie wählen",
+  "createPostGallery": "Galerie",
   "@createPostGallery": {
-    "description": "Create-Post: Tooltip Galerie-Icon"
+    "description": "Create-Post: Label der Galerie-Pille unter dem Text"
   },
-  "createPostCamera": "Foto aufnehmen",
+  "createPostCamera": "Kamera",
   "@createPostCamera": {
-    "description": "Create-Post: Tooltip Kamera-Icon"
+    "description": "Create-Post: Label der Kamera-Pille unter dem Text"
   },
   "createPostRemoveImage": "Bild entfernen",
   "@createPostRemoveImage": {
@@ -706,10 +720,6 @@
   "createPostCategory": "Kategorie",
   "@createPostCategory": {
     "description": "Create-Post: Ueberschrift Kategorie-Chips"
-  },
-  "createPostCategoryHint": "Optional – zählt für die Kategorie-Rankings",
-  "@createPostCategoryHint": {
-    "description": "Create-Post: Hinweis unter der Kategorie-Ueberschrift"
   },
   "createPostCategoryProductivity": "Produktivität",
   "@createPostCategoryProductivity": {
@@ -779,9 +789,13 @@
   "@rankingOptinTitle": {
     "description": "Titel des Ranking Opt-In Screens"
   },
-  "rankingOptinDescription": "Aktiviere das Ranking und lass dich täglich von der Community bewerten — Productivity, Creativity & Engagement.",
+  "rankingOptinDescription": "Aktiviere das Ranking und lass dich täglich von der Community bewerten.",
   "@rankingOptinDescription": {
     "description": "Beschreibungstext des Ranking Opt-In Screens"
+  },
+  "rankingOptinCategoryInfo": "Wähle beim Posten eine Kategorie – Produktivität, Kreativität oder Engagement. Sie zählt für die Kategorie-Rankings.",
+  "@rankingOptinCategoryInfo": {
+    "description": "Ranking Opt-In: zweiter Absatz, erklaert die Kategorie-Chips aus Create-Post (gleiche Woerter wie die Chips)"
   },
   "rankingOptinButton": "AKTIVIEREN",
   "@rankingOptinButton": {
@@ -2077,5 +2091,104 @@
   "timeYesterday": "Gestern",
   "@timeYesterday": {
     "description": "Chat-Datumstrenner: gestern"
+  },
+  "verifyTitle": "E-Mail bestätigen",
+  "@verifyTitle": {
+    "description": "Code-Screen: Ueberschrift"
+  },
+  "verifySubtitle": "Wir haben dir einen 6-stelligen Code an {email} geschickt.",
+  "@verifySubtitle": {
+    "description": "Code-Screen: Untertitel mit der E-Mail-Adresse",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "verifyButton": "Bestätigen",
+  "@verifyButton": {
+    "description": "Code-Screen: Haupt-Button"
+  },
+  "verifyResend": "Code erneut senden",
+  "@verifyResend": {
+    "description": "Code-Screen: Link zum neuen Code"
+  },
+  "verifyResendIn": "Neuer Code in {seconds} s",
+  "@verifyResendIn": {
+    "description": "Code-Screen: Countdown statt des Erneut-senden-Links",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "verifyResent": "Neuer Code ist unterwegs.",
+  "@verifyResent": {
+    "description": "Code-Screen: Hinweis nach erfolgreichem Erneut-senden"
+  },
+  "verifySpamHint": "Nichts angekommen? Schau auch im Spam-Ordner nach.",
+  "@verifySpamHint": {
+    "description": "Code-Screen: Hinweis unter dem Erneut-senden-Link"
+  },
+  "verifyCodeInvalid": "Code falsch oder abgelaufen. Fordere bei Bedarf einen neuen an.",
+  "@verifyCodeInvalid": {
+    "description": "Code-Screen: 400 (falsch, abgelaufen oder 5 Versuche weg)"
+  },
+  "verifyTooManyRequests": "Zu viele Versuche. Warte kurz und versuch es dann nochmal.",
+  "@verifyTooManyRequests": {
+    "description": "Code-Screen: 429 beim Bestaetigen"
+  },
+  "verifyCooldown": "Bitte warte kurz, bevor du einen neuen Code anforderst.",
+  "@verifyCooldown": {
+    "description": "Code-Screen: 429 beim Erneut-senden (60-s-Cooldown)"
+  },
+  "verifyError": "Etwas ist schiefgelaufen. Bitte versuche es nochmal.",
+  "@verifyError": {
+    "description": "Code-Screen: unerwarteter Fehler (500 o.ae.)"
+  },
+  "resetEmailInvalid": "Bitte gib eine gültige E-Mail-Adresse ein.",
+  "@resetEmailInvalid": {
+    "description": "Passwort vergessen: E-Mail-Feld leer oder ungueltig (EmailValidator)"
+  },
+  "resetPasswordLength": "Dein neues Passwort braucht 8 bis 128 Zeichen.",
+  "@resetPasswordLength": {
+    "description": "Passwort vergessen: neues Passwort zu kurz/zu lang (Backend: min 8, max 128)"
+  },
+  "resetDailyLimit": "Zu viele Fehlversuche heute. Bitte versuche es morgen erneut.",
+  "@resetDailyLimit": {
+    "description": "Passwort vergessen: 429 Tageslimit (10 falsche Codes)"
+  },
+  "resetTitle": "Passwort vergessen?",
+  "@resetTitle": {
+    "description": "Passwort vergessen, Phase 1: Titel"
+  },
+  "resetEmailSubtitle": "Gib deine E-Mail-Adresse ein. Wir schicken dir einen Code, mit dem du ein neues Passwort festlegst.",
+  "@resetEmailSubtitle": {
+    "description": "Passwort vergessen, Phase 1: Untertitel"
+  },
+  "resetSendButton": "Code senden",
+  "@resetSendButton": {
+    "description": "Passwort vergessen, Phase 1: Button"
+  },
+  "resetCodeTitle": "Neues Passwort",
+  "@resetCodeTitle": {
+    "description": "Passwort vergessen, Phase 2: Titel"
+  },
+  "resetCodeSubtitle": "Gib den Code ein, den wir an {email} geschickt haben, und wähle ein neues Passwort.",
+  "@resetCodeSubtitle": {
+    "description": "Passwort vergessen, Phase 2: Untertitel mit der E-Mail-Adresse",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "resetNewPasswordHint": "Neues Passwort (mind. 8 Zeichen)",
+  "@resetNewPasswordHint": {
+    "description": "Passwort vergessen, Phase 2: Hint im Passwortfeld"
+  },
+  "resetButton": "Passwort ändern",
+  "@resetButton": {
+    "description": "Passwort vergessen, Phase 2: Button"
   }
 }

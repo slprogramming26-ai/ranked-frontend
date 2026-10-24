@@ -25,6 +25,8 @@ class _CreatePostState extends State<CreatePost> {
   late TextEditingController contentController;
   // Damit ein Tipp auf die freie Flaeche der Composer-Karte ins Textfeld geht.
   final _contentFocus = FocusNode();
+  // Ziel, wenn jemand auf den (noch grauen) Posten-Button tippt.
+  final _titleFocus = FocusNode();
   late final AppDatabase _db;
   File? _image;
 
@@ -58,6 +60,11 @@ class _CreatePostState extends State<CreatePost> {
   }
 
   Future<void> _pickLocation() async {
+    // Den Ort waehlt man meist zum Schluss -> danach Tastatur NICHT wieder
+    // oeffnen. Flutter merkt sich pro Route das zuletzt fokussierte Feld und
+    // fokussiert es nach dem Schliessen des Sheets erneut. unfocus() vorher
+    // loescht dieses Gedaechtnis (gilt auch fuers Abbrechen).
+    FocusManager.instance.primaryFocus?.unfocus();
     final loc = await showLocationPicker(context);
     if (loc == null || !mounted) return;
     setState(() => _overrideLocation = loc);
@@ -68,6 +75,7 @@ class _CreatePostState extends State<CreatePost> {
     titleController.dispose();
     contentController.dispose();
     _contentFocus.dispose();
+    _titleFocus.dispose();
     _db.deletePostDraft();
     super.dispose();
   }
@@ -144,6 +152,13 @@ class _CreatePostState extends State<CreatePost> {
       iconActivated[name] = !wasActive;
     });
   }
+
+  // Posten erst, wenn mindestens Titel, Text oder Bild da ist (Threads-Regel).
+  // trim(): nur Leerzeichen/Zeilenumbrueche zaehlen nicht als Inhalt.
+  bool get _canPost =>
+      titleController.text.trim().isNotEmpty ||
+      contentController.text.trim().isNotEmpty ||
+      _image != null;
 
   // Unveraendert aus dem frueheren onPressed des Post-Buttons herausgezogen
   // (nur verschoben, damit die AppBar lesbar bleibt).
@@ -262,9 +277,20 @@ class _CreatePostState extends State<CreatePost> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: _PostPill(
-              label: context.l10n.createPostSubmit,
-              onTap: _submit,
+            // Nur die Pille haengt an den Controllern -> pro Tastendruck wird
+            // nur sie neu gebaut, nicht der ganze Screen. Bild-Aenderungen
+            // laufen ueber setState und bauen sie sowieso mit.
+            child: ListenableBuilder(
+              listenable: Listenable.merge([
+                titleController,
+                contentController,
+              ]),
+              builder: (context, _) => _PostPill(
+                label: context.l10n.createPostSubmit,
+                enabled: _canPost,
+                onTap: _submit,
+                onDisabledTap: _titleFocus.requestFocus,
+              ),
             ),
           ),
         ],
@@ -308,22 +334,8 @@ class _CreatePostState extends State<CreatePost> {
     );
   }
 
-  // Kleines getoentes Icon-Badge vor Kategorie/Standort -> Farbakzent,
-  // ohne die Flaechen selbst einzufaerben.
-  Widget _sectionIcon(IconData icon) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(icon, size: 18, color: AppColors.primary),
-    );
-  }
-
-  // Threads/X-Stil: Avatar links, rechts daneben Name, Felder und Anhang.
-  // Die Karte fuellt den freien Platz; unten sitzt die Medien-Toolbar.
+  // Threads/X-Stil: Avatar links, rechts daneben Name, Felder und darunter
+  // Foto-Pillen bzw. Anhang. Die Karte fuellt den freien Platz.
   Widget _buildComposer() {
     // select -> nur neu bauen, wenn sich Bild oder Name aendern.
     final picUrl = context.select<ProfileProvider, String?>(
@@ -359,6 +371,14 @@ class _CreatePostState extends State<CreatePost> {
                       ),
                       TextField(
                         controller: titleController,
+                        focusNode: _titleFocus,
+                        // Tastatur offen + blinkender Cursor = "hier tippen".
+                        // Ohne das wirkten die randlosen Felder wie eine
+                        // fertige (leere) Post-Vorschau.
+                        autofocus: true,
+                        // Enter im Titel springt in den Text, statt die
+                        // Tastatur zu schliessen (einzeiliges Feld = sonst "Fertig").
+                        textInputAction: TextInputAction.next,
                         textCapitalization: TextCapitalization.sentences,
                         style: TextStyle(
                           fontSize: 17,
@@ -387,10 +407,30 @@ class _CreatePostState extends State<CreatePost> {
                           context.l10n.createPostContentHint,
                         ),
                       ),
-                      if (image != null) ...[
-                        const SizedBox(height: 10),
-                        _buildAttachedImage(image),
-                      ],
+                      const SizedBox(height: 10),
+                      // Direkt unterm Text, wo der Blick ist, und mit Wort
+                      // statt nur Icon (Icons unten in der Karte wurden im
+                      // Test uebersehen). Mit Bild -> Bild statt Pillen,
+                      // das X darauf bringt die Pillen zurueck.
+                      if (image != null)
+                        _buildAttachedImage(image)
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _MediaPill(
+                              icon: Icons.photo_library_outlined,
+                              label: context.l10n.createPostGallery,
+                              onTap: pickImageFromGallery,
+                            ),
+                            _MediaPill(
+                              icon: Icons.photo_camera_outlined,
+                              label: context.l10n.createPostCamera,
+                              onTap: pickImageFromCamera,
+                            ),
+                          ],
+                        ),
                     ],
                   ),
                 ),
@@ -404,26 +444,6 @@ class _CreatePostState extends State<CreatePost> {
               behavior: HitTestBehavior.opaque,
               onTap: _contentFocus.requestFocus,
               child: const SizedBox(width: double.infinity, height: 24),
-            ),
-          ),
-          // Medien-Toolbar unten in der Karte, Icons in primary (Aktion).
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 4),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.photo_library_outlined),
-                  color: AppColors.primary,
-                  tooltip: context.l10n.createPostGallery,
-                  onPressed: pickImageFromGallery,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.photo_camera_outlined),
-                  color: AppColors.primary,
-                  tooltip: context.l10n.createPostCamera,
-                  onPressed: pickImageFromCamera,
-                ),
-              ],
             ),
           ),
         ],
@@ -479,9 +499,10 @@ class _CreatePostState extends State<CreatePost> {
     );
   }
 
-  // Kategorie als Chip-Reihe: Ueberschrift + kurzer Hinweis, darunter die
-  // drei Chips. Die Map-Keys ('Productivity' ...) sind die IDs fuers Backend
-  // und den Entwurf -> nur die ANZEIGE wird uebersetzt.
+  // Kategorie als Chip-Reihe: schlichte Ueberschrift, darunter die drei
+  // Chips. Kein Icon-Badge/Erklaersatz mehr, damit der Bereich nicht lauter
+  // ist als das Schreiben. Die Map-Keys ('Productivity' ...) sind die IDs
+  // fuers Backend und den Entwurf -> nur die ANZEIGE wird uebersetzt.
   Widget _buildCategorySection() {
     final l10n = context.l10n;
     final categories = [
@@ -500,35 +521,15 @@ class _CreatePostState extends State<CreatePost> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                _sectionIcon(Icons.local_offer_outlined),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.createPostCategory,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
-                        ),
-                      ),
-                      Text(
-                        l10n.createPostCategoryHint,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            Text(
+              l10n.createPostCategory,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: AppColors.onSurface,
+              ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -548,7 +549,8 @@ class _CreatePostState extends State<CreatePost> {
     );
   }
 
-  // Standort als antippbare Karte (oeffnet den Location-Picker).
+  // Standort als antippbare Listenzeile (oeffnet den Location-Picker).
+  // Schlichtes Icon statt getoenter Kachel, wie eine normale Einstellungszeile.
   Widget _buildLocationRow() {
     final l10n = context.l10n;
     final override = _overrideLocation;
@@ -572,7 +574,11 @@ class _CreatePostState extends State<CreatePost> {
           padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
           child: Row(
             children: [
-              _sectionIcon(Icons.location_on_outlined),
+              Icon(
+                Icons.location_on_outlined,
+                size: 22,
+                color: AppColors.onSurfaceVariant,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -680,31 +686,97 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-/// Kompakte "Posten"-Pille in der AppBar (solid primary, kein Schatten) –
-/// gleiche Form wie die Teilen-Pille in der Story-Vorschau.
-class _PostPill extends StatelessWidget {
+/// Foto-Aktion im Composer: getoente Pille (primary 0.10) mit Icon + Wort.
+/// Bewusst getoent statt umrandet: so ist sie klar von den Kategorie-Chips
+/// (= Auswahl) zu unterscheiden, das hier ist eine Aktion.
+class _MediaPill extends StatelessWidget {
+  final IconData icon;
   final String label;
   final VoidCallback onTap;
 
-  const _PostPill({required this.label, required this.onTap});
+  const _MediaPill({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.primary.withValues(alpha: 0.10),
+      shape: const StadiumBorder(),
+      child: InkWell(
+        customBorder: const StadiumBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: AppColors.primary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Kompakte "Posten"-Pille in der AppBar (kein Schatten) – gleiche Form wie
+/// die Teilen-Pille in der Story-Vorschau. Leer = grau, mit Inhalt = rot;
+/// das Aufleuchten zeigt, dass der Post jetzt raus kann.
+class _PostPill extends StatelessWidget {
+  final String label;
+  final bool enabled;
+  final VoidCallback onTap;
+  // Tipp auf die graue Pille: kein Fehler-Snack, sondern Fokus ins Feld.
+  final VoidCallback onDisabledTap;
+
+  const _PostPill({
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+    required this.onDisabledTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Farbe im AnimatedContainer UNTER einem transparenten Material: so wird
+    // der Wechsel animiert und der InkWell-Ripple bleibt trotzdem sichtbar.
     return Center(
-      child: Material(
-        color: AppColors.primary,
-        shape: const StadiumBorder(),
-        child: InkWell(
-          customBorder: const StadiumBorder(),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        decoration: ShapeDecoration(
+          color: enabled
+              ? AppColors.primary
+              : AppColors.surfaceContainerHighest,
+          shape: const StadiumBorder(),
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            customBorder: const StadiumBorder(),
+            onTap: enabled ? onTap : onDisabledTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 180),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: enabled ? Colors.white : AppColors.onSurfaceVariant,
+                ),
+                child: Text(label),
               ),
             ),
           ),

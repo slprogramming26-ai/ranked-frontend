@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/l10n/l10n.dart';
 import '../../app_colors.dart';
+import '../../password_policy.dart';
 import '../onboarding_text_field.dart';
 
 class CredentialsStep extends StatefulWidget {
@@ -136,6 +137,12 @@ class _CredentialsStepState extends State<CredentialsStep> {
               ),
             ),
           ),
+          // Eigener Listener statt auf den Flow-Rebuild zu bauen: die Zeile
+          // haengt nur am Passwort, der Step bleibt so in sich geschlossen.
+          ListenableBuilder(
+            listenable: widget.passwordController,
+            builder: (context, _) => _buildPasswordRule(),
+          ),
 
           // --- Backend-Fehler (409 doppelt / 403 unter 16) ---
           if (widget.errorMessage != null)
@@ -186,6 +193,50 @@ class _CredentialsStepState extends State<CredentialsStep> {
           ),
 
           const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+
+  // Erklaert, warum der Next-Button grau ist. Kein Rot beim Tippen der
+  // ersten Zeichen (wirkt wie Schimpfen) — rot nur ueber dem Maximum, weil
+  // Weitertippen da nie hilft.
+  Widget _buildPasswordRule() {
+    final length = passwordLength(widget.passwordController.text);
+    final tooLong = length > maxPasswordLength;
+    final ok = length >= minPasswordLength && !tooLong;
+    final color = tooLong ? AppColors.primary : AppColors.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, top: 8),
+      child: Row(
+        children: [
+          Icon(
+            tooLong
+                ? Icons.error_outline
+                : ok
+                ? Icons.check_circle
+                : Icons.info_outline,
+            size: 14,
+            color: ok ? AppColors.onSurface : color,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              tooLong
+                  ? context.l10n.onboardingCredentialsPasswordMax(
+                      maxPasswordLength,
+                    )
+                  : context.l10n.onboardingCredentialsPasswordMin(
+                      minPasswordLength,
+                    ),
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ),
         ],
       ),
     );

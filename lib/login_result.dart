@@ -30,3 +30,7 @@ class LoginSuspended extends LoginResult {
   const LoginSuspended(this.suspension);
   final Suspension suspension;
 }
+
+class LoginNotVerified extends LoginResult {
+  const LoginNotVerified();
+}

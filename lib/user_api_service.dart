@@ -3,14 +3,18 @@ import 'dart:convert';
 import 'dart:io';
 import 'token_storage.dart';
 import 'api_client.dart';
+import 'api_config.dart';
+import 'code_request_result.dart';
 import 'login_result.dart';
 import 'moderation/report_reason.dart';
 import 'moderation/report_target.dart';
 import 'moderation/suspension.dart';
+import 'reset_result.dart';
+import 'verify_result.dart';
 
 class UserApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
-  static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   // login bleibt roher http-Call: hier gibt es noch keinen Token, und der
   // Body ist form-urlencoded (OAuth2PasswordRequestForm), nicht JSON.
@@ -27,16 +31,145 @@ class UserApiService {
     }
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      await TokenStorage.saveRefreshToken(data["refresh_token"]);
-      await TokenStorage.saveToken(data['access_token']);
-      ApiClient.resetLogoutGuard(); // Riegel fuer kuenftige Zwangs-Logouts oeffnen
+      await _saveSession(response);
       return const LoginOk();
+    }
+    // VOR der Sperr-Pruefung: auch das ist ein 403, aber keine Sperre ->
+    // landete sonst unten bei LoginInvalid ("falsches Passwort").
+    if (response.statusCode == 403 &&
+        _detailCode(response) == 'email_not_verified') {
+      return const LoginNotVerified();
     }
     // login geht nicht ueber ApiClient._send -> die Sperre hier selbst pruefen.
     final suspension = Suspension.fromResponse(response);
     if (suspension != null) return LoginSuspended(suspension);
     return const LoginInvalid();
+  }
+
+  static Future<VerifyResult> verify(String email, String code) async {
+    final http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('$baseUrl/users/verify'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'code': code}),
+      );
+    } catch (_) {
+      return const VerifyOffline(); // sonst dreht der Login-Spinner ewig
+    }
+
+    switch (response.statusCode) {
+      case 200:
+        await _saveSession(response); // verify loggt direkt ein
+        return const VerifyOk();
+      case 403:
+        final suspension = Suspension.fromResponse(response);
+        return suspension != null
+            ? VerifyBanned(suspension)
+            : const VerifyError();
+      case 400:
+        return const VerifyCodeInvalid();
+      case 409:
+        return const VerifyAlreadyOk();
+      case 429:
+        return const VerifyTooManyRequests();
+    }
+
+    return const VerifyError();
+  }
+
+  // Gemeinsam fuer login() und verify(): Beide liefern bei 200 dasselbe
+  // Token-Paar. An EINER Stelle, damit resetLogoutGuard nirgends fehlt.
+  static Future<void> _saveSession(http.Response response) async {
+    final data = jsonDecode(response.body);
+    await TokenStorage.saveRefreshToken(data['refresh_token']);
+    await TokenStorage.saveToken(data['access_token']);
+    ApiClient.resetLogoutGuard(); // Riegel fuer kuenftige Zwangs-Logouts oeffnen
+  }
+
+  // Liest detail.code aus einer Fehlerantwort: {"detail": {"code": "..."}}.
+  // null, wenn es keinen gibt (kein JSON, detail ist ein Text, ...).
+  static String? _detailCode(http.Response response) {
+    final detail = _bodyMap(response)?['detail'];
+    if (detail is! Map) return null;
+    final code = detail['code'];
+    return code is String ? code : null;
+  }
+
+  // Body als Map, oder null (leer, kein JSON, Liste, ...).
+  // Darf NIE werfen - ein Crash hier wuerde den ganzen Login abschiessen.
+  static Map<String, dynamic>? _bodyMap(http.Response response) {
+    try {
+      final body = jsonDecode(utf8.decode(response.bodyBytes));
+      return body is Map<String, dynamic> ? body : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<CodeRequestResult> resendVerification(String email) =>
+      _requestCode('/users/verify/resend', email);
+
+  static Future<CodeRequestResult> forgotPassword(String email) =>
+      _requestCode('/users/password/forgot', email);
+
+  // Gemeinsam fuer resend und forgot: Beide Endpoints unterscheiden sich nur
+  // in der URL. Reihenfolge (path, email) - beides String, ein Vertauschen
+  // faengt der Compiler nicht ab.
+  static Future<CodeRequestResult> _requestCode(
+    String path,
+    String email,
+  ) async {
+    final http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('$baseUrl$path'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email}),
+      );
+    } catch (_) {
+      return const CodeRequestOffline(); // sonst dreht der Senden-Spinner ewig
+    }
+    if (response.statusCode == 429) return const CodeRequestCooldown();
+    // Alles andere = "gesendet", siehe CodeRequestSent (keine User-Enumeration).
+    return const CodeRequestSent();
+  }
+
+  static Future<ResetResult> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    final http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('$baseUrl/users/password/reset'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'code': code,
+          'new_password': newPassword,
+        }),
+      );
+    } catch (_) {
+      return const ResetOffline(); // sonst dreht der Speichern-Spinner ewig
+    }
+
+    switch (response.statusCode) {
+      case 204:
+        return const ResetOk(); // keine Token -> KEIN _saveSession
+      case 400:
+        return const ResetCodeInvalid();
+      case 429:
+        // Zwei Absender: HTTPException (Tageslimit) schreibt immer "detail",
+        // der slowapi-Handler immer "error". Bewusst der Key, nicht der
+        // Text - sonst bricht das, sobald jemand die Formulierung aendert.
+        return _bodyMap(response)?.containsKey('detail') == true
+            ? const ResetDailyLimit()
+            : const ResetTooManyRequests();
+    }
+
+    return const ResetError();
   }
 
   static Future<Map<String, dynamic>> getCurrentUser() async {

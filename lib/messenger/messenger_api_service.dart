@@ -27,6 +27,7 @@ import 'package:web_socket_channel/io.dart';
 import 'package:ranked/key_service.dart';
 import '../token_storage.dart';
 import '../api_client.dart';
+import '../api_config.dart';
 import '../local_data/database.dart';
 import '../user_api_service.dart';
 
@@ -40,8 +41,8 @@ part 'messenger_api_service.crypto.dart';
 part 'messenger_api_service.send.dart';
 part 'messenger_api_service.sync.dart';
 
-const _baseWsUrl = 'wss://ranked-ws-gateway-production.up.railway.app';
-const _baseUrl = 'https://web-production-1bb6f.up.railway.app';
+const _baseWsUrl = ApiConfig.wsUrl;
+const _baseUrl = ApiConfig.baseUrl;
 
 class MessengerApiService {
   final AppDatabase _db;

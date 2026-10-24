@@ -360,16 +360,21 @@ class _TextPostState extends State<TextPost>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(context),
-                _buildTitle(),
+                // Titel/Text sind optional (Post braucht nur Titel ODER Text
+                // ODER Bild). Leer -> gar nicht bauen, sonst bleiben Padding
+                // und eine leere Textzeile als Luecke stehen.
+                if (widget.title.trim().isNotEmpty) _buildTitle(),
                 // Bild-Post: Aktionen direkt unters Bild, denn dort reagiert
                 // man (wie bei Insta). Text-Post: Aktionen bleiben unten.
                 if (widget.imageUrl != null) ...[
                   // Randlos ueber die volle Kartenbreite (wie im Insta-Feed).
                   FeedImage(url: widget.imageUrl!),
                   _buildFooter(context),
-                  _buildContent(const EdgeInsets.fromLTRB(16, 0, 16, 14)),
+                  if (widget.content.trim().isNotEmpty)
+                    _buildContent(const EdgeInsets.fromLTRB(16, 0, 16, 14)),
                 ] else ...[
-                  _buildContent(const EdgeInsets.fromLTRB(16, 10, 16, 0)),
+                  if (widget.content.trim().isNotEmpty)
+                    _buildContent(const EdgeInsets.fromLTRB(16, 10, 16, 0)),
                   _buildFooter(context),
                 ],
               ],

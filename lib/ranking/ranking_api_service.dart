@@ -1,9 +1,10 @@
 import 'dart:convert';
 import '../api_client.dart';
+import '../api_config.dart';
 
 class RankingApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
-  static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   static Future<Map<String, dynamic>> getRandomTarget() async {
     final response =

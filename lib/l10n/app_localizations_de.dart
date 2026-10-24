@@ -377,6 +377,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get onboardingCredentialsPasswordHint => 'Passwort';
 
   @override
+  String onboardingCredentialsPasswordMin(int min) {
+    return 'Mindestens $min Zeichen';
+  }
+
+  @override
+  String onboardingCredentialsPasswordMax(int max) {
+    return 'Höchstens $max Zeichen';
+  }
+
+  @override
   String get onboardingCredentialsLegal =>
       'Mit der Registrierung stimmst du unseren Community-Richtlinien zu';
 
@@ -544,20 +554,16 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createPostContentHint => 'Was gibt\'s Neues?';
 
   @override
-  String get createPostGallery => 'Aus Galerie wählen';
+  String get createPostGallery => 'Galerie';
 
   @override
-  String get createPostCamera => 'Foto aufnehmen';
+  String get createPostCamera => 'Kamera';
 
   @override
   String get createPostRemoveImage => 'Bild entfernen';
 
   @override
   String get createPostCategory => 'Kategorie';
-
-  @override
-  String get createPostCategoryHint =>
-      'Optional – zählt für die Kategorie-Rankings';
 
   @override
   String get createPostCategoryProductivity => 'Produktivität';
@@ -613,7 +619,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get rankingOptinDescription =>
-      'Aktiviere das Ranking und lass dich täglich von der Community bewerten — Productivity, Creativity & Engagement.';
+      'Aktiviere das Ranking und lass dich täglich von der Community bewerten.';
+
+  @override
+  String get rankingOptinCategoryInfo =>
+      'Wähle beim Posten eine Kategorie – Produktivität, Kreativität oder Engagement. Sie zählt für die Kategorie-Rankings.';
 
   @override
   String get rankingOptinButton => 'AKTIVIEREN';
@@ -1620,4 +1630,81 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get timeYesterday => 'Gestern';
+
+  @override
+  String get verifyTitle => 'E-Mail bestätigen';
+
+  @override
+  String verifySubtitle(String email) {
+    return 'Wir haben dir einen 6-stelligen Code an $email geschickt.';
+  }
+
+  @override
+  String get verifyButton => 'Bestätigen';
+
+  @override
+  String get verifyResend => 'Code erneut senden';
+
+  @override
+  String verifyResendIn(int seconds) {
+    return 'Neuer Code in $seconds s';
+  }
+
+  @override
+  String get verifyResent => 'Neuer Code ist unterwegs.';
+
+  @override
+  String get verifySpamHint =>
+      'Nichts angekommen? Schau auch im Spam-Ordner nach.';
+
+  @override
+  String get verifyCodeInvalid =>
+      'Code falsch oder abgelaufen. Fordere bei Bedarf einen neuen an.';
+
+  @override
+  String get verifyTooManyRequests =>
+      'Zu viele Versuche. Warte kurz und versuch es dann nochmal.';
+
+  @override
+  String get verifyCooldown =>
+      'Bitte warte kurz, bevor du einen neuen Code anforderst.';
+
+  @override
+  String get verifyError =>
+      'Etwas ist schiefgelaufen. Bitte versuche es nochmal.';
+
+  @override
+  String get resetEmailInvalid => 'Bitte gib eine gültige E-Mail-Adresse ein.';
+
+  @override
+  String get resetPasswordLength =>
+      'Dein neues Passwort braucht 8 bis 128 Zeichen.';
+
+  @override
+  String get resetDailyLimit =>
+      'Zu viele Fehlversuche heute. Bitte versuche es morgen erneut.';
+
+  @override
+  String get resetTitle => 'Passwort vergessen?';
+
+  @override
+  String get resetEmailSubtitle =>
+      'Gib deine E-Mail-Adresse ein. Wir schicken dir einen Code, mit dem du ein neues Passwort festlegst.';
+
+  @override
+  String get resetSendButton => 'Code senden';
+
+  @override
+  String get resetCodeTitle => 'Neues Passwort';
+
+  @override
+  String resetCodeSubtitle(String email) {
+    return 'Gib den Code ein, den wir an $email geschickt haben, und wähle ein neues Passwort.';
+  }
+
+  @override
+  String get resetNewPasswordHint => 'Neues Passwort (mind. 8 Zeichen)';
+
+  @override
+  String get resetButton => 'Passwort ändern';
 }

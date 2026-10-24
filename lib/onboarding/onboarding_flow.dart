@@ -10,7 +10,10 @@ import 'package:ranked/l10n/l10n.dart';
 import '../app_colors.dart';
 import '../app_loading.dart';
 import '../login_result.dart';
+import '../password_policy.dart';
+import '../token_storage.dart';
 import '../user_api_service.dart';
+import '../verify_email_screen.dart';
 import 'steps/about_me_step.dart';
 import 'steps/age_step.dart';
 import 'steps/credentials_step.dart';
@@ -54,6 +57,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   final TextEditingController _passwordController = TextEditingController();
   String? _credentialsError;
   bool _isSubmitting = false;
+
+  // Mit diesen Daten wurde das Konto angelegt (null = noch keins). Bricht
+  // der User auf dem Code-Screen ab und tippt nochmal, darf createUser
+  // nicht erneut laufen -> sonst 409 "E-Mail vergeben" fuers eigene Konto.
+  ({String email, String password})? _createdWith;
+  // E-Mail schon bestaetigt -> beim erneuten Tippen direkt zum Login.
+  bool _verified = false;
 
   @override
   void initState() {
@@ -106,7 +116,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case 4:
         return EmailValidator.validate(_emailController.text.trim()) &&
             _usernameController.text.trim().isNotEmpty &&
-            _passwordController.text.isNotEmpty;
+            isValidPasswordLength(_passwordController.text);
       default:
         return true;
     }
@@ -140,35 +150,70 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     }
 
     // Collect-first, create-last: Erst der Complete-Button legt den User
-    // wirklich an, danach sofort login -> Upload -> Details.
+    // wirklich an, dann Code bestaetigen -> login -> Upload -> Details.
     final email = _emailController.text.trim();
     setState(() {
       _isSubmitting = true;
       _credentialsError = null;
     });
 
-    final error = await UserApiService.createUser(
-      email,
-      _usernameController.text.trim(),
-      _passwordController.text,
-      _age,
-    );
-    if (error != null) {
-      // Backend-Detail (E-Mail/Username vergeben, unter 16) ist direkt
-      // anzeigbar — der User kann korrigieren und nochmal druecken.
-      setState(() {
-        _credentialsError = error;
-        _isSubmitting = false;
-      });
-      return;
+    // Neue E-Mail (erster Versuch oder Tippfehler korrigiert) -> neues Konto.
+    // Ein altes unbestaetigtes raeumt das Backend nach 24 h selbst weg.
+    if (_createdWith?.email != email) {
+      String? error;
+      try {
+        error = await UserApiService.createUser(
+          email,
+          _usernameController.text.trim(),
+          _passwordController.text,
+          _age,
+        );
+      } catch (_) {
+        // Roher http.post wirft ohne Netz -> sonst haengt das Overlay ewig.
+        // Hier statt im Service, weil nur hier context.l10n da ist.
+        if (!mounted) return;
+        error = context.l10n.loginServerError;
+      }
+      if (!mounted) return;
+      if (error != null) {
+        // Backend-Detail (E-Mail/Username vergeben, unter 16) ist direkt
+        // anzeigbar — der User kann korrigieren und nochmal druecken.
+        setState(() {
+          _credentialsError = error;
+          _isSubmitting = false;
+        });
+        return;
+      }
+      _createdWith = (email: email, password: _passwordController.text);
+      _verified = false;
+    }
+    // Das Passwort, mit dem das Konto WIRKLICH angelegt wurde - auch wenn
+    // der User es nach dem Abbruch im Feld noch geaendert hat.
+    final password = _createdWith!.password;
+
+    if (!_verified) {
+      if (!mounted) return;
+      // Overlay aus, sonst haengt es noch da, wenn der User vom Code-Screen
+      // zurueckkommt.
+      setState(() => _isSubmitting = false);
+      final ok = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => VerifyEmailScreen(email: email)),
+      );
+      // Abgebrochen -> User bleibt auf der Credentials-Seite.
+      if (ok != true || !mounted) return;
+      _verified = true;
+      setState(() => _isSubmitting = true);
     }
 
     // Frisches Konto kann nicht gesperrt sein -> alles ausser Ok ist Fehler.
-    final result = await UserApiService.login(
-      email,
-      _passwordController.text,
-    );
+    // Bewusst nochmal login, obwohl verify() schon Token gespeichert hat:
+    // bei 409 (war schon bestaetigt) gibt es keine.
+    final result = await UserApiService.login(email, password);
     if (result is! LoginOk) {
+      // verify()-Token wegwerfen, sonst loggt der naechste App-Start per
+      // Session-Restore ein, ohne dass KeySetup je gelaufen ist.
+      await TokenStorage.clearAll();
       if (!mounted) return;
       setState(() {
         _credentialsError = context.l10n.onboardingLoginFailedAuto;
@@ -189,7 +234,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       // E2EE: Nur hier (und beim Login) liegt das Passwort fürs Backup vor.
       final userId = (await UserApiService.getCurrentUser())['id'] as int?;
       if (userId != null) {
-        await KeySetup.afterRegistration(userId, _passwordController.text);
+        await KeySetup.afterRegistration(userId, password);
       }
     } catch (e) {
       debugPrint('[E2EE] Key-Setup nach Registrierung fehlgeschlagen: $e');

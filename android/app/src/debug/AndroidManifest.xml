@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Nur Debug: erlaubt http:// fuers lokale Backend
+         (dart-define API_BASE_URL, siehe lib/api_config.dart).
+         Android 9+ blockt Klartext sonst. Release bleibt https-only.
+         ACHTUNG: in XML-Kommentaren sind zwei Bindestriche verboten. -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

@@ -758,6 +758,18 @@ abstract class AppLocalizations {
   /// **'Passwort'**
   String get onboardingCredentialsPasswordHint;
 
+  /// Regel-Zeile unter dem Passwortfeld der Registrierung
+  ///
+  /// In de, this message translates to:
+  /// **'Mindestens {min} Zeichen'**
+  String onboardingCredentialsPasswordMin(int min);
+
+  /// Regel-Zeile, wenn das Passwort zu lang ist
+  ///
+  /// In de, this message translates to:
+  /// **'Höchstens {max} Zeichen'**
+  String onboardingCredentialsPasswordMax(int max);
+
   /// Rechtlicher Text am Ende der Credentials-Seite
   ///
   /// In de, this message translates to:
@@ -1070,16 +1082,16 @@ abstract class AppLocalizations {
   /// **'Was gibt\'s Neues?'**
   String get createPostContentHint;
 
-  /// Create-Post: Tooltip Galerie-Icon
+  /// Create-Post: Label der Galerie-Pille unter dem Text
   ///
   /// In de, this message translates to:
-  /// **'Aus Galerie wählen'**
+  /// **'Galerie'**
   String get createPostGallery;
 
-  /// Create-Post: Tooltip Kamera-Icon
+  /// Create-Post: Label der Kamera-Pille unter dem Text
   ///
   /// In de, this message translates to:
-  /// **'Foto aufnehmen'**
+  /// **'Kamera'**
   String get createPostCamera;
 
   /// Create-Post: Accessibility-Label X am Bild
@@ -1093,12 +1105,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Kategorie'**
   String get createPostCategory;
-
-  /// Create-Post: Hinweis unter der Kategorie-Ueberschrift
-  ///
-  /// In de, this message translates to:
-  /// **'Optional – zählt für die Kategorie-Rankings'**
-  String get createPostCategoryHint;
 
   /// Create-Post: Kategorie-Chip (Backend-ID productivity)
   ///
@@ -1205,8 +1211,14 @@ abstract class AppLocalizations {
   /// Beschreibungstext des Ranking Opt-In Screens
   ///
   /// In de, this message translates to:
-  /// **'Aktiviere das Ranking und lass dich täglich von der Community bewerten — Productivity, Creativity & Engagement.'**
+  /// **'Aktiviere das Ranking und lass dich täglich von der Community bewerten.'**
   String get rankingOptinDescription;
+
+  /// Ranking Opt-In: zweiter Absatz, erklaert die Kategorie-Chips aus Create-Post (gleiche Woerter wie die Chips)
+  ///
+  /// In de, this message translates to:
+  /// **'Wähle beim Posten eine Kategorie – Produktivität, Kreativität oder Engagement. Sie zählt für die Kategorie-Rankings.'**
+  String get rankingOptinCategoryInfo;
 
   /// Button zum Aktivieren des Rankings
   ///
@@ -2881,6 +2893,132 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Gestern'**
   String get timeYesterday;
+
+  /// Code-Screen: Ueberschrift
+  ///
+  /// In de, this message translates to:
+  /// **'E-Mail bestätigen'**
+  String get verifyTitle;
+
+  /// Code-Screen: Untertitel mit der E-Mail-Adresse
+  ///
+  /// In de, this message translates to:
+  /// **'Wir haben dir einen 6-stelligen Code an {email} geschickt.'**
+  String verifySubtitle(String email);
+
+  /// Code-Screen: Haupt-Button
+  ///
+  /// In de, this message translates to:
+  /// **'Bestätigen'**
+  String get verifyButton;
+
+  /// Code-Screen: Link zum neuen Code
+  ///
+  /// In de, this message translates to:
+  /// **'Code erneut senden'**
+  String get verifyResend;
+
+  /// Code-Screen: Countdown statt des Erneut-senden-Links
+  ///
+  /// In de, this message translates to:
+  /// **'Neuer Code in {seconds} s'**
+  String verifyResendIn(int seconds);
+
+  /// Code-Screen: Hinweis nach erfolgreichem Erneut-senden
+  ///
+  /// In de, this message translates to:
+  /// **'Neuer Code ist unterwegs.'**
+  String get verifyResent;
+
+  /// Code-Screen: Hinweis unter dem Erneut-senden-Link
+  ///
+  /// In de, this message translates to:
+  /// **'Nichts angekommen? Schau auch im Spam-Ordner nach.'**
+  String get verifySpamHint;
+
+  /// Code-Screen: 400 (falsch, abgelaufen oder 5 Versuche weg)
+  ///
+  /// In de, this message translates to:
+  /// **'Code falsch oder abgelaufen. Fordere bei Bedarf einen neuen an.'**
+  String get verifyCodeInvalid;
+
+  /// Code-Screen: 429 beim Bestaetigen
+  ///
+  /// In de, this message translates to:
+  /// **'Zu viele Versuche. Warte kurz und versuch es dann nochmal.'**
+  String get verifyTooManyRequests;
+
+  /// Code-Screen: 429 beim Erneut-senden (60-s-Cooldown)
+  ///
+  /// In de, this message translates to:
+  /// **'Bitte warte kurz, bevor du einen neuen Code anforderst.'**
+  String get verifyCooldown;
+
+  /// Code-Screen: unerwarteter Fehler (500 o.ae.)
+  ///
+  /// In de, this message translates to:
+  /// **'Etwas ist schiefgelaufen. Bitte versuche es nochmal.'**
+  String get verifyError;
+
+  /// Passwort vergessen: E-Mail-Feld leer oder ungueltig (EmailValidator)
+  ///
+  /// In de, this message translates to:
+  /// **'Bitte gib eine gültige E-Mail-Adresse ein.'**
+  String get resetEmailInvalid;
+
+  /// Passwort vergessen: neues Passwort zu kurz/zu lang (Backend: min 8, max 128)
+  ///
+  /// In de, this message translates to:
+  /// **'Dein neues Passwort braucht 8 bis 128 Zeichen.'**
+  String get resetPasswordLength;
+
+  /// Passwort vergessen: 429 Tageslimit (10 falsche Codes)
+  ///
+  /// In de, this message translates to:
+  /// **'Zu viele Fehlversuche heute. Bitte versuche es morgen erneut.'**
+  String get resetDailyLimit;
+
+  /// Passwort vergessen, Phase 1: Titel
+  ///
+  /// In de, this message translates to:
+  /// **'Passwort vergessen?'**
+  String get resetTitle;
+
+  /// Passwort vergessen, Phase 1: Untertitel
+  ///
+  /// In de, this message translates to:
+  /// **'Gib deine E-Mail-Adresse ein. Wir schicken dir einen Code, mit dem du ein neues Passwort festlegst.'**
+  String get resetEmailSubtitle;
+
+  /// Passwort vergessen, Phase 1: Button
+  ///
+  /// In de, this message translates to:
+  /// **'Code senden'**
+  String get resetSendButton;
+
+  /// Passwort vergessen, Phase 2: Titel
+  ///
+  /// In de, this message translates to:
+  /// **'Neues Passwort'**
+  String get resetCodeTitle;
+
+  /// Passwort vergessen, Phase 2: Untertitel mit der E-Mail-Adresse
+  ///
+  /// In de, this message translates to:
+  /// **'Gib den Code ein, den wir an {email} geschickt haben, und wähle ein neues Passwort.'**
+  String resetCodeSubtitle(String email);
+
+  /// Passwort vergessen, Phase 2: Hint im Passwortfeld
+  ///
+  /// In de, this message translates to:
+  /// **'Neues Passwort (mind. 8 Zeichen)'**
+  String get resetNewPasswordHint;
+
+  /// Passwort vergessen, Phase 2: Button
+  ///
+  /// In de, this message translates to:
+  /// **'Passwort ändern'**
+  String get resetButton;
 }
 
 class _AppLocalizationsDelegate

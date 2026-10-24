@@ -3,11 +3,12 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'api_config.dart';
 import 'moderation/suspension.dart';
 import 'token_storage.dart';
 
 class ApiClient {
-  static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   // EIN wiederverwendeter Client fuer alle Requests. Die Top-Level-Funktionen
   // http.get/post/... erzeugen intern pro Aufruf einen frischen Client ->
@@ -164,6 +165,14 @@ class ApiClient {
   static Future<http.Response> delete(Uri url, {Object? body, Map<String, String>? headers}) {
     return _send(
         (token) => _client.delete(url, headers: _auth(token, headers), body:  body));
+  }
+
+  /// Nach WS-Close 4003: einen REST-Request machen, damit _send die
+  /// Sperre (banned_until, ban_reason) mitbekommt und den Logout auslöst.
+  static Future<void> checkSuspension() async {
+    try {
+      await get(Uri.parse('$baseUrl/users/'));
+    } catch (_) {}
   }
 
   static Future<http.Response> uploadFile(Uri url, File file,

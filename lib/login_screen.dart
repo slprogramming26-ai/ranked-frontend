@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:ranked/api_client.dart';
 import 'package:ranked/l10n/l10n.dart';
+import 'forgot_password_screen.dart';
 import 'login_result.dart';
 import 'user_api_service.dart';
 import 'onboarding/onboarding_flow.dart';
@@ -9,6 +10,7 @@ import 'app_colors.dart';
 import 'key_restore_dialogs.dart';
 import 'key_setup.dart';
 import 'token_storage.dart';
+import 'verify_email_screen.dart';
 import 'package:ranked/moderation/suspended_screen.dart';
 import 'package:ranked/moderation/suspension.dart';
 
@@ -32,6 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Suspension? _suspension;
   bool _isLoading = false;
   String? _errorMessage;
+  // Gesetzt nach "Passwort vergessen" -> das naechste erfolgreiche Key-Setup
+  // verpackt das Chat-Backup mit dem neuen Passwort neu. Ein Feld statt eines
+  // Parameters von _handleLogin: scheitert der Auto-Login (offline), kommt
+  // der zweite Versuch ueber den normalen Button - das Flag muss bleiben.
+  bool _passwordJustReset = false;
 
   @override
   void initState() {
@@ -59,10 +66,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Einmal festhalten: exakt diese Bytes verpacken/entpacken das Backup.
     final password = password_editing_controller.text;
-    final loginResult = await UserApiService.login(
-      email_editing_controller.text.trim(),
-      password,
-    );
+    // Auch die E-Mail: Login und Code-Screen muessen dieselbe Adresse nutzen.
+    final email = email_editing_controller.text.trim();
+    final loginResult = await UserApiService.login(email, password);
     if (!mounted) return;
     // Kein default: kommt ein neuer LoginResult-Fall dazu, meckert der Compiler.
     switch (loginResult) {
@@ -72,6 +78,27 @@ class _LoginScreenState extends State<LoginScreen> {
         return _showError(context.l10n.loginInvalidCredentials);
       case LoginOffline():
         return _showError(context.l10n.loginServerError);
+      case LoginNotVerified():
+        // Spinner aus, solange der Code-Screen offen ist.
+        setState(() => _isLoading = false);
+        // sendCodeOnOpen: der Code von der Registrierung ist laengst abgelaufen.
+        final verified = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                VerifyEmailScreen(email: email, sendCodeOnOpen: true),
+          ),
+        );
+        if (verified != true || !mounted) return; // abgebrochen -> Formular
+        // verify() hat Token gespeichert - wir loggen aber eh nochmal ein.
+        // Sofort weg damit: scheitert der zweite Login (offline), blieben
+        // sie sonst liegen und der naechste App-Start loggte per
+        // Session-Restore ohne KeySetup ein.
+        await TokenStorage.clearAll();
+        // Login einfach wiederholen, jetzt mit bestaetigter E-Mail. Das
+        // return ist wichtig: sonst liefe DIESER Durchlauf unter dem switch
+        // mit dem Key-Setup weiter.
+        return _handleLogin();
       // (:final suspension) holt das Feld direkt aus dem Objekt heraus.
       case LoginSuspended(:final suspension):
         setState(() {
@@ -92,13 +119,18 @@ class _LoginScreenState extends State<LoginScreen> {
     final result = userId == null
         ? KeySetupResult.error()
         : await _resolveKeySetup(
-            await KeySetup.afterLogin(userId, password),
+            await KeySetup.afterLogin(
+              userId,
+              password,
+              passwordChanged: _passwordJustReset,
+            ),
             userId,
             password,
           );
     if (!mounted) return;
 
     if (result?.status == KeySetupStatus.ready) {
+      _passwordJustReset = false; // erledigt (Neu-Verpacken ist best-effort)
       widget.onLoginSuccess();
       return;
     }
@@ -119,6 +151,24 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = message;
       _isLoading = false;
     });
+  }
+
+  // "Passwort vergessen?" -> bei Erfolg direkt mit dem neuen Passwort
+  // einloggen. Ueber die Felder, weil _handleLogin von dort liest.
+  Future<void> _openForgotPassword() async {
+    final credentials = await Navigator.push<ResetCredentials>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForgotPasswordScreen(
+          initialEmail: email_editing_controller.text.trim(),
+        ),
+      ),
+    );
+    if (credentials == null || !mounted) return; // abgebrochen
+    email_editing_controller.text = credentials.email;
+    password_editing_controller.text = credentials.password;
+    _passwordJustReset = true;
+    await _handleLogin();
   }
 
   // Fuehrt durch die seltenen Dialog-Faelle, bis ready oder error rauskommt.
@@ -265,7 +315,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {},
+                        onPressed: _isLoading ? null : _openForgotPassword,
                         child: Text(
                           context.l10n.loginForgotPassword,
                           style: TextStyle(

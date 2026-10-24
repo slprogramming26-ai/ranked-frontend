@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import '../api_client.dart';
+import '../api_config.dart';
 
 /// Wird von [PostApiService.getPosts] geworfen, wenn der lokale Feed
 /// angefragt wird, der User aber keinen Ort gesetzt hat (Backend: 400).
@@ -10,7 +11,7 @@ class NoLocationException implements Exception {}
 
 class PostApiService {
   // Für Android Emulator: 10.0.2.2, für echtes Gerät: deine lokale IP
-  static const String baseUrl = 'https://web-production-1bb6f.up.railway.app';
+  static const String baseUrl = ApiConfig.baseUrl;
 
   static Future<List<Map<String, dynamic>>> getPosts(
       String limit, String skip,

@@ -10,6 +10,7 @@ import 'package:sodium/sodium_sumo.dart'
     show SodiumSumo, SodiumSumoInit, CryptoPwhashAlgorithm;
 
 import 'api_client.dart';
+import 'api_config.dart';
 import 'key_backup.dart';
 
 // Ergebnis eines Rekey-Versuchs (POST /keys/group/{id}/rekey).
@@ -32,7 +33,7 @@ class RekeyResult {
 
 class KeyService {
   static const _storage = FlutterSecureStorage();
-  static const _baseUrl = 'https://web-production-1bb6f.up.railway.app';
+  static const _baseUrl = ApiConfig.baseUrl;
 
   // Session-Cache: Ein Secure-Storage-Read geht durch Keychain/Keystore (IPC,
   // teuer) und fiel bisher pro entschluesselter Nachricht an. Einmal geladene
