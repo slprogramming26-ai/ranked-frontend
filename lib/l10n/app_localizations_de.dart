@@ -305,7 +305,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get onboardingWelcomeSubtitle =>
-      'Der erste redaktionelle Social Feed, in dem deine Energie zählt.';
+      'Poste, was dich bewegt, und lass die Community entscheiden, was oben landet.';
 
   @override
   String get onboardingWelcomePostTitle => 'Teile dein Leben';
@@ -322,11 +322,11 @@ class AppLocalizationsDe extends AppLocalizations {
       'Die Community bewertet deine Kreativität.';
 
   @override
-  String get onboardingWelcomeEarnTitle => 'Verdienen und gestalten';
+  String get onboardingWelcomeEarnTitle => 'Sammle XP & steig auf';
 
   @override
   String get onboardingWelcomeEarnSub =>
-      'Bewerte andere und verdiene Coins. Schalte exklusive Avatar-Items und \"Freundebuch\"-Skins frei.';
+      'Bewerte andere, halte deinen Streak und steig in höhere Ligen auf.';
 
   @override
   String get onboardingVibeTitle => 'Was ist dein Vibe?';
@@ -444,15 +444,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get loginButton => 'Zum Feed einloggen';
-
-  @override
-  String get loginDivider => 'ODER WEITER MIT';
-
-  @override
-  String get loginGoogle => 'Google';
-
-  @override
-  String get loginApple => 'Apple';
 
   @override
   String get loginNoAccount => 'Neu bei Ranked?';
@@ -1029,6 +1020,33 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get suspendedBack => 'Zurück zum Login';
+
+  @override
+  String get suspendedDelete => 'Konto löschen';
+
+  @override
+  String get suspendedDeleteTitle => 'Konto endgültig löschen?';
+
+  @override
+  String get suspendedDeleteMessage =>
+      'Dein Konto, alle Posts, Votes, Kommentare und Chats werden dauerhaft gelöscht. Das lässt sich nicht rückgängig machen. Bestätige mit deinen Login-Daten.';
+
+  @override
+  String get suspendedDeleteConfirm => 'Endgültig löschen';
+
+  @override
+  String get suspendedDeleteCancel => 'Abbrechen';
+
+  @override
+  String get suspendedDeleteTooMany =>
+      'Zu viele Versuche. Warte kurz und versuch es dann nochmal.';
+
+  @override
+  String get suspendedDeleteFailed =>
+      'Löschen fehlgeschlagen. Bitte später erneut versuchen.';
+
+  @override
+  String get suspendedDeleted => 'Dein Konto wurde gelöscht.';
 
   @override
   String get settingsSectionModeration => 'MODERATION';

@@ -85,8 +85,15 @@ class _LoginScreenState extends State<LoginScreen> {
         final verified = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                VerifyEmailScreen(email: email, sendCodeOnOpen: true),
+            builder: (_) => VerifyEmailScreen(
+              email: email,
+              sendCodeOnOpen: true,
+              // SnackBar zeigt der Code-Screen selbst, hier nur Felder leeren.
+              onAccountDeleted: () {
+                email_editing_controller.clear();
+                password_editing_controller.clear();
+              },
+            ),
           ),
         );
         if (verified != true || !mounted) return; // abgebrochen -> Formular
@@ -151,6 +158,22 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = message;
       _isLoading = false;
     });
+  }
+
+  // Konto ist weg -> zurueck aufs leere Formular. Die Felder leeren, sonst
+  // stehen die Daten des geloeschten Kontos noch drin.
+  void _onAccountDeleted() {
+    // Kommt nach dem await im Dialog -> Screen evtl. schon weg.
+    if (!mounted) return;
+    email_editing_controller.clear();
+    password_editing_controller.clear();
+    setState(() {
+      _suspension = null;
+      _errorMessage = null;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.suspendedDeleted)),
+    );
   }
 
   // "Passwort vergessen?" -> bei Erfolg direkt mit dem neuen Passwort
@@ -222,12 +245,19 @@ class _LoginScreenState extends State<LoginScreen> {
       return SuspendedScreen(
         suspension: suspension,
         onBack: () => setState(() => _suspension = null),
+        // Login-Pfad: Adresse steht noch im Feld. Zwangs-Logout: leer.
+        initialEmail: email_editing_controller.text.trim(),
+        onDeleted: _onAccountDeleted,
       );
     }
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: AppColors.surface,
-      body: Center(
+      // Oben statt Center: seit die Social-Buttons weg sind, ist der Inhalt
+      // kuerzer als der Screen -> Center schob den Header nach unten und
+      // liess oben einen Streifen frei.
+      body: Align(
+        alignment: Alignment.topCenter,
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -385,49 +415,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 40),
-                    // 6. DIVIDER
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Divider(
-                            color: AppColors.onSurface.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            context.l10n.loginDivider,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Divider(
-                            color: AppColors.onSurface.withValues(alpha: 0.1),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    // 7. SOCIAL LOGINS
-                    Row(
-                      children: [
-                        Expanded(child: _buildSocialButton(
-                            context.l10n.loginGoogle, "G")),
-                        // Platzhalter für Logo
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildSocialButton(
-                            context.l10n.loginApple, "A")),
-                      ],
-                    ),
-
-                    const SizedBox(height: 40),
-                    // 8. SIGN UP LINK
+                    const SizedBox(height: 48),
+                    // 6. SIGN UP LINK
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -514,25 +503,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildSocialButton(String label, String icon) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.onSurface.withValues(alpha: 0.05)),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.onSurface,
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class SkewedAppBarClipper extends CustomClipper<Path> {

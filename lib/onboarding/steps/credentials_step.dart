@@ -16,12 +16,16 @@ class CredentialsStep extends StatefulWidget {
   // weil erst der Complete-Button den createUser-Call ausloest.
   final String? errorMessage;
 
+  // true, sobald "Konto erstellen" gedrueckt ist -> Auge wieder zu.
+  final bool isSubmitting;
+
   const CredentialsStep({
     super.key,
     required this.emailController,
     required this.usernameController,
     required this.passwordController,
     this.errorMessage,
+    this.isSubmitting = false,
   });
 
   @override
@@ -32,6 +36,17 @@ class _CredentialsStepState extends State<CredentialsStep> {
   // Nur das Auge-Toggle ist lokaler UI-State — Repeat-Passwort entfaellt
   // bewusst, das Auge reicht zum Kontrollieren.
   bool _obscurePassword = true;
+
+  // Das Lade-Overlay ist halbtransparent: war das Auge offen, stand das
+  // Passwort waehrend Code-Screen-Wechsel und Auto-Login im Klartext
+  // dahinter. Deshalb beim Absenden wieder verdecken.
+  @override
+  void didUpdateWidget(CredentialsStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSubmitting && !oldWidget.isSubmitting) {
+      _obscurePassword = true; // kein setState: build laeuft eh gleich
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

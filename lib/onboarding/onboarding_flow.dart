@@ -101,6 +101,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       usernameController: _usernameController,
       passwordController: _passwordController,
       errorMessage: _credentialsError,
+      isSubmitting: _isSubmitting,
     ),
   ];
 
@@ -198,7 +199,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       setState(() => _isSubmitting = false);
       final ok = await Navigator.push<bool>(
         context,
-        MaterialPageRoute(builder: (_) => VerifyEmailScreen(email: email)),
+        MaterialPageRoute(
+          builder: (_) => VerifyEmailScreen(
+            email: email,
+            // Konto ist weg -> beim naechsten Absenden neu anlegen, statt
+            // einen Code fuer ein geloeschtes Konto anzufordern.
+            onAccountDeleted: () => _createdWith = null,
+          ),
+        ),
       );
       // Abgebrochen -> User bleibt auf der Credentials-Seite.
       if (ok != true || !mounted) return;

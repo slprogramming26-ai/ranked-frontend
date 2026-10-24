@@ -48,10 +48,11 @@ class WelcomeStep extends StatelessWidget {
             false,
           ),
           _bentoItem(
-            Icons.insert_emoticon_rounded,
+            // Flamme wie beim Streak im Ranking.
+            Icons.local_fire_department_rounded,
             context.l10n.onboardingWelcomeEarnTitle,
             context.l10n.onboardingWelcomeEarnSub,
-            Colors.lightGreen,
+            Colors.orange,
             true,
           ),
         ],

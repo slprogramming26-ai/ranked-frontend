@@ -5,6 +5,8 @@ import 'token_storage.dart';
 import 'api_client.dart';
 import 'api_config.dart';
 import '../auth/code_request_result.dart';
+import '../auth/delete_result.dart';
+import '../e2ee/key_service.dart';
 import '../auth/login_result.dart';
 import '../moderation/report_reason.dart';
 import '../moderation/report_target.dart';
@@ -332,6 +334,55 @@ class UserApiService {
   static Future<bool> deleteUser() async {
     final response = await ApiClient.delete(Uri.parse('$baseUrl/users/'));
     return response.statusCode == 204;
+  }
+
+  // Fuer Gesperrte: Ein Bann loescht die Refresh-Tokens und /login gibt 403,
+  // an deleteUser() oben kommen sie also nie ran. Deshalb E-Mail + Passwort.
+  // Roher http-Call, NICHT ApiClient: _send wuerde das 401 ("falsches
+  // Passwort") als abgelaufenen Token deuten -> Refresh -> Zwangs-Logout.
+  static Future<DeleteResult> deleteSuspendedAccount(
+    String email,
+    String password,
+  ) async {
+    final http.Response response;
+    try {
+      response = await http.post(
+        Uri.parse('$baseUrl/users/delete'),
+        headers: {'Content-Type': 'application/json'},
+        // "passwort" mit t - wie createUser, das Backend-Schema heisst so.
+        // E-Mail trimmt + verkleinert der Server selbst.
+        body: json.encode({'email': email, 'passwort': password}),
+      );
+    } catch (_) {
+      return const DeleteOffline(); // sonst dreht der Loeschen-Spinner ewig
+    }
+
+    switch (response.statusCode) {
+      // 200 = neuer Vertrag mit {"user_id"}, 204 = altes Backend ohne Body.
+      // Beides heisst: Konto auf dem Server weg.
+      case 200:
+      case 204:
+        await _wipeLocalAccount(_bodyMap(response)?['user_id']);
+        return const DeleteOk();
+      case 401:
+        return const DeleteInvalid();
+      case 429:
+        return const DeleteTooManyRequests();
+    }
+
+    return const DeleteError();
+  }
+
+  // Raeumt die Geraete-Daten des GERADE geloeschten Kontos weg. Die DB leert
+  // der Aufrufer (braucht den Provider) - hier nur der Secure Storage.
+  // Bewusst NUR das Keypair dieser userId: andere Konten auf demselben Geraet
+  // behalten ihre Keys (ohne Backup waeren deren Chats sonst fuer immer weg).
+  // Gruppen-Keys bleiben liegen wie beim Loeschen in den Settings: ihr
+  // Storage-Key hat keine userId und kann einem anderen Konto mitgehoeren.
+  static Future<void> _wipeLocalAccount(Object? userId) async {
+    // Kein int (204 vom alten Backend) -> Keys bleiben, Konto ist trotzdem weg.
+    if (userId is int) await KeyService.deleteKeypair(userId.toString());
+    await TokenStorage.clearAll();
   }
 
   /// Ortssuche fuer den Location-Picker. Liefert max. 20 Orte als

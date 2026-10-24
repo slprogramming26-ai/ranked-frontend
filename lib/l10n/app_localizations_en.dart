@@ -298,7 +298,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingWelcomeSubtitle =>
-      'The world\'s first editorial social feed where your energy matters.';
+      'Post what moves you and let the community decide what rises to the top.';
 
   @override
   String get onboardingWelcomePostTitle => 'Post your life';
@@ -315,11 +315,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'The community evaluates your creativity.';
 
   @override
-  String get onboardingWelcomeEarnTitle => 'Earn and customize';
+  String get onboardingWelcomeEarnTitle => 'Earn XP & level up';
 
   @override
   String get onboardingWelcomeEarnSub =>
-      'Rank others to earn coins. Unlock exclusive avatar items and \"Freundebuch\" skins';
+      'Rank others, keep your streak alive and climb into higher leagues.';
 
   @override
   String get onboardingVibeTitle => 'What\'s Your Vibe?';
@@ -437,15 +437,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get loginButton => 'Login to Feed';
-
-  @override
-  String get loginDivider => 'OR CONTINUE WITH';
-
-  @override
-  String get loginGoogle => 'Google';
-
-  @override
-  String get loginApple => 'Apple';
 
   @override
   String get loginNoAccount => 'New to Ranked?';
@@ -1016,6 +1007,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get suspendedBack => 'Back to login';
+
+  @override
+  String get suspendedDelete => 'Delete account';
+
+  @override
+  String get suspendedDeleteTitle => 'Delete account permanently?';
+
+  @override
+  String get suspendedDeleteMessage =>
+      'Your account, all posts, votes, comments and chats will be permanently deleted. This cannot be undone. Confirm with your login details.';
+
+  @override
+  String get suspendedDeleteConfirm => 'Delete permanently';
+
+  @override
+  String get suspendedDeleteCancel => 'Cancel';
+
+  @override
+  String get suspendedDeleteTooMany =>
+      'Too many attempts. Please wait a moment and try again.';
+
+  @override
+  String get suspendedDeleteFailed =>
+      'Deletion failed. Please try again later.';
+
+  @override
+  String get suspendedDeleted => 'Your account has been deleted.';
 
   @override
   String get settingsSectionModeration => 'MODERATION';

@@ -635,7 +635,7 @@ abstract class AppLocalizations {
   /// Untertitel auf Welcome-Seite
   ///
   /// In de, this message translates to:
-  /// **'Der erste redaktionelle Social Feed, in dem deine Energie zählt.'**
+  /// **'Poste, was dich bewegt, und lass die Community entscheiden, was oben landet.'**
   String get onboardingWelcomeSubtitle;
 
   /// Bento-Karte Titel 1: Post your life
@@ -665,13 +665,13 @@ abstract class AppLocalizations {
   /// Bento-Karte Titel 3
   ///
   /// In de, this message translates to:
-  /// **'Verdienen und gestalten'**
+  /// **'Sammle XP & steig auf'**
   String get onboardingWelcomeEarnTitle;
 
   /// Bento-Karte Untertitel 3
   ///
   /// In de, this message translates to:
-  /// **'Bewerte andere und verdiene Coins. Schalte exklusive Avatar-Items und \"Freundebuch\"-Skins frei.'**
+  /// **'Bewerte andere, halte deinen Streak und steig in höhere Ligen auf.'**
   String get onboardingWelcomeEarnSub;
 
   /// Titel auf Vibe-Seite (Schritt 2)
@@ -877,24 +877,6 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Zum Feed einloggen'**
   String get loginButton;
-
-  /// Divider-Text für soziale Logins
-  ///
-  /// In de, this message translates to:
-  /// **'ODER WEITER MIT'**
-  String get loginDivider;
-
-  /// Google Login Button
-  ///
-  /// In de, this message translates to:
-  /// **'Google'**
-  String get loginGoogle;
-
-  /// Apple Login Button
-  ///
-  /// In de, this message translates to:
-  /// **'Apple'**
-  String get loginApple;
 
   /// Text für Sign-Up-Link am Ende von Login-Seite
   ///
@@ -1957,6 +1939,54 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Zurück zum Login'**
   String get suspendedBack;
+
+  /// Small red button on the suspended screen, opens the delete dialog (no token needed)
+  ///
+  /// In de, this message translates to:
+  /// **'Konto löschen'**
+  String get suspendedDelete;
+
+  /// Title of the delete dialog for suspended accounts
+  ///
+  /// In de, this message translates to:
+  /// **'Konto endgültig löschen?'**
+  String get suspendedDeleteTitle;
+
+  /// Warning text in the delete dialog for suspended accounts
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Konto, alle Posts, Votes, Kommentare und Chats werden dauerhaft gelöscht. Das lässt sich nicht rückgängig machen. Bestätige mit deinen Login-Daten.'**
+  String get suspendedDeleteMessage;
+
+  /// Red confirm button in the delete dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Endgültig löschen'**
+  String get suspendedDeleteConfirm;
+
+  /// Cancel button in the delete dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Abbrechen'**
+  String get suspendedDeleteCancel;
+
+  /// 429 from POST /users/delete (5 per minute)
+  ///
+  /// In de, this message translates to:
+  /// **'Zu viele Versuche. Warte kurz und versuch es dann nochmal.'**
+  String get suspendedDeleteTooMany;
+
+  /// Unexpected error (422, 500, ...) in the delete dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Löschen fehlgeschlagen. Bitte später erneut versuchen.'**
+  String get suspendedDeleteFailed;
+
+  /// SnackBar on the login screen after a suspended account was deleted
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Konto wurde gelöscht.'**
+  String get suspendedDeleted;
 
   /// Moderation section label in settings, only visible for moderators/admins
   ///

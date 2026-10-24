@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../ui/app_colors.dart';
 import '../l10n/l10n.dart';
+import 'delete_suspended_dialog.dart';
 import 'suspension.dart';
 
 /// Wird statt des Login-Formulars gezeigt, wenn der Account gesperrt ist:
@@ -13,10 +14,19 @@ class SuspendedScreen extends StatelessWidget {
     super.key,
     required this.suspension,
     required this.onBack,
+    this.initialEmail = '',
+    this.onDeleted,
   });
 
   final Suspension suspension;
   final VoidCallback onBack;
+
+  /// Fuellt das E-Mail-Feld im Loeschen-Dialog vor.
+  final String initialEmail;
+
+  /// Nach erfolgreichem "Konto loeschen" (lokal schon aufgeraeumt).
+  /// null = kein Loeschen-Button.
+  final VoidCallback? onDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +88,10 @@ class SuspendedScreen extends StatelessWidget {
                 ],
                 const SizedBox(height: 36),
                 _backButton(l10n.suspendedBack),
+                if (onDeleted != null) ...[
+                  const SizedBox(height: 12),
+                  _deleteButton(context, l10n.suspendedDelete),
+                ],
               ],
             ),
           ),
@@ -151,6 +165,28 @@ class SuspendedScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Bewusst klein und unter dem Hauptbutton: muss erreichbar sein
+  // (DSGVO Art. 17, App-Stores), soll aber nicht der naheliegende Tap sein.
+  Widget _deleteButton(BuildContext context, String text) {
+    return TextButton(
+      style: TextButton.styleFrom(minimumSize: const Size(0, 48)),
+      onPressed: () async {
+        final deleted = await showDeleteSuspendedDialog(
+          context,
+          initialEmail: initialEmail,
+        );
+        if (deleted) onDeleted?.call();
+      },
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }

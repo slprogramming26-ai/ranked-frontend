@@ -28,9 +28,15 @@ class VerifyEmailScreen extends StatefulWidget {
     super.key,
     required this.email,
     this.sendCodeOnOpen = false,
+    this.onAccountDeleted,
   });
 
   final String email;
+
+  /// Gesperrt + "Konto loeschen" geklappt: Der Screen geht selbst zu (pop
+  /// mit false) und zeigt die SnackBar. Hier raeumt der Aufrufer seinen
+  /// Stand auf (Felder leeren, gemerktes Konto vergessen).
+  final VoidCallback? onAccountDeleted;
 
   /// true beim Login: der Code von der Registrierung ist evtl. laengst
   /// abgelaufen -> gleich einen neuen anfordern. Nach createUser false,
@@ -143,6 +149,19 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     });
   }
 
+  void _onAccountDeleted() {
+    // Kommt nach dem await im Dialog -> Screen evtl. schon weg.
+    if (!mounted) return;
+    // Messenger VOR dem pop holen: danach ist dieser context weg. Die
+    // SnackBar landet trotzdem sichtbar auf dem Screen darunter, weil der
+    // ScaffoldMessenger ueber allen Routen haengt.
+    final messenger = ScaffoldMessenger.of(context);
+    final text = context.l10n.suspendedDeleted;
+    widget.onAccountDeleted?.call();
+    Navigator.pop(context, false);
+    messenger.showSnackBar(SnackBar(content: Text(text)));
+  }
+
   // onOpen: der automatische Versand beim Oeffnen (Login-Pfad). Ein 429
   // heisst dort nur "es gibt schon einen frischen Code" - kein Fehler.
   Future<void> _resend({bool onOpen = false}) async {
@@ -178,6 +197,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       return SuspendedScreen(
         suspension: suspension,
         onBack: () => Navigator.pop(context, false),
+        // Hier ist die Adresse sicher bekannt: an sie ging der Code.
+        initialEmail: widget.email,
+        onDeleted: _onAccountDeleted,
       );
     }
     final l10n = context.l10n;

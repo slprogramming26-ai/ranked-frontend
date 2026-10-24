@@ -386,7 +386,7 @@
   "@onboardingWelcomeTitle": {
     "description": "Großer Titel auf Welcome-Seite (Onboarding Schritt 1)"
   },
-  "onboardingWelcomeSubtitle": "Der erste redaktionelle Social Feed, in dem deine Energie zählt.",
+  "onboardingWelcomeSubtitle": "Poste, was dich bewegt, und lass die Community entscheiden, was oben landet.",
   "@onboardingWelcomeSubtitle": {
     "description": "Untertitel auf Welcome-Seite"
   },
@@ -406,11 +406,11 @@
   "@onboardingWelcomeRankSub": {
     "description": "Bento-Karte Untertitel 2"
   },
-  "onboardingWelcomeEarnTitle": "Verdienen und gestalten",
+  "onboardingWelcomeEarnTitle": "Sammle XP & steig auf",
   "@onboardingWelcomeEarnTitle": {
     "description": "Bento-Karte Titel 3"
   },
-  "onboardingWelcomeEarnSub": "Bewerte andere und verdiene Coins. Schalte exklusive Avatar-Items und \"Freundebuch\"-Skins frei.",
+  "onboardingWelcomeEarnSub": "Bewerte andere, halte deinen Streak und steig in höhere Ligen auf.",
   "@onboardingWelcomeEarnSub": {
     "description": "Bento-Karte Untertitel 3"
   },
@@ -563,18 +563,6 @@
   "loginButton": "Zum Feed einloggen",
   "@loginButton": {
     "description": "Hauptbutton auf Login-Seite"
-  },
-  "loginDivider": "ODER WEITER MIT",
-  "@loginDivider": {
-    "description": "Divider-Text für soziale Logins"
-  },
-  "loginGoogle": "Google",
-  "@loginGoogle": {
-    "description": "Google Login Button"
-  },
-  "loginApple": "Apple",
-  "@loginApple": {
-    "description": "Apple Login Button"
   },
   "loginNoAccount": "Neu bei Ranked?",
   "@loginNoAccount": {
@@ -1331,6 +1319,38 @@
   "suspendedBack": "Zurück zum Login",
   "@suspendedBack": {
     "description": "Button on the suspended screen"
+  },
+  "suspendedDelete": "Konto löschen",
+  "@suspendedDelete": {
+    "description": "Small red button on the suspended screen, opens the delete dialog (no token needed)"
+  },
+  "suspendedDeleteTitle": "Konto endgültig löschen?",
+  "@suspendedDeleteTitle": {
+    "description": "Title of the delete dialog for suspended accounts"
+  },
+  "suspendedDeleteMessage": "Dein Konto, alle Posts, Votes, Kommentare und Chats werden dauerhaft gelöscht. Das lässt sich nicht rückgängig machen. Bestätige mit deinen Login-Daten.",
+  "@suspendedDeleteMessage": {
+    "description": "Warning text in the delete dialog for suspended accounts"
+  },
+  "suspendedDeleteConfirm": "Endgültig löschen",
+  "@suspendedDeleteConfirm": {
+    "description": "Red confirm button in the delete dialog"
+  },
+  "suspendedDeleteCancel": "Abbrechen",
+  "@suspendedDeleteCancel": {
+    "description": "Cancel button in the delete dialog"
+  },
+  "suspendedDeleteTooMany": "Zu viele Versuche. Warte kurz und versuch es dann nochmal.",
+  "@suspendedDeleteTooMany": {
+    "description": "429 from POST /users/delete (5 per minute)"
+  },
+  "suspendedDeleteFailed": "Löschen fehlgeschlagen. Bitte später erneut versuchen.",
+  "@suspendedDeleteFailed": {
+    "description": "Unexpected error (422, 500, ...) in the delete dialog"
+  },
+  "suspendedDeleted": "Dein Konto wurde gelöscht.",
+  "@suspendedDeleted": {
+    "description": "SnackBar on the login screen after a suspended account was deleted"
   },
   "settingsSectionModeration": "MODERATION",
   "@settingsSectionModeration": {
