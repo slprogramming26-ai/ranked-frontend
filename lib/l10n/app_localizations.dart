@@ -554,6 +554,12 @@ abstract class AppLocalizations {
   /// **'Blockieren'**
   String get chatInfoBlock;
 
+  /// Aktion im DM-Info-Sheet, wenn der Peer schon blockiert ist
+  ///
+  /// In de, this message translates to:
+  /// **'Blockierung aufheben'**
+  String get chatInfoUnblock;
+
   /// Aktion im DM-Info-Sheet
   ///
   /// In de, this message translates to:
@@ -607,6 +613,114 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Du'**
   String get chatInfoYou;
+
+  /// Rollen-Badge in der Mitgliederliste: Gründer der Gruppe
+  ///
+  /// In de, this message translates to:
+  /// **'Gründer'**
+  String get chatInfoRoleCreator;
+
+  /// Rollen-Badge in der Mitgliederliste: Admin
+  ///
+  /// In de, this message translates to:
+  /// **'Admin'**
+  String get chatInfoRoleAdmin;
+
+  /// Mitglieder-Aktion: Mitglied zum Admin befördern
+  ///
+  /// In de, this message translates to:
+  /// **'Zum Admin machen'**
+  String get chatInfoMakeAdmin;
+
+  /// Mitglieder-Aktion: Admin wieder zum Mitglied machen
+  ///
+  /// In de, this message translates to:
+  /// **'Als Admin entfernen'**
+  String get chatInfoRemoveAdmin;
+
+  /// Mitglieder-Aktion: Gründer-Rolle an dieses Mitglied abgeben
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe übergeben'**
+  String get chatInfoTransfer;
+
+  /// Mitglieder-Aktion: Mitglied rauswerfen
+  ///
+  /// In de, this message translates to:
+  /// **'Aus Gruppe entfernen'**
+  String get chatInfoKick;
+
+  /// Titel des Rauswerfen-Dialogs
+  ///
+  /// In de, this message translates to:
+  /// **'{name} entfernen?'**
+  String chatInfoKickTitle(String name);
+
+  /// Text des Rauswerfen-Dialogs
+  ///
+  /// In de, this message translates to:
+  /// **'Die Person bekommt danach keine neuen Nachrichten mehr aus dieser Gruppe. Mit einer neuen Einladung kann sie wieder beitreten.'**
+  String get chatInfoKickMessage;
+
+  /// Bestätigen-Button im Rauswerfen-Dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Entfernen'**
+  String get chatInfoKickConfirm;
+
+  /// Titel des Übergeben-Dialogs
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe an {name} übergeben?'**
+  String chatInfoTransferTitle(String name);
+
+  /// Text des Übergeben-Dialogs
+  ///
+  /// In de, this message translates to:
+  /// **'{name} wird Gründer der Gruppe. Du bleibst als Admin dabei und kannst das nicht selbst rückgängig machen.'**
+  String chatInfoTransferMessage(String name);
+
+  /// Bestätigen-Button im Übergeben-Dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Übergeben'**
+  String get chatInfoTransferConfirm;
+
+  /// Snack nach erfolgreichem Befördern
+  ///
+  /// In de, this message translates to:
+  /// **'{name} ist jetzt Admin.'**
+  String chatInfoPromoted(String name);
+
+  /// Snack nach erfolgreichem Degradieren
+  ///
+  /// In de, this message translates to:
+  /// **'{name} ist kein Admin mehr.'**
+  String chatInfoDemoted(String name);
+
+  /// Snack nach erfolgreichem Rauswerfen
+  ///
+  /// In de, this message translates to:
+  /// **'{name} wurde entfernt.'**
+  String chatInfoKicked(String name);
+
+  /// Snack nach erfolgreichem Übergeben
+  ///
+  /// In de, this message translates to:
+  /// **'{name} ist jetzt Gründer.'**
+  String chatInfoTransferred(String name);
+
+  /// Snack bei 403/404 auf eine Mitglieder-Aktion (Ansicht war veraltet)
+  ///
+  /// In de, this message translates to:
+  /// **'Das geht nicht mehr. Die Mitgliederliste wurde aktualisiert.'**
+  String get chatInfoMemberActionOutdated;
+
+  /// Snack bei sonstigem Fehler einer Mitglieder-Aktion
+  ///
+  /// In de, this message translates to:
+  /// **'Hat nicht geklappt. Versuch es erneut.'**
+  String get chatInfoMemberActionFailed;
 
   /// Hinweis im Einladungs-Code-Dialog
   ///
@@ -2795,7 +2909,7 @@ abstract class AppLocalizations {
   /// Gruppenbild: 403
   ///
   /// In de, this message translates to:
-  /// **'Nur der Ersteller der Gruppe kann das Bild ändern.'**
+  /// **'Nur Gründer und Admins können das Bild ändern.'**
   String get chatInfoPictureOnlyCreator;
 
   /// Gruppenbild: Upload-Fehler

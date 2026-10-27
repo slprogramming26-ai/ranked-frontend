@@ -1,6 +1,5 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ranked/moderation/my_moderation_screen.dart';
 import 'package:ranked/moderation/report_sheet.dart';
@@ -76,6 +75,8 @@ class _ProfileState extends State<Profile> {
   bool _foreignLoading = false;
   bool _isFollowing = false;
   bool _followLoading = false;
+  // Steuert im ⋮-Menü "Blockieren" vs. "Blockierung aufheben".
+  bool _isBlocked = false;
 
   bool get _isOwn => widget.targetUserId == null;
 
@@ -93,11 +94,20 @@ class _ProfileState extends State<Profile> {
 
   Future<void> _fetchForeignUser() async {
     setState(() => _foreignLoading = true);
-    final data = await UserApiService.getUser(widget.targetUserId!);
+    final id = widget.targetUserId!;
+    // Beide Requests parallel: Record + .wait behaelt die Typen
+    // (Map bzw. List?), Future.wait wuerde List<Object?> liefern -> Casts.
+    final (data, blocks) = await (
+      UserApiService.getUser(id),
+      UserApiService.getBlocks(),
+    ).wait;
     if (mounted) {
       setState(() {
         _foreignData = data;
         _isFollowing = data['is_followed'] as bool? ?? false;
+        // Fehler (null) -> false, wie im Chat-Sheet: Blockieren auf einen
+        // schon Blockierten gibt 409 = Erfolg, also harmlos.
+        _isBlocked = blocks?.any((b) => b['id'] == id) ?? false;
         _foreignLoading = false;
       });
     }
@@ -139,7 +149,10 @@ class _ProfileState extends State<Profile> {
       context: context,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black.withValues(alpha: 0.3),
-      builder: (_) => _ProfileMenuSheet(canModerate: myRole.canModerate),
+      builder: (_) => _ProfileMenuSheet(
+        canModerate: myRole.canModerate,
+        isBlocked: _isBlocked,
+      ),
     );
     if (!mounted || action == null) return; // weggewischt
 
@@ -164,6 +177,29 @@ class _ProfileState extends State<Profile> {
         if (ok && nav.canPop()) nav.pop(); // Profil zu
         messenger.showSnackBar(SnackBar(
           content: Text(ok ? l10n.profileBlocked(name) : l10n.profileBlockFailed),
+        ));
+
+      case _ProfileAction.unblock:
+        // Texte wie im Chat-Sheet / BlockedAccountsScreen.
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (_) => ConfirmDialog(
+            icon: Icons.lock_open_rounded,
+            title: l10n.blockedUnblockTitle(name),
+            message: l10n.blockedUnblockMessage(name),
+            confirmLabel: l10n.blockedUnblock,
+          ),
+        );
+        if (confirmed != true) return;
+
+        final ok = await UserApiService.deleteBlock(id);
+        // Anders als beim Blockieren bleibt das Profil offen -> nur den
+        // Status umdrehen, damit das ⋮-Menü wieder "Blockieren" zeigt.
+        if (ok && mounted) setState(() => _isBlocked = false);
+        messenger.showSnackBar(SnackBar(
+          content: Text(
+            ok ? l10n.blockedUnblocked(name) : l10n.blockedUnblockFailed,
+          ),
         ));
 
       case _ProfileAction.moderate:
@@ -696,14 +732,19 @@ class _LeagueProgress extends StatelessWidget {
 // ── ⋮-Menü (fremdes Profil) ──────────────────────────────────────────────────
 // Enum statt String ('report'/'block'): Tippfehler werden zum Compile-Fehler,
 // und der switch in _onMore braucht kein default.
-enum _ProfileAction { report, block, moderate }
+enum _ProfileAction { report, block, unblock, moderate }
 
 // Gleicher Look wie das Melde-Sheet (Griff oben, 32er Radius, Zeilen mit
 // InkWell). Gibt die Wahl per Navigator.pop zurueck, sonst nichts.
 class _ProfileMenuSheet extends StatelessWidget {
   /// Zeigt zusaetzlich "Moderation" (nur Mods/Admins).
   final bool canModerate;
-  const _ProfileMenuSheet({required this.canModerate});
+  /// true -> "Blockierung aufheben" statt "Blockieren".
+  final bool isBlocked;
+  const _ProfileMenuSheet({
+    required this.canModerate,
+    required this.isBlocked,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -733,13 +774,22 @@ class _ProfileMenuSheet extends StatelessWidget {
               color: AppColors.onSurface,
               action: _ProfileAction.report,
             ),
-            _row(
-              context,
-              icon: Icons.block_rounded,
-              label: context.l10n.chatInfoBlock,
-              color: AppColors.primary, // destruktiv hervorgehoben
-              action: _ProfileAction.block,
-            ),
+            if (isBlocked)
+              _row(
+                context,
+                icon: Icons.lock_open_rounded,
+                label: context.l10n.chatInfoUnblock,
+                color: AppColors.onSurface, // nicht destruktiv
+                action: _ProfileAction.unblock,
+              )
+            else
+              _row(
+                context,
+                icon: Icons.block_rounded,
+                label: context.l10n.chatInfoBlock,
+                color: AppColors.primary, // destruktiv hervorgehoben
+                action: _ProfileAction.block,
+              ),
             if (canModerate)
               _row(
                 context,

@@ -185,7 +185,9 @@ class UserApiService {
   static Future<Map<String, dynamic>> getUser(int userId) async {
     final response = await ApiClient.get(Uri.parse('$baseUrl/users/$userId'));
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      // bodyBytes + utf8: response.body raet das Encoding aus dem Header,
+      // ohne charset kommt Latin-1 raus -> Umlaute kaputt.
+      return jsonDecode(utf8.decode(response.bodyBytes));
     }
     return {};
   }

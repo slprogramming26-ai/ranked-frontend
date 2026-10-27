@@ -329,6 +329,10 @@
   "@chatInfoBlock": {
     "description": "Blockieren-Aktion und Bestätigungs-Button im Info-Sheet"
   },
+  "chatInfoUnblock": "Blockierung aufheben",
+  "@chatInfoUnblock": {
+    "description": "Aktion im DM-Info-Sheet, wenn der Peer schon blockiert ist"
+  },
   "chatInfoOpenProfile": "Profil öffnen",
   "@chatInfoOpenProfile": {
     "description": "Aktion im DM-Info-Sheet"
@@ -369,6 +373,113 @@
   "chatInfoYou": "Du",
   "@chatInfoYou": {
     "description": "Badge am eigenen Eintrag in der Mitgliederliste"
+  },
+  "chatInfoRoleCreator": "Gründer",
+  "@chatInfoRoleCreator": {
+    "description": "Rollen-Badge in der Mitgliederliste: Gründer der Gruppe"
+  },
+  "chatInfoRoleAdmin": "Admin",
+  "@chatInfoRoleAdmin": {
+    "description": "Rollen-Badge in der Mitgliederliste: Admin"
+  },
+  "chatInfoMakeAdmin": "Zum Admin machen",
+  "@chatInfoMakeAdmin": {
+    "description": "Mitglieder-Aktion: Mitglied zum Admin befördern"
+  },
+  "chatInfoRemoveAdmin": "Als Admin entfernen",
+  "@chatInfoRemoveAdmin": {
+    "description": "Mitglieder-Aktion: Admin wieder zum Mitglied machen"
+  },
+  "chatInfoTransfer": "Gruppe übergeben",
+  "@chatInfoTransfer": {
+    "description": "Mitglieder-Aktion: Gründer-Rolle an dieses Mitglied abgeben"
+  },
+  "chatInfoKick": "Aus Gruppe entfernen",
+  "@chatInfoKick": {
+    "description": "Mitglieder-Aktion: Mitglied rauswerfen"
+  },
+  "chatInfoKickTitle": "{name} entfernen?",
+  "@chatInfoKickTitle": {
+    "description": "Titel des Rauswerfen-Dialogs",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoKickMessage": "Die Person bekommt danach keine neuen Nachrichten mehr aus dieser Gruppe. Mit einer neuen Einladung kann sie wieder beitreten.",
+  "@chatInfoKickMessage": {
+    "description": "Text des Rauswerfen-Dialogs"
+  },
+  "chatInfoKickConfirm": "Entfernen",
+  "@chatInfoKickConfirm": {
+    "description": "Bestätigen-Button im Rauswerfen-Dialog"
+  },
+  "chatInfoTransferTitle": "Gruppe an {name} übergeben?",
+  "@chatInfoTransferTitle": {
+    "description": "Titel des Übergeben-Dialogs",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoTransferMessage": "{name} wird Gründer der Gruppe. Du bleibst als Admin dabei und kannst das nicht selbst rückgängig machen.",
+  "@chatInfoTransferMessage": {
+    "description": "Text des Übergeben-Dialogs",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoTransferConfirm": "Übergeben",
+  "@chatInfoTransferConfirm": {
+    "description": "Bestätigen-Button im Übergeben-Dialog"
+  },
+  "chatInfoPromoted": "{name} ist jetzt Admin.",
+  "@chatInfoPromoted": {
+    "description": "Snack nach erfolgreichem Befördern",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoDemoted": "{name} ist kein Admin mehr.",
+  "@chatInfoDemoted": {
+    "description": "Snack nach erfolgreichem Degradieren",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoKicked": "{name} wurde entfernt.",
+  "@chatInfoKicked": {
+    "description": "Snack nach erfolgreichem Rauswerfen",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoTransferred": "{name} ist jetzt Gründer.",
+  "@chatInfoTransferred": {
+    "description": "Snack nach erfolgreichem Übergeben",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoMemberActionOutdated": "Das geht nicht mehr. Die Mitgliederliste wurde aktualisiert.",
+  "@chatInfoMemberActionOutdated": {
+    "description": "Snack bei 403/404 auf eine Mitglieder-Aktion (Ansicht war veraltet)"
+  },
+  "chatInfoMemberActionFailed": "Hat nicht geklappt. Versuch es erneut.",
+  "@chatInfoMemberActionFailed": {
+    "description": "Snack bei sonstigem Fehler einer Mitglieder-Aktion"
   },
   "chatInfoInviteCodeNote": "Nur für begrenzte Zeit gültig. Wer den Code eingibt, tritt der Gruppe bei.",
   "@chatInfoInviteCodeNote": {
@@ -1989,7 +2100,7 @@
   "@chatInfoPictureProcessFailed": {
     "description": "Gruppenbild: EXIF-Strip fehlgeschlagen"
   },
-  "chatInfoPictureOnlyCreator": "Nur der Ersteller der Gruppe kann das Bild ändern.",
+  "chatInfoPictureOnlyCreator": "Nur Gründer und Admins können das Bild ändern.",
   "@chatInfoPictureOnlyCreator": {
     "description": "Gruppenbild: 403"
   },

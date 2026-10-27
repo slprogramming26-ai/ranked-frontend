@@ -25,13 +25,17 @@ import '../post/widgets/share_sheet.dart';
 import '../profile/profile.dart';
 import '../core/user_api_service.dart';
 import 'conversation.dart';
+import 'group_permissions.dart';
 import 'messenger_api_service.dart';
 import 'messenger_controller.dart';
 import 'package:ranked/l10n/l10n.dart';
 
 /// Einstiegspunkt: entscheidet anhand des Conversation-Typs, welches Sheet
 /// gezeigt wird. Wird vom ChatScreen-Header aufgerufen.
-Future<void> showChatInfoSheet(BuildContext context, Conversation conversation) {
+Future<void> showChatInfoSheet(
+  BuildContext context,
+  Conversation conversation,
+) {
   return showModalBottomSheet<void>(
     context: context,
     backgroundColor: AppColors.surface,
@@ -49,9 +53,33 @@ Future<void> showChatInfoSheet(BuildContext context, Conversation conversation) 
 //  DM-Variante
 // -----------------------------------------------------------------------------
 
-class _DmInfoSheet extends StatelessWidget {
+class _DmInfoSheet extends StatefulWidget {
   final DmConversation conversation;
   const _DmInfoSheet({required this.conversation});
+
+  @override
+  State<_DmInfoSheet> createState() => _DmInfoSheetState();
+}
+
+class _DmInfoSheetState extends State<_DmInfoSheet> {
+  @override
+  void initState() {
+    super.initState();
+    fetchBlock();
+  }
+
+  bool? isBlocked;
+
+  Future<void> fetchBlock() async {
+    final blocks = await UserApiService.getBlocks();
+    if (!mounted) return; // Sheet evtl. schon weggewischt
+    // Fehler (null) -> false, also wie bisher "Blockieren". Harmlos: ist er
+    // doch schon blockiert, liefert der Server 409 = Erfolg.
+    setState(() {
+      isBlocked =
+          blocks?.any((b) => b['id'] == widget.conversation.peerId) ?? false;
+    });
+  }
 
   Future<void> _openProfile(BuildContext context) async {
     // Navigator VOR dem pop holen: das Sheet liegt auf dem Root-Navigator,
@@ -60,7 +88,7 @@ class _DmInfoSheet extends StatelessWidget {
     nav.pop();
     nav.push(
       MaterialPageRoute(
-        builder: (_) => Profile(targetUserId: conversation.peerId),
+        builder: (_) => Profile(targetUserId: widget.conversation.peerId),
       ),
     );
   }
@@ -76,14 +104,14 @@ class _DmInfoSheet extends StatelessWidget {
       context: context,
       builder: (_) => ConfirmDialog(
         icon: Icons.block_rounded,
-        title: l10n.chatInfoBlockTitle(conversation.title),
+        title: l10n.chatInfoBlockTitle(widget.conversation.title),
         message: l10n.chatInfoBlockMessage,
         confirmLabel: l10n.chatInfoBlock,
       ),
     );
     if (confirmed != true) return;
 
-    final ok = await UserApiService.blockUser(conversation.peerId);
+    final ok = await UserApiService.blockUser(widget.conversation.peerId);
 
     if (ok && nav.canPop()) nav.pop(); // Sheet zu
     messenger.showSnackBar(
@@ -92,8 +120,45 @@ class _DmInfoSheet extends StatelessWidget {
         backgroundColor: ok ? AppColors.onSurface : AppColors.primary,
         content: Text(
           ok
-              ? l10n.profileBlocked(conversation.title)
+              ? l10n.profileBlocked(widget.conversation.title)
               : l10n.profileBlockFailed,
+          style: GoogleFonts.inter(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Spiegelbild von _confirmBlock, Texte wie im BlockedAccountsScreen.
+  Future<void> _confirmUnblock(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    final l10n = context.l10n;
+    final name = widget.conversation.title;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => ConfirmDialog(
+        icon: Icons.lock_open_rounded,
+        title: l10n.blockedUnblockTitle(name),
+        message: l10n.blockedUnblockMessage(name),
+        confirmLabel: l10n.blockedUnblock,
+      ),
+    );
+    if (confirmed != true) return;
+
+    final ok = await UserApiService.deleteBlock(widget.conversation.peerId);
+
+    if (ok && nav.canPop()) nav.pop(); // Sheet zu
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: ok ? AppColors.onSurface : AppColors.primary,
+        content: Text(
+          ok ? l10n.blockedUnblocked(name) : l10n.blockedUnblockFailed,
           style: GoogleFonts.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
@@ -115,12 +180,12 @@ class _DmInfoSheet extends StatelessWidget {
             const _DragHandle(),
             const SizedBox(height: 16),
             _BigAvatar(
-              name: conversation.title,
-              avatarUrl: conversation.avatarUrl,
+              name: widget.conversation.title,
+              avatarUrl: widget.conversation.avatarUrl,
             ),
             const SizedBox(height: 12),
             Text(
-              conversation.title,
+              widget.conversation.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.plusJakartaSans(
@@ -139,10 +204,21 @@ class _DmInfoSheet extends StatelessWidget {
               onTap: () => _openProfile(context),
             ),
             const SizedBox(height: 8),
+            // Waehrend des Ladens gesperrt (onTap null), sonst koennte man in
+            // den ersten Millisekunden die falsche Aktion erwischen.
             _ActionTile(
-              icon: Icons.block_rounded,
-              label: context.l10n.chatInfoBlock,
-              onTap: () => _confirmBlock(context),
+              icon: isBlocked == true
+                  ? Icons.lock_open_rounded
+                  : Icons.block_rounded,
+              label: isBlocked == true
+                  ? context.l10n.chatInfoUnblock
+                  : context.l10n.chatInfoBlock,
+              loading: isBlocked == null,
+              onTap: switch (isBlocked) {
+                null => null,
+                true => () => _confirmUnblock(context),
+                false => () => _confirmBlock(context),
+              },
             ),
           ],
         ),
@@ -164,10 +240,16 @@ class _GroupInfoSheet extends StatefulWidget {
 }
 
 class _GroupInfoSheetState extends State<_GroupInfoSheet> {
-  // Future in initState festhalten (wie bei _PostPreviewCard): sonst würde
-  // jeder Rebuild die Mitglieder neu vom Server laden.
-  late final Future<List<({int id, String username, String? avatarUrl})>>
-  _membersFuture;
+  // Future festhalten (wie bei _PostPreviewCard): sonst würde jeder Rebuild
+  // die Mitglieder neu vom Server laden. Nicht final — nach jeder
+  // Mitglieder-Aktion setzt _loadMembers ein neues Future.
+  late Future<List<GroupMember>> _membersFuture;
+
+  // Eigene Rolle, aus derselben Mitgliederliste gelesen (Rollen kommen nicht
+  // per WebSocket). null = noch nicht geladen -> Bearbeiten-Elemente bleiben
+  // so lange versteckt, statt kurz aufzublitzen und wieder zu verschwinden.
+  GroupRole? _myRole;
+  bool get _canManage => _myRole?.canManage ?? false;
 
   // Eigene Kopie der Avatar-URL: widget.conversation ist final, nach einem
   // Upload soll das Sheet das neue Bild aber sofort zeigen.
@@ -177,9 +259,23 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
   @override
   void initState() {
     super.initState();
-    _membersFuture = MessengerApiService.fetchGroupMembers(
-      widget.conversation.groupChatId,
-    );
+    _loadMembers();
+  }
+
+  // Laedt die Mitgliederliste (neu) und liest dabei die eigene Rolle mit aus.
+  // Laeuft in initState und nach jeder Mitglieder-Aktion: Rollen kommen nicht
+  // per WebSocket, nach einer Aenderung weiss es nur der Server sicher.
+  // Nach Aktionen als setState(_loadMembers) aufrufen, damit der
+  // FutureBuilder das neue Future mitbekommt.
+  void _loadMembers() {
+    _membersFuture =
+        MessengerApiService.fetchGroupMembers(
+          widget.conversation.groupChatId,
+        ).then((members) {
+          final me = members.where((m) => m.id == widget.conversation.myUserId);
+          if (mounted && me.isNotEmpty) setState(() => _myRole = me.first.role);
+          return members;
+        });
   }
 
   Future<void> _changeGroupPicture() async {
@@ -200,10 +296,11 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     setState(() => _uploadingPicture = true);
 
     // 1) EXIF/GPS raus im Hintergrund-Isolate. Kein Fallback aufs Original.
-    final cleanPath = await compute(
-      sanitizeImageFile,
-      (path: picked.path, maxSize: 1024, quality: 85),
-    );
+    final cleanPath = await compute(sanitizeImageFile, (
+      path: picked.path,
+      maxSize: 1024,
+      quality: 85,
+    ));
     if (!mounted) return;
     if (cleanPath == null) {
       setState(() => _uploadingPicture = false);
@@ -234,9 +331,8 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     // 3) Lokal in Drift speichern -> Chatliste (watchAllContacts) zieht
     // automatisch nach. Nur avatarUrl anfassen, der Rest bleibt.
     final db = widget.conversation.db;
-    await (db.update(db.openChats)..where(
-          (t) => t.id.equals(groupId) & t.isGroupChat.equals(true),
-        ))
+    await (db.update(db.openChats)
+          ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
         .write(OpenChatsCompanion(avatarUrl: Value(url)));
     if (!mounted) return;
 
@@ -271,9 +367,111 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
   void _openMemberProfile(int userId) {
     final nav = Navigator.of(context);
     nav.pop();
-    nav.push(
-      MaterialPageRoute(builder: (_) => Profile(targetUserId: userId)),
+    nav.push(MaterialPageRoute(builder: (_) => Profile(targetUserId: userId)));
+  }
+
+  // Tap auf ein Mitglied: Darf ich nichts mit ihm machen, geht's direkt zum
+  // Profil (wie vorher). Sonst kommt ein kleines Aktions-Sheet.
+  Future<void> _onMemberTap(GroupMember member) async {
+    final myRole = _myRole;
+    final actions = myRole == null
+        ? const <MemberAction>{}
+        : allowedMemberActions(
+            myRole: myRole,
+            myUserId: widget.conversation.myUserId,
+            target: member,
+          );
+    if (actions.isEmpty) {
+      _openMemberProfile(member.id);
+      return;
+    }
+
+    final action = await showModalBottomSheet<MemberAction>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => _MemberActionsSheet(
+        member: member,
+        actions: actions,
+        onOpenProfile: () => _openMemberProfile(member.id),
+      ),
     );
+    if (action == null || !mounted) return;
+    await _runMemberAction(action, member);
+  }
+
+  Future<void> _runMemberAction(MemberAction action, GroupMember member) async {
+    // Wie überall im Sheet: Messenger/l10n vor dem ersten await sichern.
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+    final groupId = widget.conversation.groupChatId;
+    final name = member.username;
+
+    // Rauswerfen und Übergeben kann man nicht mit einem Tap zurückdrehen
+    // (nach dem Übergeben gar nicht mehr selbst) -> erst nachfragen.
+    // Befördern/Degradieren gehen ohne Dialog, die sind leicht umkehrbar.
+    final dialog = switch (action) {
+      MemberAction.kick => ConfirmDialog(
+        icon: Icons.person_remove_rounded,
+        title: l10n.chatInfoKickTitle(name),
+        message: l10n.chatInfoKickMessage,
+        confirmLabel: l10n.chatInfoKickConfirm,
+      ),
+      MemberAction.transfer => ConfirmDialog(
+        icon: Icons.workspace_premium_rounded,
+        title: l10n.chatInfoTransferTitle(name),
+        message: l10n.chatInfoTransferMessage(name),
+        confirmLabel: l10n.chatInfoTransferConfirm,
+      ),
+      MemberAction.promote || MemberAction.demote => null,
+    };
+    if (dialog != null) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => dialog,
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    final status = await switch (action) {
+      MemberAction.promote => MessengerApiService.setMemberRole(
+        groupId,
+        member.id,
+        GroupRole.admin,
+      ),
+      MemberAction.demote => MessengerApiService.setMemberRole(
+        groupId,
+        member.id,
+        GroupRole.member,
+      ),
+      MemberAction.kick => MessengerApiService.kickMember(groupId, member.id),
+      MemberAction.transfer => MessengerApiService.transferGroup(
+        groupId,
+        member.id,
+      ),
+    };
+    if (!mounted) return;
+
+    // IMMER neu laden, auch bei Fehlern: Rollen kommen nicht per WebSocket,
+    // ein 403/404 heisst fast immer "deine Ansicht war veraltet" (jemand
+    // anderes hat inzwischen was geaendert). Nach dem Uebergeben aendert
+    // sich auch _myRole (wir sind dann Admin) -> Buttons passen sich an.
+    setState(_loadMembers);
+
+    final ok = status >= 200 && status < 300;
+    final text = ok
+        ? switch (action) {
+            MemberAction.promote => l10n.chatInfoPromoted(name),
+            MemberAction.demote => l10n.chatInfoDemoted(name),
+            MemberAction.kick => l10n.chatInfoKicked(name),
+            MemberAction.transfer => l10n.chatInfoTransferred(name),
+          }
+        : (status == 403 || status == 404)
+        ? l10n.chatInfoMemberActionOutdated
+        : l10n.chatInfoMemberActionFailed;
+    _showSnack(messenger, text, error: !ok);
   }
 
   Future<void> _showInviteCode() async {
@@ -349,9 +547,11 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     );
     if (confirmed != true) return;
 
-    final ok = await MessengerApiService.leaveGroup(
+    // 403-Sonderfall (Gruender) kommt in Schritt 4, bis dahin nur ok/Fehler.
+    final status = await MessengerApiService.leaveGroup(
       widget.conversation.groupChatId,
     );
+    final ok = status == 200;
 
     if (ok) {
       // Chat aus der lokalen Liste nehmen — sonst bleibt eine Leiche in der
@@ -396,10 +596,11 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
             children: [
               const _DragHandle(),
               const SizedBox(height: 16),
-              // Tap -> neues Gruppenbild. Kamera-Badge zeigt, dass es geht;
-              // waehrend des Uploads liegt ein Spinner ueber dem Avatar.
+              // Tap -> neues Gruppenbild (nur Gruender/Admins). Kamera-Badge
+              // zeigt, dass es geht; waehrend des Uploads liegt ein Spinner
+              // ueber dem Avatar.
               GestureDetector(
-                onTap: _changeGroupPicture,
+                onTap: _canManage ? _changeGroupPicture : null,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -424,26 +625,27 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
                           ),
                         ),
                       ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primary,
-                          border: Border.all(
-                            color: AppColors.surface,
-                            width: 2,
+                    if (_canManage)
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.primary,
+                            border: Border.all(
+                              color: AppColors.surface,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 14,
+                            color: Colors.white,
                           ),
                         ),
-                        child: const Icon(
-                          Icons.camera_alt_rounded,
-                          size: 14,
-                          color: Colors.white,
-                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -496,10 +698,14 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
   }
 
   Widget _buildMemberList() {
-    return FutureBuilder<List<({int id, String username, String? avatarUrl})>>(
+    return FutureBuilder<List<GroupMember>>(
       future: _membersFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
+        // Spinner nur beim ersten Laden. Beim Neuladen behaelt der
+        // FutureBuilder die alten Daten im Snapshot — die Liste bleibt
+        // stehen und springt erst um, wenn die neue Antwort da ist.
+        if (snapshot.connectionState != ConnectionState.done &&
+            !snapshot.hasData) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
             child: Center(
@@ -515,9 +721,14 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
           );
         }
 
+        // Gruender oben, dann Admins, dann alle anderen — jeweils alphabetisch.
+        // role.index passt dafuer, weil das Enum genau so sortiert ist.
         final members = [...?snapshot.data]
-          ..sort((a, b) =>
-              a.username.toLowerCase().compareTo(b.username.toLowerCase()));
+          ..sort((a, b) {
+            final byRole = a.role.index.compareTo(b.role.index);
+            if (byRole != 0) return byRole;
+            return a.username.toLowerCase().compareTo(b.username.toLowerCase());
+          });
         if (members.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -541,9 +752,10 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
             return _MemberTile(
               username: m.username,
               avatarUrl: m.avatarUrl,
+              role: m.role,
               isMe: isMe,
               // Aufs eigene Profil führt schon der Profil-Tab.
-              onTap: isMe ? null : () => _openMemberProfile(m.id),
+              onTap: isMe ? null : () => _onMemberTap(m),
             );
           },
         );
@@ -555,12 +767,14 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
 class _MemberTile extends StatelessWidget {
   final String username;
   final String? avatarUrl;
+  final GroupRole role;
   final bool isMe;
   final VoidCallback? onTap;
 
   const _MemberTile({
     required this.username,
     required this.avatarUrl,
+    required this.role,
     required this.isMe,
     required this.onTap,
   });
@@ -577,21 +791,36 @@ class _MemberTile extends StatelessWidget {
             _CircleAvatar(name: username, avatarUrl: avatarUrl, size: 40),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                username,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
-                ),
+              child: Row(
+                children: [
+                  // Flexible statt Expanded: der Name nimmt nur so viel Platz
+                  // wie noetig, das Badge klebt direkt dahinter.
+                  Flexible(
+                    child: Text(
+                      username,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                  ),
+                  if (role != GroupRole.member) ...[
+                    const SizedBox(width: 6),
+                    _RoleBadge(role: role),
+                  ],
+                ],
               ),
             ),
+            const SizedBox(width: 8),
             if (isMe)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
@@ -613,6 +842,144 @@ class _MemberTile extends StatelessWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// Aktions-Sheet beim Tap auf ein Mitglied: Kopf mit Avatar + Name, darunter
+// "Profil öffnen" und die erlaubten Aktionen. Gibt die gewählte Aktion per
+// Navigator.pop zurück (null = weggewischt); das Ausführen macht der Aufrufer.
+class _MemberActionsSheet extends StatelessWidget {
+  final GroupMember member;
+  final Set<MemberAction> actions;
+  final VoidCallback onOpenProfile;
+
+  const _MemberActionsSheet({
+    required this.member,
+    required this.actions,
+    required this.onOpenProfile,
+  });
+
+  // Feste Reihenfolge, unabhaengig davon, wie das Set gebaut wurde.
+  // Rauswerfen bewusst ganz unten — die "gefaehrlichste" Aktion.
+  static const _order = [
+    MemberAction.promote,
+    MemberAction.demote,
+    MemberAction.transfer,
+    MemberAction.kick,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _DragHandle(),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _CircleAvatar(
+                  name: member.username,
+                  avatarUrl: member.avatarUrl,
+                  size: 48,
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    member.username,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ),
+                if (member.role != GroupRole.member) ...[
+                  const SizedBox(width: 8),
+                  _RoleBadge(role: member.role),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            _ActionTile(
+              icon: Icons.person_rounded,
+              label: l10n.chatInfoOpenProfile,
+              onTap: () {
+                Navigator.pop(context); // nur dieses Sheet zu ...
+                onOpenProfile(); // ... den Rest macht _openMemberProfile
+              },
+            ),
+            for (final action in _order.where(actions.contains)) ...[
+              const SizedBox(height: 8),
+              _ActionTile(
+                icon: switch (action) {
+                  MemberAction.promote => Icons.add_moderator_rounded,
+                  MemberAction.demote => Icons.remove_moderator_rounded,
+                  MemberAction.transfer => Icons.workspace_premium_rounded,
+                  MemberAction.kick => Icons.person_remove_rounded,
+                },
+                label: switch (action) {
+                  MemberAction.promote => l10n.chatInfoMakeAdmin,
+                  MemberAction.demote => l10n.chatInfoRemoveAdmin,
+                  MemberAction.transfer => l10n.chatInfoTransfer,
+                  MemberAction.kick => l10n.chatInfoKick,
+                },
+                onTap: () => Navigator.pop(context, action),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Kleines Rollen-Badge hinter dem Namen. Gruender in Gold (Brand-Moment),
+// Admin bewusst neutral, damit nur der Gruender heraussticht.
+class _RoleBadge extends StatelessWidget {
+  final GroupRole role;
+  const _RoleBadge({required this.role});
+
+  @override
+  Widget build(BuildContext context) {
+    final isCreator = role == GroupRole.creator;
+    final fg = isCreator ? AppColors.tertiary : AppColors.secondary;
+    final bg = isCreator
+        ? AppColors.tertiaryContainer.withValues(alpha: 0.35)
+        : AppColors.secondaryFixed;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(6, 2, 8, 2),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isCreator ? Icons.workspace_premium_rounded : Icons.shield_rounded,
+            size: 12,
+            color: fg,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            isCreator
+                ? context.l10n.chatInfoRoleCreator
+                : context.l10n.chatInfoRoleAdmin,
+            style: GoogleFonts.inter(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: fg,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -755,12 +1122,14 @@ class _CircleAvatar extends StatelessWidget {
 class _ActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap; // null = gesperrt
+  final bool loading; // nur zentrierter Spinner, Inhalt unsichtbar
 
   const _ActionTile({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.loading = false,
   });
 
   @override
@@ -773,25 +1142,44 @@ class _ActionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
+          // Opacity 0 statt weglassen: die Row bestimmt weiter die Hoehe,
+          // die Kachel springt also nicht, wenn das Label erscheint.
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              Icon(icon, size: 20, color: AppColors.primary),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.onSurface,
-                  ),
+              Opacity(
+                opacity: loading ? 0 : 1,
+                child: Row(
+                  children: [
+                    Icon(icon, size: 20, color: AppColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
+                    ),
+                  ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
-                color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
+              if (loading)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary,
+                  ),
+                ),
             ],
           ),
         ),
@@ -909,8 +1297,11 @@ class _InviteCodeDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                icon: const Icon(Icons.send_rounded,
-                    size: 18, color: Colors.white),
+                icon: const Icon(
+                  Icons.send_rounded,
+                  size: 18,
+                  color: Colors.white,
+                ),
                 label: Text(
                   context.l10n.chatInfoShareInChat,
                   style: GoogleFonts.inter(
@@ -932,8 +1323,11 @@ class _InviteCodeDialog extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                icon: Icon(Icons.copy_rounded,
-                    size: 18, color: AppColors.primary),
+                icon: Icon(
+                  Icons.copy_rounded,
+                  size: 18,
+                  color: AppColors.primary,
+                ),
                 label: Text(
                   context.l10n.chatInfoCopyCode,
                   style: GoogleFonts.inter(

@@ -44,6 +44,35 @@ part 'messenger_api_service.sync.dart';
 const _baseWsUrl = ApiConfig.wsUrl;
 const _baseUrl = ApiConfig.baseUrl;
 
+// Rolle eines Gruppenmitglieds, wie GET /group_chat/{id}/members sie liefert.
+// Die echten Rechte prueft immer das Backend — die UI blendet damit nur
+// Buttons ein/aus.
+enum GroupRole {
+  creator,
+  admin,
+  member;
+
+  // Server schickt einen String ("creator"/"admin"/"member"). Unbekannt oder
+  // fehlend -> member: im Zweifel lieber zu wenige Buttons zeigen als zu viele.
+  static GroupRole parse(Object? raw) {
+    for (final t in values) {
+      if (t.name == raw) return t;
+    }
+    return member;
+  }
+
+  bool get canManage => this == creator || this == admin;
+}
+
+// Ein Eintrag der Mitgliederliste. Als typedef, damit der Record-Typ nicht an
+// jeder Stelle ausgeschrieben werden muss (und nicht auseinanderlaeuft).
+typedef GroupMember = ({
+  int id,
+  String username,
+  String? avatarUrl,
+  GroupRole role,
+});
+
 class MessengerApiService {
   final AppDatabase _db;
   final int _myUserId;
@@ -73,7 +102,8 @@ class MessengerApiService {
   Future<void>? _connectFuture;
 
   // Reconnect-Zustand (Details siehe connection-Part):
-  bool _manuallyClosed = false; // true = absichtlich geschlossen, kein Reconnect
+  bool _manuallyClosed =
+      false; // true = absichtlich geschlossen, kein Reconnect
   Timer? _reconnectTimer;
   int _reconnectAttempts = 0;
 
@@ -85,9 +115,15 @@ class MessengerApiService {
   //
   // --------------
 
-  static Future<int?> createGroup() async {
+  // POST /group_chat/create — optional gleich mit Namen (ein Request statt
+  // create + rename). Ohne Namen geht kein Body raus, wie bisher.
+  static Future<int?> createGroup({String? name}) async {
+    final trimmed = name?.trim();
+    final hasName = trimmed != null && trimmed.isNotEmpty;
     final response = await ApiClient.post(
       Uri.parse("$_baseUrl/group_chat/create"),
+      headers: hasName ? {'Content-Type': 'application/json'} : null,
+      body: hasName ? jsonEncode({'group_name': trimmed}) : null,
     );
     if (response.statusCode != 201) return null;
     final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -126,18 +162,67 @@ class MessengerApiService {
     return response.statusCode == 200;
   }
 
-  static Future<bool> leaveGroup(int groupChatId) async {
+  // Gibt den Statuscode zurueck statt bool: 403 heisst hier "du bist der
+  // Gruender, erst uebergeben" — die UI zeigt dafuer einen eigenen Hinweis.
+  static Future<int> leaveGroup(int groupChatId) async {
     final response = await ApiClient.delete(
       Uri.parse("$_baseUrl/group_chat/leave/$groupChatId"),
     );
-    return response.statusCode == 200;
+    return response.statusCode;
+  }
+
+  // PATCH /group_chat/{id} — Gruppe umbenennen (Gruender + Admins).
+  // 200 ok, 403 keine Rechte, 400 leerer Name.
+  static Future<int> renameGroup(int groupChatId, String name) async {
+    final response = await ApiClient.patch(
+      Uri.parse("$_baseUrl/group_chat/$groupChatId"),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'group_name': name.trim()}),
+    );
+    return response.statusCode;
+  }
+
+  // PATCH /group_chat/{id}/members/{user}/role — befoerdern (admin) oder
+  // degradieren (member). Ist die Rolle schon gesetzt, kommt trotzdem 200.
+  // 403 = keine Rechte / Ziel ist Gruender / Admin will degradieren.
+  // GroupRole.creator ist hier verboten (Server: 422) — dafuer transferGroup.
+  static Future<int> setMemberRole(
+    int groupChatId,
+    int userId,
+    GroupRole role,
+  ) async {
+    assert(role != GroupRole.creator, 'Gruender wechselt nur per transferGroup');
+    final response = await ApiClient.patch(
+      Uri.parse("$_baseUrl/group_chat/$groupChatId/members/$userId/role"),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'role': role.name}),
+    );
+    return response.statusCode;
+  }
+
+  // POST /group_chat/{id}/transfer/{user} — Gruppe uebergeben (nur Gruender).
+  // Danach ist das Ziel Gruender und wir selbst Admin (koennen also leaven).
+  static Future<int> transferGroup(int groupChatId, int userId) async {
+    final response = await ApiClient.post(
+      Uri.parse("$_baseUrl/group_chat/$groupChatId/transfer/$userId"),
+    );
+    return response.statusCode;
+  }
+
+  // DELETE /group_chat/kick/{id}/{user} — Mitglied entfernen.
+  // 403 = Regelverstoss (Admin kickt Admin/Gruender ...), 404 = kein Mitglied.
+  static Future<int> kickMember(int groupChatId, int userId) async {
+    final response = await ApiClient.delete(
+      Uri.parse("$_baseUrl/group_chat/kick/$groupChatId/$userId"),
+    );
+    return response.statusCode;
   }
 
   // POST /group_chat/{id}/picture — neues Gruppenbild hochladen. Die Datei muss
   // VORHER durch sanitizeImageFile (EXIF raus), das macht der Aufrufer.
   // Antwort ist die komplette Gruppen-Info ({group_chat_id, group_name,
   // profile_picture}), wir brauchen nur die neue URL.
-  // Rueckgabe als Record, weil die UI 403 (nur der Creator darf) anders
+  // Rueckgabe als Record, weil die UI 403 (nur Gruender/Admins duerfen) anders
   // anzeigen will als einen normalen Fehler.
   static Future<({String? url, int statusCode})> uploadGroupChatPicture(
     int groupChatId,
@@ -151,16 +236,19 @@ class MessengerApiService {
       final data = jsonDecode(response.body);
       return (url: data['profile_picture'] as String?, statusCode: 200);
     }
-    debugPrint('Gruppenbild-Upload fehlgeschlagen: ${response.statusCode} – ${response.body}');
+    debugPrint(
+      'Gruppenbild-Upload fehlgeschlagen: ${response.statusCode} – ${response.body}',
+    );
     return (url: null, statusCode: response.statusCode);
   }
 
   // GET /group_chat/{id}/members — aktuelle Mitglieder inkl. Username/Avatar
   // (der Server joint die users-Tabelle schon mit). Zwei Abnehmer:
   //  * Rekey-Flow: braucht nur die IDs (je eine Schluesselkopie pro Mitglied)
-  //  * Chat-Info-Sheet: zeigt die Mitgliederliste mit Namen an
-  static Future<List<({int id, String username, String? avatarUrl})>>
-  fetchGroupMembers(int groupChatId) async {
+  //  * Chat-Info-Sheet: zeigt die Mitgliederliste mit Namen + Rolle an
+  // Rollen kommen NICHT per WebSocket — wer die aktuelle Rolle braucht, laedt
+  // diese Liste neu (z.B. beim Oeffnen des Info-Sheets).
+  static Future<List<GroupMember>> fetchGroupMembers(int groupChatId) async {
     final response = await ApiClient.get(
       Uri.parse("$_baseUrl/group_chat/$groupChatId/members"),
     );
@@ -172,6 +260,7 @@ class MessengerApiService {
         id: id,
         username: (e['username'] as String?) ?? 'User $id',
         avatarUrl: e['profile_picture_url'] as String?,
+        role: GroupRole.parse(e['role']),
       );
     }).toList();
   }

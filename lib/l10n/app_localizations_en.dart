@@ -254,6 +254,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatInfoBlock => 'Block';
 
   @override
+  String get chatInfoUnblock => 'Unblock';
+
+  @override
   String get chatInfoOpenProfile => 'Open profile';
 
   @override
@@ -282,6 +285,77 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatInfoYou => 'You';
+
+  @override
+  String get chatInfoRoleCreator => 'Creator';
+
+  @override
+  String get chatInfoRoleAdmin => 'Admin';
+
+  @override
+  String get chatInfoMakeAdmin => 'Make admin';
+
+  @override
+  String get chatInfoRemoveAdmin => 'Remove as admin';
+
+  @override
+  String get chatInfoTransfer => 'Transfer group';
+
+  @override
+  String get chatInfoKick => 'Remove from group';
+
+  @override
+  String chatInfoKickTitle(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get chatInfoKickMessage =>
+      'They won\'t receive new messages from this group anymore. They can rejoin with a new invite.';
+
+  @override
+  String get chatInfoKickConfirm => 'Remove';
+
+  @override
+  String chatInfoTransferTitle(String name) {
+    return 'Transfer group to $name?';
+  }
+
+  @override
+  String chatInfoTransferMessage(String name) {
+    return '$name becomes the group\'s creator. You stay on as an admin and can\'t undo this yourself.';
+  }
+
+  @override
+  String get chatInfoTransferConfirm => 'Transfer';
+
+  @override
+  String chatInfoPromoted(String name) {
+    return '$name is now an admin.';
+  }
+
+  @override
+  String chatInfoDemoted(String name) {
+    return '$name is no longer an admin.';
+  }
+
+  @override
+  String chatInfoKicked(String name) {
+    return '$name was removed.';
+  }
+
+  @override
+  String chatInfoTransferred(String name) {
+    return '$name is now the creator.';
+  }
+
+  @override
+  String get chatInfoMemberActionOutdated =>
+      'That\'s no longer possible. The member list has been refreshed.';
+
+  @override
+  String get chatInfoMemberActionFailed =>
+      'That didn\'t work. Please try again.';
 
   @override
   String get chatInfoInviteCodeNote =>
@@ -1522,7 +1596,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatInfoPictureOnlyCreator =>
-      'Only the group\'s creator can change the picture.';
+      'Only the creator and admins can change the picture.';
 
   @override
   String get chatInfoPictureUploadFailed => 'Upload failed. Please try again.';
