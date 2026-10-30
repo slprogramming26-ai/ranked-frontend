@@ -1600,9 +1600,22 @@ class AppLocalizationsDe extends AppLocalizations {
   String get roleSheetReasonHint => 'Erscheint im Moderations-Protokoll';
 
   @override
-  String messengerGroupCreated(int id) {
-    return 'Gruppe $id erfolgreich erstellt!';
+  String messengerGroupCreated(String name) {
+    return '„$name“ wurde erstellt!';
   }
+
+  @override
+  String get messengerGroupPictureFailed =>
+      'Gruppe erstellt, aber das Bild konnte nicht hochgeladen werden. Du kannst es in den Gruppen-Infos nachholen.';
+
+  @override
+  String get createGroupTitle => 'Neue Gruppe';
+
+  @override
+  String get createGroupNameHint => 'Gruppenname (optional)';
+
+  @override
+  String get createGroupSubmit => 'Erstellen';
 
   @override
   String messengerGroupJoined(int id) {
@@ -1625,6 +1638,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get chatInfoPictureUpdated => 'Gruppenbild aktualisiert.';
 
   @override
+  String get chatInfoRenameTitle => 'Gruppe umbenennen';
+
+  @override
+  String get chatInfoRenameHint => 'Gruppenname';
+
+  @override
+  String get chatInfoRenameSave => 'Speichern';
+
+  @override
+  String chatInfoRenamed(String name) {
+    return 'Gruppe heißt jetzt „$name“.';
+  }
+
+  @override
   String get chatInfoInviteCodeFailed =>
       'Code konnte nicht erstellt werden. Versuch es erneut.';
 
@@ -1634,6 +1661,38 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get chatInfoLeaveFailed =>
       'Verlassen fehlgeschlagen. Versuch es erneut.';
+
+  @override
+  String get chatInfoCreatorLeaveTitle => 'Du bist Gründer';
+
+  @override
+  String get chatInfoCreatorLeaveMessage =>
+      'Übergib die Gruppe zuerst an ein Mitglied: Tippe in der Liste auf die Person und wähle „Gruppe übergeben“. Danach kannst du sie verlassen.';
+
+  @override
+  String get chatInfoCreatorLeaveAloneMessage =>
+      'Du bist das einzige Mitglied, deshalb kannst du die Gruppe an niemanden übergeben. Du kannst sie stattdessen löschen – das lässt sich nicht rückgängig machen.';
+
+  @override
+  String get chatInfoDeleteGroup => 'Gruppe löschen';
+
+  @override
+  String chatInfoDeleteTitle(String name) {
+    return '$name löschen?';
+  }
+
+  @override
+  String get chatInfoDeleteMessage =>
+      'Die Gruppe wird für alle Mitglieder gelöscht, samt Verlauf. Das lässt sich nicht rückgängig machen.';
+
+  @override
+  String get chatInfoDeleteConfirm => 'Löschen';
+
+  @override
+  String get chatInfoGroupDeleted => 'Gruppe gelöscht.';
+
+  @override
+  String get chatInfoGotIt => 'Verstanden';
 
   @override
   String get chatInfoCodeCopied => 'Code kopiert!';

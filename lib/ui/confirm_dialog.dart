@@ -6,11 +6,13 @@ import '../l10n/l10n.dart';
 
 /// Bestätigungs-Dialog für folgenreiche Aktionen (Blockieren, Gruppe
 /// verlassen). Gibt true/false über Navigator.pop zurück.
+/// showCancel: false -> reiner Hinweis mit nur einem Button.
 class ConfirmDialog extends StatelessWidget {
   final IconData icon;
   final String title;
   final String message;
   final String confirmLabel;
+  final bool showCancel;
 
   const ConfirmDialog({
     super.key,
@@ -18,6 +20,7 @@ class ConfirmDialog extends StatelessWidget {
     required this.title,
     required this.message,
     required this.confirmLabel,
+    this.showCancel = true,
   });
 
   @override
@@ -62,26 +65,28 @@ class ConfirmDialog extends StatelessWidget {
             const SizedBox(height: 22),
             Row(
               children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                if (showCancel) ...[
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      context.l10n.messengerCancel,
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.onSurfaceVariant,
+                      child: Text(
+                        context.l10n.messengerCancel,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
+                  const SizedBox(width: 10),
+                ],
                 Expanded(
                   child: FilledButton(
                     onPressed: () => Navigator.pop(context, true),

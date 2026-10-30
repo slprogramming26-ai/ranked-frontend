@@ -115,6 +115,10 @@ class MessengerApiService {
   //
   // --------------
 
+  // Reines UI-Limit fuer Gruppennamen (Erstellen-Sheet + Umbenennen). Das
+  // Backend prueft selbst KEINE Laenge.
+  static const groupNameMaxLength = 50;
+
   // POST /group_chat/create — optional gleich mit Namen (ein Request statt
   // create + rename). Ohne Namen geht kein Body raus, wie bisher.
   static Future<int?> createGroup({String? name}) async {
@@ -155,11 +159,13 @@ class MessengerApiService {
     return body['group_chat_id'] as int;
   }
 
-  static Future<bool> deleteGroup(int groupChatId) async {
+  // DELETE /group_chat/{id} — Gruppe fuer alle loeschen (nur Gruender).
+  // 200 ok, 403 nicht (mehr) Gruender, 404 Gruppe gibt's schon nicht mehr.
+  static Future<int> deleteGroup(int groupChatId) async {
     final response = await ApiClient.delete(
       Uri.parse("$_baseUrl/group_chat/$groupChatId"),
     );
-    return response.statusCode == 200;
+    return response.statusCode;
   }
 
   // Gibt den Statuscode zurueck statt bool: 403 heisst hier "du bist der
@@ -269,10 +275,12 @@ class MessengerApiService {
   // Das ist das Gruppen-Gegenstueck zum globalen DM-Endpoint /messages/:
   // ohne diesen Aufruf weiss der Client nach einem frischen Login (leere DB)
   // nicht, welche Gruppen er nachsyncen soll.
-  static Future<List<({int id, String? name, String? avatarUrl})>>
+  // null = Fehler. NICHT als leere Liste melden: der Sync loescht lokal alle
+  // Gruppen, die hier fehlen — ein Server-Schluckauf wuerde sonst alles abraeumen.
+  static Future<List<({int id, String? name, String? avatarUrl})>?>
   fetchMyGroups() async {
     final response = await ApiClient.get(Uri.parse("$_baseUrl/group_chat/my"));
-    if (response.statusCode != 200) return const [];
+    if (response.statusCode != 200) return null;
     final raw = jsonDecode(response.body) as List;
     return raw.cast<Map<String, dynamic>>().map((e) {
       return (

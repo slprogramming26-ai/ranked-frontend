@@ -2078,14 +2078,30 @@
   "@roleSheetReasonHint": {
     "description": "Role sheet: hint inside the reason field"
   },
-  "messengerGroupCreated": "Gruppe {id} erfolgreich erstellt!",
+  "messengerGroupCreated": "„{name}“ wurde erstellt!",
   "@messengerGroupCreated": {
     "description": "Snackbar nach Gruppe erstellen",
     "placeholders": {
-      "id": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
+  },
+  "messengerGroupPictureFailed": "Gruppe erstellt, aber das Bild konnte nicht hochgeladen werden. Du kannst es in den Gruppen-Infos nachholen.",
+  "@messengerGroupPictureFailed": {
+    "description": "Snackbar: Gruppe da, Bild-Upload danach fehlgeschlagen"
+  },
+  "createGroupTitle": "Neue Gruppe",
+  "@createGroupTitle": {
+    "description": "Erstellen-Sheet: Überschrift"
+  },
+  "createGroupNameHint": "Gruppenname (optional)",
+  "@createGroupNameHint": {
+    "description": "Erstellen-Sheet: Hinweis im Namensfeld"
+  },
+  "createGroupSubmit": "Erstellen",
+  "@createGroupSubmit": {
+    "description": "Erstellen-Sheet: Button"
   },
   "messengerGroupJoined": "Gruppe {id} beigetreten!",
   "@messengerGroupJoined": {
@@ -2112,6 +2128,27 @@
   "@chatInfoPictureUpdated": {
     "description": "Gruppenbild: Erfolg"
   },
+  "chatInfoRenameTitle": "Gruppe umbenennen",
+  "@chatInfoRenameTitle": {
+    "description": "Umbenennen-Dialog: Überschrift"
+  },
+  "chatInfoRenameHint": "Gruppenname",
+  "@chatInfoRenameHint": {
+    "description": "Umbenennen-Dialog: Hinweis im Textfeld"
+  },
+  "chatInfoRenameSave": "Speichern",
+  "@chatInfoRenameSave": {
+    "description": "Umbenennen-Dialog: Button"
+  },
+  "chatInfoRenamed": "Gruppe heißt jetzt „{name}“.",
+  "@chatInfoRenamed": {
+    "description": "Snack nach erfolgreichem Umbenennen",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "chatInfoInviteCodeFailed": "Code konnte nicht erstellt werden. Versuch es erneut.",
   "@chatInfoInviteCodeFailed": {
     "description": "Einladungs-Code: Fehler"
@@ -2123,6 +2160,47 @@
   "chatInfoLeaveFailed": "Verlassen fehlgeschlagen. Versuch es erneut.",
   "@chatInfoLeaveFailed": {
     "description": "Gruppe verlassen: Fehler"
+  },
+  "chatInfoCreatorLeaveTitle": "Du bist Gründer",
+  "@chatInfoCreatorLeaveTitle": {
+    "description": "Hinweis-Dialog: Gründer will Gruppe verlassen"
+  },
+  "chatInfoCreatorLeaveMessage": "Übergib die Gruppe zuerst an ein Mitglied: Tippe in der Liste auf die Person und wähle „Gruppe übergeben“. Danach kannst du sie verlassen.",
+  "@chatInfoCreatorLeaveMessage": {
+    "description": "Hinweis-Dialog: Gründer muss erst übergeben"
+  },
+  "chatInfoCreatorLeaveAloneMessage": "Du bist das einzige Mitglied, deshalb kannst du die Gruppe an niemanden übergeben. Du kannst sie stattdessen löschen – das lässt sich nicht rückgängig machen.",
+  "@chatInfoCreatorLeaveAloneMessage": {
+    "description": "Hinweis-Dialog: Gründer ist allein in der Gruppe (Button löscht direkt)"
+  },
+  "chatInfoDeleteGroup": "Gruppe löschen",
+  "@chatInfoDeleteGroup": {
+    "description": "Aktion im Info-Sheet (nur Gründer)"
+  },
+  "chatInfoDeleteTitle": "{name} löschen?",
+  "@chatInfoDeleteTitle": {
+    "description": "Titel des Gruppe-löschen-Dialogs",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chatInfoDeleteMessage": "Die Gruppe wird für alle Mitglieder gelöscht, samt Verlauf. Das lässt sich nicht rückgängig machen.",
+  "@chatInfoDeleteMessage": {
+    "description": "Text des Gruppe-löschen-Dialogs"
+  },
+  "chatInfoDeleteConfirm": "Löschen",
+  "@chatInfoDeleteConfirm": {
+    "description": "Bestätigen-Button im Gruppe-löschen-Dialog"
+  },
+  "chatInfoGroupDeleted": "Gruppe gelöscht.",
+  "@chatInfoGroupDeleted": {
+    "description": "Snackbar nach Gruppe löschen"
+  },
+  "chatInfoGotIt": "Verstanden",
+  "@chatInfoGotIt": {
+    "description": "Button in einem reinen Hinweis-Dialog"
   },
   "chatInfoCodeCopied": "Code kopiert!",
   "@chatInfoCodeCopied": {

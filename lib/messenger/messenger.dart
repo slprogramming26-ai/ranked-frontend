@@ -10,6 +10,7 @@ import 'messenger_controller.dart';
 import '../profile/profile.dart';
 import 'chat_requests.dart';
 import 'chat_screen.dart';
+import 'create_group_sheet.dart';
 import '../ui/app_colors.dart';
 import '../ui/net_image.dart';
 import '../core/user_api_service.dart';
@@ -93,6 +94,9 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
   }
 
   Future<void> _createNewGroup() async {
+    final input = await showCreateGroupSheet(context);
+    if (input == null || !mounted) return;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -100,23 +104,48 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
     );
-    final newGroupId = await MessengerApiService.createGroup();
+    final newGroupId = await MessengerApiService.createGroup(name: input.name);
+
+    // Bild erst JETZT: der Upload-Endpoint braucht die Gruppen-ID. Scheitert
+    // er, bleibt die Gruppe trotzdem bestehen (kein Rollback) — das Bild kann
+    // man im Info-Sheet nachreichen.
+    String? avatarUrl;
+    var pictureFailed = false;
+    final picture = input.picture;
+    if (newGroupId != null && picture != null) {
+      final result = await MessengerApiService.uploadGroupChatPicture(
+        newGroupId,
+        picture,
+      );
+      avatarUrl = result.url;
+      pictureFailed = avatarUrl == null;
+    }
+
     if (!mounted) return;
     Navigator.pop(context);
     if (newGroupId == null) {
       _snack(context.l10n.messengerGroupCreateFailed);
       return;
     }
+    // Leerer Name -> Server speichert keinen, Discovery liefert dann auch den
+    // Fallback. Gleicher Text wie in _upsertGroupFromServer, sonst springt
+    // der Titel beim nächsten Sync um.
+    final title = input.name.isEmpty ? 'Gruppe $newGroupId' : input.name;
     final db = context.read<AppDatabase>();
     await db.into(db.openChats).insert(
           OpenChatsCompanion.insert(
             id: newGroupId,
             isGroupChat: true,
-            username: Value('Gruppe $newGroupId'),
+            username: Value(title),
+            avatarUrl: Value(avatarUrl),
           ),
         );
     if (!mounted) return;
-    _snack(context.l10n.messengerGroupCreated(newGroupId));
+    _snack(
+      pictureFailed
+          ? context.l10n.messengerGroupPictureFailed
+          : context.l10n.messengerGroupCreated(title),
+    );
   }
 
   Future<void> _joinGroupWithCode(int code) async {

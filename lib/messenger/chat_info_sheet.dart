@@ -7,18 +7,15 @@
 //             schon mit) + "Gruppe verlassen"
 // =============================================================================
 
-import 'dart:io';
+import 'dart:async';
 
 import 'package:drift/drift.dart' hide Column;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../ui/app_colors.dart';
 import '../ui/confirm_dialog.dart';
-import '../core/image_sanitizer.dart';
 import '../local_data/database.dart';
 import '../ui/net_image.dart';
 import '../post/widgets/share_sheet.dart';
@@ -26,6 +23,7 @@ import '../profile/profile.dart';
 import '../core/user_api_service.dart';
 import 'conversation.dart';
 import 'group_permissions.dart';
+import 'group_picture.dart';
 import 'messenger_api_service.dart';
 import 'messenger_controller.dart';
 import 'package:ranked/l10n/l10n.dart';
@@ -62,10 +60,26 @@ class _DmInfoSheet extends StatefulWidget {
 }
 
 class _DmInfoSheetState extends State<_DmInfoSheet> {
+  // Name + Bild live aus Drift, wie im Gruppen-Sheet (Begründung dort).
+  late ChatHeader _header = (
+    title: widget.conversation.title,
+    avatarUrl: widget.conversation.avatarUrl,
+  );
+  late final StreamSubscription<ChatHeader> _headerSub;
+
   @override
   void initState() {
     super.initState();
     fetchBlock();
+    _headerSub = widget.conversation.watchHeader().listen(
+      (h) => setState(() => _header = h),
+    );
+  }
+
+  @override
+  void dispose() {
+    _headerSub.cancel();
+    super.dispose();
   }
 
   bool? isBlocked;
@@ -104,7 +118,7 @@ class _DmInfoSheetState extends State<_DmInfoSheet> {
       context: context,
       builder: (_) => ConfirmDialog(
         icon: Icons.block_rounded,
-        title: l10n.chatInfoBlockTitle(widget.conversation.title),
+        title: l10n.chatInfoBlockTitle(_header.title),
         message: l10n.chatInfoBlockMessage,
         confirmLabel: l10n.chatInfoBlock,
       ),
@@ -120,7 +134,7 @@ class _DmInfoSheetState extends State<_DmInfoSheet> {
         backgroundColor: ok ? AppColors.onSurface : AppColors.primary,
         content: Text(
           ok
-              ? l10n.profileBlocked(widget.conversation.title)
+              ? l10n.profileBlocked(_header.title)
               : l10n.profileBlockFailed,
           style: GoogleFonts.inter(
             fontSize: 13.5,
@@ -137,7 +151,7 @@ class _DmInfoSheetState extends State<_DmInfoSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
     final l10n = context.l10n;
-    final name = widget.conversation.title;
+    final name = _header.title;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -180,12 +194,12 @@ class _DmInfoSheetState extends State<_DmInfoSheet> {
             const _DragHandle(),
             const SizedBox(height: 16),
             _BigAvatar(
-              name: widget.conversation.title,
-              avatarUrl: widget.conversation.avatarUrl,
+              name: _header.title,
+              avatarUrl: _header.avatarUrl,
             ),
             const SizedBox(height: 12),
             Text(
-              widget.conversation.title,
+              _header.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.plusJakartaSans(
@@ -251,15 +265,33 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
   GroupRole? _myRole;
   bool get _canManage => _myRole?.canManage ?? false;
 
-  // Eigene Kopie der Avatar-URL: widget.conversation ist final, nach einem
-  // Upload soll das Sheet das neue Bild aber sofort zeigen.
-  late String? _avatarUrl = widget.conversation.avatarUrl;
   bool _uploadingPicture = false;
+
+  // Name + Bild live aus Drift (wie der ChatScreen-Header). Per listen statt
+  // StreamBuilder, weil nicht nur build den aktuellen Namen braucht, sondern
+  // auch die Dialoge (Umbenennen, Löschen, Verlassen). Startwert =
+  // Schnappschuss, bis Drift den ersten Wert liefert.
+  late ChatHeader _header = (
+    title: widget.conversation.title,
+    avatarUrl: widget.conversation.avatarUrl,
+  );
+  late final StreamSubscription<ChatHeader> _headerSub;
 
   @override
   void initState() {
     super.initState();
     _loadMembers();
+    _headerSub = widget.conversation.watchHeader().listen(
+      (h) => setState(() => _header = h),
+    );
+  }
+
+  @override
+  void dispose() {
+    // Ohne cancel liefe die Drift-Abfrage weiter und setState würde auf
+    // einem toten State landen.
+    _headerSub.cancel();
+    super.dispose();
   }
 
   // Laedt die Mitgliederliste (neu) und liest dabei die eigene Rolle mit aus.
@@ -283,26 +315,15 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = context.l10n;
 
-    // Picker skaliert nativ runter (Backend lehnt >20 MP ab, siehe
-    // about_me_step.dart). Den Rest macht sanitizeImageFile.
-    final picked = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      imageQuality: 85,
-    );
+    final picked = await pickGroupPicture();
     if (picked == null || !mounted) return;
 
     setState(() => _uploadingPicture = true);
 
-    // 1) EXIF/GPS raus im Hintergrund-Isolate. Kein Fallback aufs Original.
-    final cleanPath = await compute(sanitizeImageFile, (
-      path: picked.path,
-      maxSize: 1024,
-      quality: 85,
-    ));
+    // 1) EXIF/GPS raus (siehe group_picture.dart).
+    final cleanFile = await sanitizeGroupPicture(picked);
     if (!mounted) return;
-    if (cleanPath == null) {
+    if (cleanFile == null) {
       setState(() => _uploadingPicture = false);
       _showSnack(messenger, l10n.chatInfoPictureProcessFailed);
       return;
@@ -312,13 +333,24 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     final groupId = widget.conversation.groupChatId;
     final result = await MessengerApiService.uploadGroupChatPicture(
       groupId,
-      File(cleanPath),
+      cleanFile,
     );
+    final url = result.url;
+
+    // 3) Lokal in Drift speichern -> Chatliste, ChatScreen-Header und dieses
+    // Sheet (_header) ziehen über ihre Streams nach. Wie beim Umbenennen VOR
+    // dem mounted-Check: das Bild ist auf dem Server, auch wenn das Sheet
+    // inzwischen zu ist.
+    if (url != null) {
+      final db = widget.conversation.db;
+      await (db.update(db.openChats)
+            ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
+          .write(OpenChatsCompanion(avatarUrl: Value(url)));
+    }
     if (!mounted) return;
 
-    final url = result.url;
+    setState(() => _uploadingPicture = false);
     if (url == null) {
-      setState(() => _uploadingPicture = false);
       _showSnack(
         messenger,
         result.statusCode == 403
@@ -327,20 +359,48 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
       );
       return;
     }
+    _showSnack(messenger, l10n.chatInfoPictureUpdated, error: false);
+  }
 
-    // 3) Lokal in Drift speichern -> Chatliste (watchAllContacts) zieht
-    // automatisch nach. Nur avatarUrl anfassen, der Rest bleibt.
-    final db = widget.conversation.db;
-    await (db.update(db.openChats)
-          ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
-        .write(OpenChatsCompanion(avatarUrl: Value(url)));
+  Future<void> _renameGroup() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (_) => _RenameDialog(initialName: _header.title),
+    );
+    if (newName == null || newName == _header.title || !mounted) return;
+
+    final groupId = widget.conversation.groupChatId;
+    final status = await MessengerApiService.renameGroup(groupId, newName);
+    final ok = status >= 200 && status < 300;
+
+    // Drift VOR dem mounted-Check: hat man das Sheet inzwischen weggewischt,
+    // ist der Name auf dem Server trotzdem neu — die Chatliste soll ihn dann
+    // auch zeigen und nicht bis zum naechsten Sync den alten.
+    if (ok) {
+      final db = widget.conversation.db;
+      await (db.update(db.openChats)
+            ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
+          .write(OpenChatsCompanion(username: Value(newName)));
+    }
     if (!mounted) return;
 
-    setState(() {
-      _avatarUrl = url;
-      _uploadingPicture = false;
-    });
-    _showSnack(messenger, l10n.chatInfoPictureUpdated, error: false);
+    if (ok) {
+      // Kein setState nötig: der Drift-Write oben lässt _headerSub feuern.
+      _showSnack(messenger, l10n.chatInfoRenamed(newName), error: false);
+      return;
+    }
+    // 403 = wir sind (nicht mehr) Gruender/Admin, 404 = Gruppe weg. Wie bei
+    // den Mitglieder-Aktionen neu laden -> Stift verschwindet ggf.
+    if (status == 403 || status == 404) setState(_loadMembers);
+    _showSnack(
+      messenger,
+      (status == 403 || status == 404)
+          ? l10n.chatInfoMemberActionOutdated
+          : l10n.chatInfoMemberActionFailed,
+    );
   }
 
   void _showSnack(
@@ -530,7 +590,85 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
     );
   }
 
+  // Der Gruender darf nicht einfach gehen (Server: 403), sonst haette die
+  // Gruppe niemanden mehr, der sie verwaltet. Statt eines Fehler-Snacks
+  // erklaeren wir, was zu tun ist.
+  Future<void> _showCreatorLeaveHint() async {
+    final l10n = context.l10n;
+    // Liste ist meist schon geladen; await wartet sonst kurz auf den Server.
+    final members = await _membersFuture;
+    if (!mounted) return;
+    final alone = members.length <= 1;
+
+    // Allein: Uebergeben geht nicht -> der Hinweis bietet direkt Loeschen an.
+    // Der Text sagt schon, dass es endgueltig ist, daher kein zweiter Dialog.
+    final deleteNow = await showDialog<bool>(
+      context: context,
+      builder: (_) => ConfirmDialog(
+        icon: Icons.workspace_premium_rounded,
+        title: l10n.chatInfoCreatorLeaveTitle,
+        message: alone
+            ? l10n.chatInfoCreatorLeaveAloneMessage
+            : l10n.chatInfoCreatorLeaveMessage,
+        confirmLabel: alone ? l10n.chatInfoDeleteGroup : l10n.chatInfoGotIt,
+        showCancel: alone,
+      ),
+    );
+    if (alone && deleteNow == true && mounted) {
+      await _deleteGroup(askFirst: false);
+    }
+  }
+
+  Future<void> _deleteGroup({bool askFirst = true}) async {
+    // Wie überall im Sheet: Messenger/Navigator vor dem ersten await sichern.
+    final messenger = ScaffoldMessenger.of(context);
+    final nav = Navigator.of(context);
+    final l10n = context.l10n;
+
+    if (askFirst) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => ConfirmDialog(
+          icon: Icons.delete_forever_rounded,
+          title: l10n.chatInfoDeleteTitle(_header.title),
+          message: l10n.chatInfoDeleteMessage,
+          confirmLabel: l10n.chatInfoDeleteConfirm,
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    final groupId = widget.conversation.groupChatId;
+    final status = await MessengerApiService.deleteGroup(groupId);
+    if (!mounted) return;
+
+    // 404 = Gruppe gibt's eh nicht mehr -> lokal genauso aufraeumen.
+    if (status == 200 || status == 404) {
+      await widget.conversation.db.removeGroupLocally(groupId);
+      nav.pop(); // Sheet zu
+      if (nav.canPop()) nav.pop(); // ChatScreen zu -> zurück zur Chatliste
+      _showSnack(messenger, l10n.chatInfoGroupDeleted, error: false);
+      return;
+    }
+
+    // 403 = wir sind nicht (mehr) Gruender, Ansicht veraltet -> neu laden,
+    // damit der Loeschen-Button verschwindet.
+    if (status == 403) setState(_loadMembers);
+    _showSnack(
+      messenger,
+      status == 403
+          ? l10n.chatInfoMemberActionOutdated
+          : l10n.chatInfoMemberActionFailed,
+    );
+  }
+
   Future<void> _confirmLeave() async {
+    // Gruender? Dann gar nicht erst fragen/anfragen, gleich den Hinweis.
+    if (_myRole == GroupRole.creator) {
+      await _showCreatorLeaveHint();
+      return;
+    }
+
     // Wie im DM-Sheet: Messenger/Navigator vor dem ersten await sichern.
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
@@ -540,17 +678,27 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
       context: context,
       builder: (_) => ConfirmDialog(
         icon: Icons.logout_rounded,
-        title: l10n.chatInfoLeaveTitle(widget.conversation.title),
+        title: l10n.chatInfoLeaveTitle(_header.title),
         message: l10n.chatInfoLeaveMessage,
         confirmLabel: l10n.chatInfoLeave,
       ),
     );
     if (confirmed != true) return;
 
-    // 403-Sonderfall (Gruender) kommt in Schritt 4, bis dahin nur ok/Fehler.
     final status = await MessengerApiService.leaveGroup(
       widget.conversation.groupChatId,
     );
+    if (!mounted) return;
+
+    // 403 = wir sind (inzwischen) Gruender, die Ansicht war veraltet —
+    // z. B. hat uns jemand die Gruppe uebergeben, waehrend das Sheet offen
+    // war. Rollen neu laden und denselben Hinweis zeigen.
+    if (status == 403) {
+      setState(_loadMembers);
+      await _showCreatorLeaveHint();
+      return;
+    }
+
     final ok = status == 200;
 
     if (ok) {
@@ -605,8 +753,8 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
                   alignment: Alignment.center,
                   children: [
                     _BigAvatar(
-                      name: widget.conversation.title,
-                      avatarUrl: _avatarUrl,
+                      name: _header.title,
+                      avatarUrl: _header.avatarUrl,
                       isGroup: true,
                     ),
                     if (_uploadingPicture)
@@ -650,15 +798,36 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
                 ),
               ),
               const SizedBox(height: 12),
-              Text(
-                widget.conversation.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.onSurface,
-                  letterSpacing: -0.3,
+              // Tap auf den Namen -> umbenennen (nur Gruender/Admins), der
+              // Stift zeigt, dass es geht — wie die Kamera am Avatar.
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _canManage ? _renameGroup : null,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _header.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.onSurface,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    ),
+                    if (_canManage) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.edit_rounded,
+                        size: 18,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ],
+                  ],
                 ),
               ),
               const SizedBox(height: 4),
@@ -690,6 +859,14 @@ class _GroupInfoSheetState extends State<_GroupInfoSheet> {
                 label: context.l10n.chatInfoLeaveGroup,
                 onTap: _confirmLeave,
               ),
+              if (_myRole == GroupRole.creator) ...[
+                const SizedBox(height: 8),
+                _ActionTile(
+                  icon: Icons.delete_forever_rounded,
+                  label: context.l10n.chatInfoDeleteGroup,
+                  onTap: _deleteGroup,
+                ),
+              ],
             ],
           ),
         ),
@@ -988,6 +1165,94 @@ class _RoleBadge extends StatelessWidget {
 // -----------------------------------------------------------------------------
 //  Bausteine
 // -----------------------------------------------------------------------------
+
+/// Gibt den neuen Namen schon getrimmt per pop zurück, null = abgebrochen.
+/// Stateful nur wegen des TextEditingControllers (muss disposed werden).
+class _RenameDialog extends StatefulWidget {
+  final String initialName;
+  const _RenameDialog({required this.initialName});
+
+  @override
+  State<_RenameDialog> createState() => _RenameDialogState();
+}
+
+class _RenameDialogState extends State<_RenameDialog> {
+  // Alter Name vorausgefüllt + komplett markiert: Tippen ersetzt ihn,
+  // für kleine Korrekturen kann man trotzdem reintippen.
+  late final _controller = TextEditingController(text: widget.initialName)
+    ..selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: widget.initialName.length,
+    );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  // Leerer Name -> Server antwortet 400, also gar nicht erst abschicken.
+  void _save() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) return;
+    Navigator.pop(context, name);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceContainerHigh,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text(
+        l10n.chatInfoRenameTitle,
+        style: GoogleFonts.plusJakartaSans(
+          fontWeight: FontWeight.w800,
+          color: AppColors.onSurface,
+        ),
+      ),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: MessengerApiService.groupNameMaxLength,
+        textCapitalization: TextCapitalization.sentences,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _save(),
+        style: GoogleFonts.inter(color: AppColors.onSurface),
+        decoration: InputDecoration(
+          hintText: l10n.chatInfoRenameHint,
+          hintStyle: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          counterText: '',
+          filled: true,
+          fillColor: AppColors.surface.withValues(alpha: 0.6),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            l10n.messengerCancel,
+            style: GoogleFonts.inter(color: AppColors.onSurfaceVariant),
+          ),
+        ),
+        TextButton(
+          onPressed: _save,
+          child: Text(
+            l10n.chatInfoRenameSave,
+            style: GoogleFonts.inter(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
 class _DragHandle extends StatelessWidget {
   const _DragHandle();

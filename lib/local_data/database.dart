@@ -197,6 +197,14 @@ class AppDatabase extends _$AppDatabase {
     return select(openChats).watch();
   }
 
+  Stream<OpenChat?> watchOpenChat({required int id, required bool isGroupChat}) {
+    return (select(openChats)
+      ..where((t) => t.id.equals(id) & t.isGroupChat.equals(isGroupChat))
+      ..limit(1))
+        .watch()
+        .map((rows) => rows.isEmpty ? null : rows.first);
+  }
+
   // Liest den Marker fuer einen Scope ("dm" / "group:<id>").
   // null = noch nie gesynct -> Aufrufer holt kompletten Verlauf.
   Future<DateTime?> getSyncMarker(String key) async {
@@ -215,6 +223,25 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<List<OpenChat>> getAllContacts() => select(openChats).get();
+
+  // Raeumt eine Gruppe lokal komplett weg: Chatlisten-Eintrag, Verlauf und
+  // Sync-Marker. Fuer Gruppen, die es fuer uns nicht mehr gibt (geloescht
+  // oder rausgeworfen) — beim normalen Verlassen bleibt der Verlauf liegen.
+  // Transaktion: entweder alles weg oder nichts, keine halben Leichen.
+  Future<void> removeGroupLocally(int groupChatId) {
+    return transaction(() async {
+      await (delete(openChats)..where(
+            (t) => t.id.equals(groupChatId) & t.isGroupChat.equals(true),
+          ))
+          .go();
+      await (delete(groupChatHistory)
+            ..where((t) => t.groupChatId.equals(groupChatId)))
+          .go();
+      await (delete(syncMarkers)
+            ..where((t) => t.key.equals('group:$groupChatId')))
+          .go();
+    });
+  }
 
   // ------------------------------------------------------------------
   //  Post-Entwurf (genau eine Zeile, id = 0)

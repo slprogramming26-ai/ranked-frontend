@@ -64,10 +64,16 @@ class _ChatScreenState extends State<ChatScreen> {
   // Screen umschalten (Composer statt Leiste), kein Neu-Navigieren noetig.
   late bool _isRequest;
 
+  // Name + Bild live aus Drift (Umbenennen, Bild-Upload, Sync) — die
+  // Conversation selbst ist nur ein Schnappschuss vom Öffnen. Wie _messages
+  // einmal in initState, sonst neue Abfrage bei jedem Rebuild.
+  late final Stream<ChatHeader> _header;
+
   @override
   void initState() {
     super.initState();
     _messages = widget.conversation.watch();
+    _header = widget.conversation.watchHeader();
     _isRequest = widget.isRequest;
   }
 
@@ -87,7 +93,6 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final conversation = widget.conversation;
-    final title = conversation.title;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -105,49 +110,63 @@ class _ChatScreenState extends State<ChatScreen> {
         title: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => showChatInfoSheet(context, conversation),
-          child: Row(
-            children: [
-              _Avatar(name: title, avatarUrl: conversation.avatarUrl),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.onSurface,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Row(
+          child: StreamBuilder<ChatHeader>(
+            stream: _header,
+            // Schnappschuss als Startwert -> kein leerer erster Frame.
+            initialData: (
+              title: conversation.title,
+              avatarUrl: conversation.avatarUrl,
+            ),
+            builder: (context, snapshot) {
+              final title = snapshot.data!.title;
+              final avatarUrl = snapshot.data!.avatarUrl;
+              return Row(
+                children: [
+                  _Avatar(name: title, avatarUrl: avatarUrl),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.lock_rounded,
-                          size: 10,
-                          color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
-                        ),
-                        const SizedBox(width: 4),
                         Text(
-                          context.l10n.chatEncrypted,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.onSurfaceVariant,
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.onSurface,
+                            letterSpacing: -0.3,
                           ),
+                        ),
+                        const SizedBox(height: 1),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.lock_rounded,
+                              size: 10,
+                              color: AppColors.onSurfaceVariant.withValues(
+                                alpha: 0.8,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              context.l10n.chatEncrypted,
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -194,15 +213,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           if (_isRequest)
-            _RequestBar(
-              onAccept: _acceptRequest,
-              onDecline: _declineRequest,
-            )
+            _RequestBar(onAccept: _acceptRequest, onDecline: _declineRequest)
           else
-            _Composer(
-              controller: _textController,
-              onSend: _send,
-            ),
+            _Composer(controller: _textController, onSend: _send),
         ],
       ),
     );
@@ -241,17 +254,19 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Abgelehnt wird auch, wenn das Blockieren scheitert: Die Zeile lokal
     // zu loeschen klappt immer, die Snackbar sagt dann ehrlich Bescheid.
-    final blocked =
-        action == 'block' ? await UserApiService.blockUser(dm.peerId) : null;
-    await (dm.db.delete(dm.db.openChats)
-          ..where((t) => t.id.equals(dm.peerId) & t.isGroupChat.equals(false)))
-        .go();
+    final blocked = action == 'block'
+        ? await UserApiService.blockUser(dm.peerId)
+        : null;
+    await (dm.db.delete(
+      dm.db.openChats,
+    )..where((t) => t.id.equals(dm.peerId) & t.isGroupChat.equals(false))).go();
     nav.pop(); // zurueck zur Anfragen-Liste
     messenger.showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor:
-            blocked == false ? AppColors.primary : AppColors.onSurface,
+        backgroundColor: blocked == false
+            ? AppColors.primary
+            : AppColors.onSurface,
         content: Text(
           switch (blocked) {
             null => l10n.chatDeclined,
@@ -285,15 +300,16 @@ class _ChatScreenState extends State<ChatScreen> {
         lastDay = day;
         lastSender = null;
       }
-      items.add(_MessageItem(
-        message: msg,
-        groupedWithPrevious: !newDay && lastSender == msg.senderId,
-      ));
+      items.add(
+        _MessageItem(
+          message: msg,
+          groupedWithPrevious: !newDay && lastSender == msg.senderId,
+        ),
+      );
       lastSender = msg.senderId;
     }
     return items;
   }
-
 }
 
 // -----------------------------------------------------------------------------
@@ -308,7 +324,10 @@ class _DateSeparator {
 class _MessageItem {
   final ChatMessage message;
   final bool groupedWithPrevious;
-  const _MessageItem({required this.message, required this.groupedWithPrevious});
+  const _MessageItem({
+    required this.message,
+    required this.groupedWithPrevious,
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -465,21 +484,23 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
         future: _postFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return _wrap(SizedBox(
-              height: 60,
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    // Auf der roten eigenen Bubble wäre der Standard-Spinner
-                    // (primary) unsichtbar.
-                    color: widget.isMe ? Colors.white : AppColors.primary,
+            return _wrap(
+              SizedBox(
+                height: 60,
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      // Auf der roten eigenen Bubble wäre der Standard-Spinner
+                      // (primary) unsichtbar.
+                      color: widget.isMe ? Colors.white : AppColors.primary,
+                    ),
                   ),
                 ),
               ),
-            ));
+            );
           }
 
           final data = snapshot.data;
@@ -548,7 +569,8 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
   Widget _buildPreview(Map<String, dynamic> post) {
     final title = (post['title'] ?? '').toString();
     final owner = post['owner'] as Map<String, dynamic>?;
-    final username = owner?['username']?.toString() ?? context.l10n.chatUnknownUser;
+    final username =
+        owner?['username']?.toString() ?? context.l10n.chatUnknownUser;
     final imageUrl = post['image_url']?.toString();
 
     // Auf der roten eigenen Bubble wäre primary-auf-primary unsichtbar –
@@ -578,8 +600,10 @@ class _PostPreviewCardState extends State<_PostPreviewCard> {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stack) => Container(
                       color: AppColors.surfaceContainerLow,
-                      child: Icon(Icons.image_not_supported_outlined,
-                          color: AppColors.onSurfaceVariant),
+                      child: Icon(
+                        Icons.image_not_supported_outlined,
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ),
@@ -798,39 +822,45 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
-              child: widget.isMe ? null : FilledButton(
-                onPressed: _state == _JoinState.idle ? _join : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: buttonBg,
-                  foregroundColor: buttonFg,
-                  // "Beigetreten" soll nicht wie ein Fehler aussehen — nur
-                  // leicht abgeschwächt.
-                  disabledBackgroundColor: buttonBg.withValues(alpha: 0.55),
-                  disabledForegroundColor: buttonFg.withValues(alpha: 0.9),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: _state == _JoinState.loading
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: buttonFg,
+              child: widget.isMe
+                  ? null
+                  : FilledButton(
+                      onPressed: _state == _JoinState.idle ? _join : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: buttonBg,
+                        foregroundColor: buttonFg,
+                        // "Beigetreten" soll nicht wie ein Fehler aussehen — nur
+                        // leicht abgeschwächt.
+                        disabledBackgroundColor: buttonBg.withValues(
+                          alpha: 0.55,
                         ),
-                      )
-                    : Text(
-                        _state == _JoinState.joined
-                            ? context.l10n.chatJoined
-                            : context.l10n.messengerJoin,
-                        style: GoogleFonts.inter(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
+                        disabledForegroundColor: buttonFg.withValues(
+                          alpha: 0.9,
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-              ),
+                      child: _state == _JoinState.loading
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: buttonFg,
+                              ),
+                            )
+                          : Text(
+                              _state == _JoinState.joined
+                                  ? context.l10n.chatJoined
+                                  : context.l10n.messengerJoin,
+                              style: GoogleFonts.inter(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                    ),
             ),
             const SizedBox(height: 4),
             Padding(
@@ -941,10 +971,7 @@ class _Composer extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
 
-  const _Composer({
-    required this.controller,
-    required this.onSend,
-  });
+  const _Composer({required this.controller, required this.onSend});
 
   @override
   Widget build(BuildContext context) {
@@ -1071,7 +1098,9 @@ class _RequestBar extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       side: BorderSide(
-                        color: AppColors.onSurfaceVariant.withValues(alpha: 0.4),
+                        color: AppColors.onSurfaceVariant.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),

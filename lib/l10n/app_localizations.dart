@@ -2891,8 +2891,32 @@ abstract class AppLocalizations {
   /// Snackbar nach Gruppe erstellen
   ///
   /// In de, this message translates to:
-  /// **'Gruppe {id} erfolgreich erstellt!'**
-  String messengerGroupCreated(int id);
+  /// **'„{name}“ wurde erstellt!'**
+  String messengerGroupCreated(String name);
+
+  /// Snackbar: Gruppe da, Bild-Upload danach fehlgeschlagen
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe erstellt, aber das Bild konnte nicht hochgeladen werden. Du kannst es in den Gruppen-Infos nachholen.'**
+  String get messengerGroupPictureFailed;
+
+  /// Erstellen-Sheet: Überschrift
+  ///
+  /// In de, this message translates to:
+  /// **'Neue Gruppe'**
+  String get createGroupTitle;
+
+  /// Erstellen-Sheet: Hinweis im Namensfeld
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppenname (optional)'**
+  String get createGroupNameHint;
+
+  /// Erstellen-Sheet: Button
+  ///
+  /// In de, this message translates to:
+  /// **'Erstellen'**
+  String get createGroupSubmit;
 
   /// Snackbar nach Beitritt per Code-Dialog
   ///
@@ -2924,6 +2948,30 @@ abstract class AppLocalizations {
   /// **'Gruppenbild aktualisiert.'**
   String get chatInfoPictureUpdated;
 
+  /// Umbenennen-Dialog: Überschrift
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe umbenennen'**
+  String get chatInfoRenameTitle;
+
+  /// Umbenennen-Dialog: Hinweis im Textfeld
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppenname'**
+  String get chatInfoRenameHint;
+
+  /// Umbenennen-Dialog: Button
+  ///
+  /// In de, this message translates to:
+  /// **'Speichern'**
+  String get chatInfoRenameSave;
+
+  /// Snack nach erfolgreichem Umbenennen
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe heißt jetzt „{name}“.'**
+  String chatInfoRenamed(String name);
+
   /// Einladungs-Code: Fehler
   ///
   /// In de, this message translates to:
@@ -2941,6 +2989,60 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Verlassen fehlgeschlagen. Versuch es erneut.'**
   String get chatInfoLeaveFailed;
+
+  /// Hinweis-Dialog: Gründer will Gruppe verlassen
+  ///
+  /// In de, this message translates to:
+  /// **'Du bist Gründer'**
+  String get chatInfoCreatorLeaveTitle;
+
+  /// Hinweis-Dialog: Gründer muss erst übergeben
+  ///
+  /// In de, this message translates to:
+  /// **'Übergib die Gruppe zuerst an ein Mitglied: Tippe in der Liste auf die Person und wähle „Gruppe übergeben“. Danach kannst du sie verlassen.'**
+  String get chatInfoCreatorLeaveMessage;
+
+  /// Hinweis-Dialog: Gründer ist allein in der Gruppe (Button löscht direkt)
+  ///
+  /// In de, this message translates to:
+  /// **'Du bist das einzige Mitglied, deshalb kannst du die Gruppe an niemanden übergeben. Du kannst sie stattdessen löschen – das lässt sich nicht rückgängig machen.'**
+  String get chatInfoCreatorLeaveAloneMessage;
+
+  /// Aktion im Info-Sheet (nur Gründer)
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe löschen'**
+  String get chatInfoDeleteGroup;
+
+  /// Titel des Gruppe-löschen-Dialogs
+  ///
+  /// In de, this message translates to:
+  /// **'{name} löschen?'**
+  String chatInfoDeleteTitle(String name);
+
+  /// Text des Gruppe-löschen-Dialogs
+  ///
+  /// In de, this message translates to:
+  /// **'Die Gruppe wird für alle Mitglieder gelöscht, samt Verlauf. Das lässt sich nicht rückgängig machen.'**
+  String get chatInfoDeleteMessage;
+
+  /// Bestätigen-Button im Gruppe-löschen-Dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Löschen'**
+  String get chatInfoDeleteConfirm;
+
+  /// Snackbar nach Gruppe löschen
+  ///
+  /// In de, this message translates to:
+  /// **'Gruppe gelöscht.'**
+  String get chatInfoGroupDeleted;
+
+  /// Button in einem reinen Hinweis-Dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Verstanden'**
+  String get chatInfoGotIt;
 
   /// Einladungs-Code kopiert
   ///

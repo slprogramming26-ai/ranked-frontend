@@ -1582,9 +1582,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get roleSheetReasonHint => 'Shown in the moderation log';
 
   @override
-  String messengerGroupCreated(int id) {
-    return 'Group $id created!';
+  String messengerGroupCreated(String name) {
+    return '“$name” created!';
   }
+
+  @override
+  String get messengerGroupPictureFailed =>
+      'Group created, but the picture couldn\'t be uploaded. You can add it later in the group info.';
+
+  @override
+  String get createGroupTitle => 'New group';
+
+  @override
+  String get createGroupNameHint => 'Group name (optional)';
+
+  @override
+  String get createGroupSubmit => 'Create';
 
   @override
   String messengerGroupJoined(int id) {
@@ -1605,6 +1618,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatInfoPictureUpdated => 'Group picture updated.';
 
   @override
+  String get chatInfoRenameTitle => 'Rename group';
+
+  @override
+  String get chatInfoRenameHint => 'Group name';
+
+  @override
+  String get chatInfoRenameSave => 'Save';
+
+  @override
+  String chatInfoRenamed(String name) {
+    return 'Group is now called “$name”.';
+  }
+
+  @override
   String get chatInfoInviteCodeFailed =>
       'Couldn\'t create a code. Please try again.';
 
@@ -1614,6 +1641,38 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get chatInfoLeaveFailed =>
       'Couldn\'t leave the group. Please try again.';
+
+  @override
+  String get chatInfoCreatorLeaveTitle => 'You\'re the creator';
+
+  @override
+  String get chatInfoCreatorLeaveMessage =>
+      'Transfer the group to a member first: tap them in the list and choose \"Transfer group\". After that you can leave.';
+
+  @override
+  String get chatInfoCreatorLeaveAloneMessage =>
+      'You\'re the only member, so there\'s no one to transfer the group to. You can delete it instead – this can\'t be undone.';
+
+  @override
+  String get chatInfoDeleteGroup => 'Delete group';
+
+  @override
+  String chatInfoDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get chatInfoDeleteMessage =>
+      'The group and its history will be deleted for all members. This can\'t be undone.';
+
+  @override
+  String get chatInfoDeleteConfirm => 'Delete';
+
+  @override
+  String get chatInfoGroupDeleted => 'Group deleted.';
+
+  @override
+  String get chatInfoGotIt => 'Got it';
 
   @override
   String get chatInfoCodeCopied => 'Code copied!';

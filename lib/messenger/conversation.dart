@@ -1,6 +1,8 @@
 import '../local_data/database.dart';
 import 'messenger_api_service.dart';
 
+typedef ChatHeader = ({String title, String? avatarUrl});
+
 class ChatMessage {
   final int senderId;
   final String message;
@@ -18,6 +20,7 @@ abstract class Conversation {
   String? get avatarUrl;
   int get myUserId;
   Stream<List<ChatMessage>> watch();
+  Stream<ChatHeader> watchHeader();
   void send(String text);
 }
 
@@ -47,12 +50,11 @@ class DmConversation implements Conversation {
   @override
   String get title => displayName ?? 'User $peerId';
 
-
-@override
-void send(String text) {
-  if (text.trim().isEmpty) return;
-  service.sendDirectMessage(peerId, text);
-}
+  @override
+  void send(String text) {
+    if (text.trim().isEmpty) return;
+    service.sendDirectMessage(peerId, text);
+  }
 
   @override
   Stream<List<ChatMessage>> watch() {
@@ -61,17 +63,30 @@ void send(String text) {
     // deshalb hier einmal umdrehen.
     return db
         .watchDmConversation(myUserId: myUserId, otherUserId: peerId)
-        .map((rows) => rows.reversed
-        .map((r) => ChatMessage(
-      senderId: r.senderId,
-      message: r.message,
-      createdAt: r.createdAt,
-    ))
-        .toList());
+        .map(
+          (rows) => rows.reversed
+              .map(
+                (r) => ChatMessage(
+                  senderId: r.senderId,
+                  message: r.message,
+                  createdAt: r.createdAt,
+                ),
+              )
+              .toList(),
+        );
   }
+
+  @override
+  Stream<ChatHeader> watchHeader() => db
+      .watchOpenChat(id: peerId, isGroupChat: false)
+      .map((row) => (
+  title: row?.username ?? title,          // Zeile weg -> Schnappschuss
+  avatarUrl: row == null ? avatarUrl : row.avatarUrl,
+  ))
+      .distinct();
 }
 
-class GroupConversation implements Conversation{
+class GroupConversation implements Conversation {
   final int groupChatId;
   @override
   final int myUserId;
@@ -94,16 +109,36 @@ class GroupConversation implements Conversation{
   @override
   Stream<List<ChatMessage>> watch() {
     // Wie im DM: DB liefert absteigend (LIMIT-Fenster), UI will chronologisch.
-    return db.watchGroupConversation(groupChatId: groupChatId)
-    .map((rows) => rows.reversed.map((r) => ChatMessage(senderId: r.senderId, message: r.message, createdAt: r.createdAt)).toList());
-
+    return db
+        .watchGroupConversation(groupChatId: groupChatId)
+        .map(
+          (rows) => rows.reversed
+              .map(
+                (r) => ChatMessage(
+                  senderId: r.senderId,
+                  message: r.message,
+                  createdAt: r.createdAt,
+                ),
+              )
+              .toList(),
+        );
   }
+
+  @override
+  Stream<ChatHeader> watchHeader() => db
+      .watchOpenChat(id: groupChatId, isGroupChat: true)
+      .map(
+        (row) => (
+          title: row?.username ?? title, // Zeile weg -> Schnappschuss
+          avatarUrl: row == null ? avatarUrl : row.avatarUrl,
+        ),
+      )
+      .distinct();
 
   @override
   void send(String text) {
     if (text.trim().isEmpty) return;
     service.sendGroupMessage(groupChatId, text);
-
   }
 
   @override

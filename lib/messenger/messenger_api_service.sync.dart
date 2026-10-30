@@ -157,6 +157,21 @@ extension MessengerSync on MessengerApiService {
         );
   }
 
+  // Gegenstueck zum Upsert: Gruppen, die lokal noch in der Chatliste stehen,
+  // auf dem Server aber nicht mehr zu unseren gehoeren (Gruppe geloescht oder
+  // wir wurden rausgeworfen), fliegen samt Verlauf raus. Server = Wahrheit.
+  // Nur mit einer ERFOLGREICHEN Serverantwort aufrufen (siehe fetchMyGroups).
+  Future<void> _pruneGroups(Set<int> serverGroupIds) async {
+    final local = await (_db.select(
+      _db.openChats,
+    )..where((t) => t.isGroupChat.equals(true))).get();
+    for (final chat in local) {
+      if (!serverGroupIds.contains(chat.id)) {
+        await _db.removeGroupLocally(chat.id);
+      }
+    }
+  }
+
   // Holt fuer ALLE bekannten Chats das nach (DMs + jede Gruppe), ausgehend vom
   // jeweils gespeicherten SyncMarker. Wird beim (Re)connect aufgerufen.
   Future<void> _syncAll() async {
@@ -169,8 +184,11 @@ extension MessengerSync on MessengerApiService {
     // leer -> Gruppen wuerden nie nachgesynct. DMs entdecken ihre Partner
     // dagegen direkt aus dem globalen /messages/-Endpoint.
     final myGroups = await MessengerApiService.fetchMyGroups();
-    for (final g in myGroups) {
-      await _upsertGroupFromServer(g);
+    if (myGroups != null) {
+      for (final g in myGroups) {
+        await _upsertGroupFromServer(g);
+      }
+      await _pruneGroups({for (final g in myGroups) g.id});
     }
 
     final groups = await (_db.select(
