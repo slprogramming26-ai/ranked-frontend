@@ -1618,8 +1618,8 @@ class AppLocalizationsDe extends AppLocalizations {
   String get createGroupSubmit => 'Erstellen';
 
   @override
-  String messengerGroupJoined(int id) {
-    return 'Gruppe $id beigetreten!';
+  String messengerGroupJoined(String name) {
+    return '„$name“ beigetreten!';
   }
 
   @override

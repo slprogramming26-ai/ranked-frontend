@@ -470,7 +470,7 @@
   "createGroupTitle": "New group",
   "createGroupNameHint": "Group name (optional)",
   "createGroupSubmit": "Create",
-  "messengerGroupJoined": "Joined group {id}!",
+  "messengerGroupJoined": "Joined “{name}”!",
   "chatInfoPictureProcessFailed": "Couldn't process the image.",
   "chatInfoPictureOnlyCreator": "Only the creator and admins can change the picture.",
   "chatInfoPictureUploadFailed": "Upload failed. Please try again.",

@@ -2103,12 +2103,12 @@
   "@createGroupSubmit": {
     "description": "Erstellen-Sheet: Button"
   },
-  "messengerGroupJoined": "Gruppe {id} beigetreten!",
+  "messengerGroupJoined": "„{name}“ beigetreten!",
   "@messengerGroupJoined": {
     "description": "Snackbar nach Beitritt per Code-Dialog",
     "placeholders": {
-      "id": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },

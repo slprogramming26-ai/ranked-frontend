@@ -159,6 +159,46 @@ class MessengerApiService {
     return body['group_chat_id'] as int;
   }
 
+  // Beitreten + Chatlisten-Eintrag anlegen in einem — fuer Code-Dialog UND
+  // Einladungs-Card. Die Join-Antwort enthaelt nur die ID, Name + Bild holen
+  // wir deshalb hinterher aus /group_chat/my. Scheitert DAS, bleibt der
+  // Beitritt trotzdem gueltig: dann eben Fallback-Titel, der naechste
+  // Reconnect-Sync (_upsertGroupFromServer) zieht den echten Namen nach.
+  // null = Beitritt fehlgeschlagen (siehe joinGroupByCode).
+  static Future<({int id, String name})?> joinGroupAndStore(
+    AppDatabase db,
+    int code,
+  ) async {
+    final groupId = await joinGroupByCode(code);
+    if (groupId == null) return null;
+
+    final myGroups = await fetchMyGroups();
+    final match = myGroups?.where((g) => g.id == groupId).firstOrNull;
+    // Gleicher Fallback-Text wie im Sync, sonst springt der Titel spaeter um.
+    final name = match?.name ?? 'Gruppe $groupId';
+
+    // Chatlisten-Eintrag nur anlegen, wenn er fehlt (dieselbe Gruppe kann
+    // nicht zweimal in der Liste stehen).
+    final existing =
+        await (db.select(db.openChats)..where(
+              (t) => t.id.equals(groupId) & t.isGroupChat.equals(true),
+            ))
+            .getSingleOrNull();
+    if (existing == null) {
+      await db
+          .into(db.openChats)
+          .insert(
+            OpenChatsCompanion.insert(
+              id: groupId,
+              isGroupChat: true,
+              username: Value(name),
+              avatarUrl: Value(match?.avatarUrl),
+            ),
+          );
+    }
+    return (id: groupId, name: name);
+  }
+
   // DELETE /group_chat/{id} — Gruppe fuer alle loeschen (nur Gruender).
   // 200 ok, 403 nicht (mehr) Gruender, 404 Gruppe gibt's schon nicht mehr.
   static Future<int> deleteGroup(int groupChatId) async {

@@ -156,29 +156,17 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
         child: CircularProgressIndicator(color: AppColors.primary),
       ),
     );
-    // Welche Gruppe hinter dem Code steckt, wissen wir erst nach der Antwort.
-    final groupId = await MessengerApiService.joinGroupByCode(code);
+    // DB VOR dem await sichern; Beitritt + Chatlisten-Eintrag macht der
+    // Service (Name + Bild inklusive).
+    final db = context.read<AppDatabase>();
+    final joined = await MessengerApiService.joinGroupAndStore(db, code);
     if (!mounted) return;
     Navigator.pop(context);
-    if (groupId == null) {
+    if (joined == null) {
       _snack(context.l10n.messengerJoinFailed);
       return;
     }
-    final db = context.read<AppDatabase>();
-    final existing = await (db.select(db.openChats)
-          ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
-        .getSingleOrNull();
-    if (existing == null) {
-      await db.into(db.openChats).insert(
-            OpenChatsCompanion.insert(
-              id: groupId,
-              isGroupChat: true,
-              username: Value('Gruppe $groupId'),
-            ),
-          );
-    }
-    if (!mounted) return;
-    _snack(context.l10n.messengerGroupJoined(groupId));
+    _snack(context.l10n.messengerGroupJoined(joined.name));
   }
 
   void _snack(String text) {

@@ -688,11 +688,14 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
     final l10n = context.l10n;
     setState(() => _state = _JoinState.loading);
 
-    // Welche Gruppe hinter dem Code steckt, verrät erst die Server-Antwort.
-    final groupId = await MessengerApiService.joinGroupByCode(widget.code);
+    // Beitritt + Chatlisten-Eintrag (mit Name + Bild) wie beim Code-Dialog.
+    final joined = await MessengerApiService.joinGroupAndStore(
+      db,
+      widget.code,
+    );
     if (!mounted) return;
 
-    if (groupId == null) {
+    if (joined == null) {
       setState(() => _state = _JoinState.idle);
       messenger.showSnackBar(
         SnackBar(
@@ -711,24 +714,6 @@ class _GroupInviteCardState extends State<_GroupInviteCard> {
       return;
     }
 
-    // Wie beim Code-Dialog: Chatlisten-Eintrag nur anlegen, wenn er fehlt
-    // (man kann derselben Gruppe nicht zweimal in der Liste stehen).
-    final existing =
-        await (db.select(db.openChats)
-              ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
-            .getSingleOrNull();
-    if (existing == null) {
-      await db
-          .into(db.openChats)
-          .insert(
-            OpenChatsCompanion.insert(
-              id: groupId,
-              isGroupChat: true,
-              username: Value('Gruppe $groupId'),
-            ),
-          );
-    }
-    if (!mounted) return;
     setState(() => _state = _JoinState.joined);
     messenger.showSnackBar(
       SnackBar(

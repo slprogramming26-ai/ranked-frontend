@@ -2921,8 +2921,8 @@ abstract class AppLocalizations {
   /// Snackbar nach Beitritt per Code-Dialog
   ///
   /// In de, this message translates to:
-  /// **'Gruppe {id} beigetreten!'**
-  String messengerGroupJoined(int id);
+  /// **'„{name}“ beigetreten!'**
+  String messengerGroupJoined(String name);
 
   /// Gruppenbild: EXIF-Strip fehlgeschlagen
   ///
