@@ -760,6 +760,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankingBackButton => 'BACK';
 
   @override
+  String get rankingLimitReachedHeadline => 'DONE FOR\nTODAY';
+
+  @override
+  String get rankingLimitReachedMessage =>
+      'No more ranking possible today.\nYou can rank again tomorrow!';
+
+  @override
+  String get rankingOfflineMessage =>
+      'Can\'t reach the server. Check your internet and try again.';
+
+  @override
+  String get rankingRetryButton => 'TRY AGAIN';
+
+  @override
   String get profileNoActivity =>
       'No activity yet – once someone rates you, it will show up here.';
 

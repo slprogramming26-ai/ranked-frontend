@@ -1460,6 +1460,30 @@ abstract class AppLocalizations {
   /// **'ZURÜCK'**
   String get rankingBackButton;
 
+  /// Headline wenn my_target sagt: heute kein Ranking mehr (abgeschlossen oder keine Neuziehung)
+  ///
+  /// In de, this message translates to:
+  /// **'FÜR HEUTE\nFERTIG'**
+  String get rankingLimitReachedHeadline;
+
+  /// Text wenn my_target sagt: heute kein Ranking mehr (abgeschlossen oder keine Neuziehung)
+  ///
+  /// In de, this message translates to:
+  /// **'Heute ist kein weiteres Ranking möglich.\nMorgen bist du wieder dran!'**
+  String get rankingLimitReachedMessage;
+
+  /// Text wenn my_target den Server nicht erreicht
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Verbindung zum Server. Prüf dein Internet und versuch es nochmal.'**
+  String get rankingOfflineMessage;
+
+  /// Button zum erneuten Laden des Ranking-Targets
+  ///
+  /// In de, this message translates to:
+  /// **'ERNEUT VERSUCHEN'**
+  String get rankingRetryButton;
+
   /// Empty state in activity section of profile
   ///
   /// In de, this message translates to:

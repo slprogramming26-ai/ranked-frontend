@@ -997,6 +997,22 @@
   "@rankingBackButton": {
     "description": "Button zum Zurückgehen vom Error Screen"
   },
+  "rankingLimitReachedHeadline": "FÜR HEUTE\nFERTIG",
+  "@rankingLimitReachedHeadline": {
+    "description": "Headline wenn my_target sagt: heute kein Ranking mehr (abgeschlossen oder keine Neuziehung)"
+  },
+  "rankingLimitReachedMessage": "Heute ist kein weiteres Ranking möglich.\nMorgen bist du wieder dran!",
+  "@rankingLimitReachedMessage": {
+    "description": "Text wenn my_target sagt: heute kein Ranking mehr (abgeschlossen oder keine Neuziehung)"
+  },
+  "rankingOfflineMessage": "Keine Verbindung zum Server. Prüf dein Internet und versuch es nochmal.",
+  "@rankingOfflineMessage": {
+    "description": "Text wenn my_target den Server nicht erreicht"
+  },
+  "rankingRetryButton": "ERNEUT VERSUCHEN",
+  "@rankingRetryButton": {
+    "description": "Button zum erneuten Laden des Ranking-Targets"
+  },
   "profileNoActivity": "Noch keine Aktivität — sobald dich jemand bewertet, steht es hier.",
   "@profileNoActivity": {
     "description": "Empty state in activity section of profile"

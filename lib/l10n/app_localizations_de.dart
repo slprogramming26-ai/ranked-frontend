@@ -768,6 +768,20 @@ class AppLocalizationsDe extends AppLocalizations {
   String get rankingBackButton => 'ZURÜCK';
 
   @override
+  String get rankingLimitReachedHeadline => 'FÜR HEUTE\nFERTIG';
+
+  @override
+  String get rankingLimitReachedMessage =>
+      'Heute ist kein weiteres Ranking möglich.\nMorgen bist du wieder dran!';
+
+  @override
+  String get rankingOfflineMessage =>
+      'Keine Verbindung zum Server. Prüf dein Internet und versuch es nochmal.';
+
+  @override
+  String get rankingRetryButton => 'ERNEUT VERSUCHEN';
+
+  @override
   String get profileNoActivity =>
       'Noch keine Aktivität — sobald dich jemand bewertet, steht es hier.';
 

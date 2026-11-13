@@ -11,6 +11,7 @@ import 'package:ranked/l10n/l10n.dart';
 import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
 import 'ranking_widgets.dart' show PrimaryButton, PopIn;
+import 'target_result.dart';
 
 // ─── RankingPages: Tinder-Style Swipe ─────────────────────────────────────────
 class RankingPages extends StatefulWidget {
@@ -30,7 +31,7 @@ class _RankingPagesState extends State<RankingPages> {
   int? _targetUserId;
   // Wer bewertet wird — kommt schon in der my_target-Response mit (user_data).
   Map<String, dynamic>? _targetUser;
-  bool _isLoading = true;
+  TargetResult? _target;
   bool _submitting = false;
 
   @override
@@ -46,14 +47,24 @@ class _RankingPagesState extends State<RankingPages> {
   }
 
   Future<void> _loadData() async {
-    final data = await RankingApiService.getRandomTarget(); // {user_data, posts}
+    final result = await RankingApiService.getMyTarget();
     if (!mounted) return;
     setState(() {
-      _posts = (data['posts'] as List<dynamic>?) ?? [];
-      _targetUser = data['user_data'] as Map<String, dynamic>?;
-      _targetUserId = data['user_data']?['id'] as int?;
-      _isLoading = false;
+      _target = result;
+      // Nur im Erfolgsfall gibt es Posts und Target, alle anderen Fälle
+      // zeigt build() direkt anhand von _target an.
+      if (result case TargetFound(:final posts, :final targetUser)) {
+        _posts = posts;
+        _targetUser = targetUser;
+        _targetUserId = targetUser['id'] as int?;
+      }
     });
+  }
+
+  /// Nur bei Offline/Error: zurück auf den Spinner, dann neu laden.
+  void _retry() {
+    setState(() => _target = null);
+    _loadData();
   }
 
   bool _onSwipe(int previousIndex, int? currentIndex, CardSwiperDirection direction) {
@@ -81,7 +92,9 @@ class _RankingPagesState extends State<RankingPages> {
         context,
         MaterialPageRoute(
           builder: (_) => _SwipeErrorScreen(
-            alreadyVoted: status == 409,
+            notice: status == 409
+                ? _RankingNotice.alreadyVoted
+                : _RankingNotice.error,
             detail: result['detail'] as String?,
           ),
         ),
@@ -104,122 +117,130 @@ class _RankingPagesState extends State<RankingPages> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppColors.surface,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-      );
-    }
-
-    if (_posts.isEmpty) {
-      return Scaffold(
-        backgroundColor: AppColors.surface,
-        appBar: AppBar(
+    switch (_target) {
+      case null:
+        return Scaffold(
           backgroundColor: AppColors.surface,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          leading: BackButton(color: AppColors.primary),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
+          body: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
+        );
+      case TargetLimitReached():  return _SwipeErrorScreen(notice: _RankingNotice.limitReached);
+      case TargetOffline():       return _SwipeErrorScreen(notice: _RankingNotice.offline, onRetry: _retry);
+      case TargetError():         return _SwipeErrorScreen(notice: _RankingNotice.error,   onRetry: _retry);
+      case TargetNoneAvailable():
+        return Scaffold(
+          backgroundColor: AppColors.surface,
+          appBar: AppBar(
+            backgroundColor: AppColors.surface,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            leading: BackButton(color: AppColors.primary),
+          ),
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.inbox_rounded,
+                      size: 56, color: AppColors.outlineVariant),
+                  const SizedBox(height: 16),
+                  Text(
+                    context.l10n.rankingNoParticipants,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+      case TargetFound():
+        return Scaffold(
+          backgroundColor: AppColors.surface,
+          body: SafeArea(
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.inbox_rounded,
-                    size: 56, color: AppColors.outlineVariant),
-                const SizedBox(height: 16),
-                Text(
-                  context.l10n.rankingNoParticipants,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSurfaceVariant,
+                // Header: Story-Progress + Target-User + Karten-Zaehler
+                _SessionHeader(
+                  targetUser: _targetUser,
+                  totalCards: _posts.length,
+                  swipedCards: _swipes.length,
+                ),
+                Expanded(
+                  child: _submitting
+                      ? Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  )
+                      : CardSwiper(
+                    controller: _controller,
+                    cardsCount: _posts.length,
+                    isLoop: false,
+                    // Bis zu 3 Karten sichtbar: hintere lugen skaliert
+                    // darunter hervor -> echter Deck-Look statt Einzelkarte.
+                    numberOfCardsDisplayed:
+                    _posts.length < 3 ? _posts.length : 3,
+                    backCardOffset: const Offset(0, 36),
+                    scale: 0.92,
+                    allowedSwipeDirection:
+                    const AllowedSwipeDirection.only(left: true, right: true),
+                    padding: const EdgeInsets.all(20),
+                    onSwipe: _onSwipe,
+                    onEnd: _submitSession,
+                    cardBuilder:
+                        (context, index, hThresh, vThresh) {
+                      final post = _posts[index];
+                      return _SwipeCard(
+                        title: post['title']?.toString() ?? '',
+                        content: post['content']?.toString() ?? '',
+                        imageUrl: post['image_url']?.toString() ?? '',
+                        flag: post['flag']?.toString(),
+                        createdAt: DateTime.parse(post['created_at']),
+                        horizontalThreshold: hThresh.toDouble(),
+                      );
+                    },
                   ),
                 ),
+                // Like / Nope Buttons
+                if (!_submitting)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(40, 8, 40, 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _SwipeActionButton(
+                          icon: Icons.close_rounded,
+                          color: AppColors.secondary,
+                          size: 60,
+                          onTap: () =>
+                              _controller.swipe(CardSwiperDirection.left),
+                        ),
+                        // Like ist groesser + gradient-gefuellt: die "Haupt-Aktion".
+                        _SwipeActionButton(
+                          icon: Icons.favorite_rounded,
+                          color: AppColors.primary,
+                          size: 72,
+                          filled: true,
+                          onTap: () =>
+                              _controller.swipe(CardSwiperDirection.right),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
-        ),
-      );
+        );
     }
-
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header: Story-Progress + Target-User + Karten-Zaehler
-            _SessionHeader(
-              targetUser: _targetUser,
-              totalCards: _posts.length,
-              swipedCards: _swipes.length,
-            ),
-            Expanded(
-              child: _submitting
-                  ? Center(
-                      child: CircularProgressIndicator(color: AppColors.primary),
-                    )
-                  : CardSwiper(
-                      controller: _controller,
-                      cardsCount: _posts.length,
-                      isLoop: false,
-                      // Bis zu 3 Karten sichtbar: hintere lugen skaliert
-                      // darunter hervor -> echter Deck-Look statt Einzelkarte.
-                      numberOfCardsDisplayed:
-                          _posts.length < 3 ? _posts.length : 3,
-                      backCardOffset: const Offset(0, 36),
-                      scale: 0.92,
-                      allowedSwipeDirection:
-                          const AllowedSwipeDirection.only(left: true, right: true),
-                      padding: const EdgeInsets.all(20),
-                      onSwipe: _onSwipe,
-                      onEnd: _submitSession,
-                      cardBuilder:
-                          (context, index, hThresh, vThresh) {
-                        final post = _posts[index];
-                        return _SwipeCard(
-                          title: post['title']?.toString() ?? '',
-                          content: post['content']?.toString() ?? '',
-                          imageUrl: post['image_url']?.toString() ?? '',
-                          flag: post['flag']?.toString(),
-                          createdAt: DateTime.parse(post['created_at']),
-                          horizontalThreshold: hThresh.toDouble(),
-                        );
-                      },
-                    ),
-            ),
-            // Like / Nope Buttons
-            if (!_submitting)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(40, 8, 40, 24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _SwipeActionButton(
-                      icon: Icons.close_rounded,
-                      color: AppColors.secondary,
-                      size: 60,
-                      onTap: () => _controller.swipe(CardSwiperDirection.left),
-                    ),
-                    // Like ist groesser + gradient-gefuellt: die "Haupt-Aktion".
-                    _SwipeActionButton(
-                      icon: Icons.favorite_rounded,
-                      color: AppColors.primary,
-                      size: 72,
-                      filled: true,
-                      onTap: () => _controller.swipe(CardSwiperDirection.right),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
   }
 }
+
 
 // ─── Session Header ───────────────────────────────────────────────────────────
 // Story-Style Fortschritt (ein Segment pro Karte), wer bewertet wird und ein
@@ -883,25 +904,68 @@ class _RewardChip extends StatelessWidget {
 }
 
 // ─── Swipe Error Screen ───────────────────────────────────────────────────────
-class _SwipeErrorScreen extends StatelessWidget {
-  const _SwipeErrorScreen({required this.alreadyVoted, this.detail});
+/// Welcher Hinweis gezeigt wird. Enum statt bool: der switch in
+/// _SwipeErrorScreen.build erzwingt, dass jeder Fall Icon + Text hat.
+enum _RankingNotice {
+  /// 409 beim Abschicken: heute schon abgestimmt.
+  alreadyVoted,
 
-  final bool alreadyVoted;
+  /// my_target: heute abgeschlossen / keine Neuziehung mehr.
+  limitReached,
+
+  /// my_target: Server nicht erreichbar.
+  offline,
+
+  /// Alles Unerwartete (beim Laden oder Abschicken).
+  error,
+}
+
+class _SwipeErrorScreen extends StatelessWidget {
+  const _SwipeErrorScreen({required this.notice, this.detail, this.onRetry});
+
+  final _RankingNotice notice;
+
+  /// Server-Text, nur bei error genutzt (sonst Standardtext).
   final String? detail;
+
+  /// Gesetzt -> Hauptbutton wird "Erneut versuchen", "Zurück" rutscht
+  /// als Textbutton darunter. null -> nur "Zurück" (wie bisher).
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
-    final iconData = alreadyVoted
-        ? Icons.event_available_rounded
-        : Icons.cloud_off_rounded;
-    final iconColor = alreadyVoted ? AppColors.tertiary : AppColors.secondary;
-    final iconBg = alreadyVoted
-        ? AppColors.tertiaryContainer
-        : AppColors.secondaryFixed;
-    final headline = alreadyVoted ? context.l10n.rankingAlreadyVotedHeadline : context.l10n.rankingErrorHeadline;
-    final subtitle = alreadyVoted
-        ? context.l10n.rankingAlreadyVotedMessage
-        : (detail ?? context.l10n.rankingErrorMessage);
+    final l10n = context.l10n;
+    // Record mit Namen: ein switch liefert alle fünf Werte auf einmal.
+    final (:icon, :color, :bg, :headline, :subtitle) = switch (notice) {
+      _RankingNotice.alreadyVoted => (
+          icon: Icons.event_available_rounded,
+          color: AppColors.tertiary,
+          bg: AppColors.tertiaryContainer,
+          headline: l10n.rankingAlreadyVotedHeadline,
+          subtitle: l10n.rankingAlreadyVotedMessage,
+        ),
+      _RankingNotice.limitReached => (
+          icon: Icons.event_available_rounded,
+          color: AppColors.tertiary,
+          bg: AppColors.tertiaryContainer,
+          headline: l10n.rankingLimitReachedHeadline,
+          subtitle: l10n.rankingLimitReachedMessage,
+        ),
+      _RankingNotice.offline => (
+          icon: Icons.cloud_off_rounded,
+          color: AppColors.secondary,
+          bg: AppColors.secondaryFixed,
+          headline: l10n.rankingErrorHeadline,
+          subtitle: l10n.rankingOfflineMessage,
+        ),
+      _RankingNotice.error => (
+          icon: Icons.cloud_off_rounded,
+          color: AppColors.secondary,
+          bg: AppColors.secondaryFixed,
+          headline: l10n.rankingErrorHeadline,
+          subtitle: detail ?? l10n.rankingErrorMessage,
+        ),
+    };
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -916,8 +980,8 @@ class _SwipeErrorScreen extends StatelessWidget {
                 child: Container(
                   width: 88,
                   height: 88,
-                  decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
-                  child: Icon(iconData, color: iconColor, size: 44),
+                  decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 44),
                 ),
               ),
               const SizedBox(height: 28),
@@ -928,7 +992,7 @@ class _SwipeErrorScreen extends StatelessWidget {
                   fontSize: 48,
                   fontWeight: FontWeight.w900,
                   fontStyle: FontStyle.italic,
-                  color: iconColor,
+                  color: color,
                   height: 1.0,
                 ),
               ),
@@ -945,10 +1009,33 @@ class _SwipeErrorScreen extends StatelessWidget {
               const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(bottom: 40),
-                child: PrimaryButton(
-                  label: context.l10n.rankingBackButton,
-                  isLoading: false,
-                  onPressed: () => Navigator.pop(context),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    PrimaryButton(
+                      label: onRetry != null
+                          ? l10n.rankingRetryButton
+                          : l10n.rankingBackButton,
+                      isLoading: false,
+                      onPressed: onRetry ?? () => Navigator.pop(context),
+                    ),
+                    if (onRetry != null) ...[
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text(
+                          l10n.rankingBackButton,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
