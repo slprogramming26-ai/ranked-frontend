@@ -1484,6 +1484,12 @@ abstract class AppLocalizations {
   /// **'ERNEUT VERSUCHEN'**
   String get rankingRetryButton;
 
+  /// Snackbar: swipe_session 404, Target inzwischen gemeldet/geblockt/gesperrt -> neues Target wird geladen
+  ///
+  /// In de, this message translates to:
+  /// **'Dieses Ranking ist nicht mehr verfügbar, wir laden ein neues.'**
+  String get rankingTargetGone;
+
   /// Empty state in activity section of profile
   ///
   /// In de, this message translates to:

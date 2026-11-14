@@ -100,24 +100,31 @@ class RankingProvider extends ChangeNotifier {
 }
 
 
+// "Heute schon gerankt?" als lokaler Cache. Die Wahrheit liegt beim Server:
+// my_target meldet "bereits abgeschlossen" -> dann wird hier nachgezogen.
 class Streak {
-  static const _lastActivityKey = 'saved_date_time_key';
+  // Neuer Key-Name statt 'saved_date_time_key': der alte enthaelt einen int,
+  // getString() auf einen int-Wert wirft einen TypeError.
+  static const _rankedOnKey = 'ranked_on_utc';
+  static const _legacyKey = 'saved_date_time_key';
 
+  // "YYYY-MM-DD" in UTC — gleiche Tagesgrenze wie das Backend (Reset 00:00 UTC).
+  static String _todayUtc() =>
+      DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
-  static bool didActivityToday(SharedPreferences prefs) {
-    final timestamp = prefs.getInt(_lastActivityKey);
-    if (timestamp == null) return false;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final diff = today.difference(DateTime.fromMillisecondsSinceEpoch(timestamp)).inDays;
-    return diff == 0;
-  }
-
+  static bool didActivityToday(SharedPreferences prefs) =>
+      prefs.getString(_rankedOnKey) == _todayUtc();
 
   static Future<void> markRankedToday() async {
     final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    await prefs.setInt(_lastActivityKey, today.millisecondsSinceEpoch);
+    await prefs.setString(_rankedOnKey, _todayUtc());
+  }
+
+  // Der Key haengt am Geraet, nicht am User -> beim Logout loeschen, sonst
+  // erbt der naechste Account den Stand.
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_rankedOnKey);
+    await prefs.remove(_legacyKey);
   }
 }

@@ -1013,6 +1013,10 @@
   "@rankingRetryButton": {
     "description": "Button zum erneuten Laden des Ranking-Targets"
   },
+  "rankingTargetGone": "Dieses Ranking ist nicht mehr verfügbar, wir laden ein neues.",
+  "@rankingTargetGone": {
+    "description": "Snackbar: swipe_session 404, Target inzwischen gemeldet/geblockt/gesperrt -> neues Target wird geladen"
+  },
   "profileNoActivity": "Noch keine Aktivität — sobald dich jemand bewertet, steht es hier.",
   "@profileNoActivity": {
     "description": "Empty state in activity section of profile"

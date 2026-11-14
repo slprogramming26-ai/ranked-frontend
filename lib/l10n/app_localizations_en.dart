@@ -774,6 +774,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankingRetryButton => 'TRY AGAIN';
 
   @override
+  String get rankingTargetGone =>
+      'This ranking is no longer available, loading a new one.';
+
+  @override
   String get profileNoActivity =>
       'No activity yet – once someone rates you, it will show up here.';
 

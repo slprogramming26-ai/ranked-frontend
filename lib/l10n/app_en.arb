@@ -231,6 +231,7 @@
   "rankingLimitReachedMessage": "No more ranking possible today.\nYou can rank again tomorrow!",
   "rankingOfflineMessage": "Can't reach the server. Check your internet and try again.",
   "rankingRetryButton": "TRY AGAIN",
+  "rankingTargetGone": "This ranking is no longer available, loading a new one.",
   "profileNoActivity": "No activity yet – once someone rates you, it will show up here.",
   "profileActivityRated": "You were rated",
   "profileActivityDefault": "New activity",

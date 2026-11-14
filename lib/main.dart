@@ -242,6 +242,10 @@ class _MyHomePageState extends State<MyHomePage> {
         // zwischen Leeren und Stoppen noch eine Nachricht reinschreiben.
         await context.read<MessengerController>().shutdown();
         await db.clearDatabase();
+        // "Heute gerankt"-Cache haengt am Geraet, nicht am User. VOR
+        // startNewSession leeren: der neue RankingProvider liest ihn sofort
+        // im Konstruktor.
+        await Streak.clear();
         if (mounted) {
           // Wirft RankingProvider/PostProvider/StoryProvider/ProfileProvider/
           // MessengerController und den kompletten Riverpod-Speicher (z.B.

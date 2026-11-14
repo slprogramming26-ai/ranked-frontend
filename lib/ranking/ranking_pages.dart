@@ -4,6 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:ranked/moderation/report_sheet.dart';
+import 'package:ranked/moderation/report_target.dart';
+import 'package:ranked/ui/confirm_dialog.dart';
 import '../ui/app_colors.dart';
 import '../ui/net_image.dart';
 import '../profile/profile.dart';
@@ -12,6 +15,7 @@ import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
 import 'ranking_widgets.dart' show PrimaryButton, PopIn;
 import 'target_result.dart';
+import 'package:ranked/core/user_api_service.dart';
 
 // ─── RankingPages: Tinder-Style Swipe ─────────────────────────────────────────
 class RankingPages extends StatefulWidget {
@@ -59,6 +63,11 @@ class _RankingPagesState extends State<RankingPages> {
         _targetUserId = targetUser['id'] as int?;
       }
     });
+    // Self-Heal: Server sagt "heute fertig" -> lokalen Cache nachziehen
+    // (Flamme + Button). read statt Provider.of: wir sind nicht in build().
+    if (result case TargetLimitReached()) {
+      context.read<RankingProvider>().markRankedToday();
+    }
   }
 
   /// Nur bei Offline/Error: zurück auf den Spinner, dann neu laden.
@@ -78,6 +87,69 @@ class _RankingPagesState extends State<RankingPages> {
     return true;
   }
 
+
+  /// ⋮-Menue: Post melden / Target blockieren. Logik kommt in Schritt 2.
+  Future<void> _onMore() async {
+    final action = await showModalBottomSheet<_SessionAction>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      builder: (_) => const _SessionMenuSheet(),
+    );
+    if (!mounted || action == null) return; // weggewischt
+    final l10n = context.l10n;
+
+    switch (action) {
+      case _SessionAction.reportPost:
+        // Karten gehen strikt der Reihe nach weg (kein Undo) -> bei n
+        // bewerteten liegt Index n oben. Nach der letzten Karte gibt es
+        // keinen "obersten" Post mehr (kurz vor onEnd) -> nichts tun.
+        if (_swipes.length >= _posts.length) return;
+        final postId = _posts[_swipes.length]['id'] as int;
+
+        // Snackbar ("Danke! ...") macht showReportSheet selbst.
+        final ok = await showReportSheet(
+          context,
+          target: ReportTarget.post,
+          id: postId,
+        );
+        // Abgebrochen/Fehler -> Session laeuft einfach weiter.
+        if (!mounted || !ok) return;
+        _reloadWithNewTarget();
+
+      case _SessionAction.block:
+        final name = _targetUser?['username']?.toString() ?? '';
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (_) => ConfirmDialog(
+            icon: Icons.block_rounded,
+            title: l10n.chatInfoBlockTitle(name.isEmpty ? '—' : '@$name'),
+            message: l10n.chatInfoBlockMessage,
+            confirmLabel: l10n.chatInfoBlock,
+          ),
+        );
+        if (confirmed != true || !mounted) return;
+        // VOR dem await greifen: danach ist dieser Screen evtl. schon ersetzt.
+        final messenger = ScaffoldMessenger.of(context);
+        final ok = await UserApiService.blockUser(_targetUserId!);
+        // App-weiter Messenger -> Snackbar ueberlebt den Seitenwechsel.
+        messenger.showSnackBar(SnackBar(
+          content: Text(ok ? l10n.profileBlocked(name) : l10n.profileBlockFailed),
+        ));
+        if (!mounted || !ok) return;
+        _reloadWithNewTarget();
+    }
+  }
+
+  /// Session verwerfen (NICHT abschicken) -> frische RankingPages laedt
+  /// my_target neu. Neuer State = alle Felder + CardSwiper automatisch frisch.
+  void _reloadWithNewTarget() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const RankingPages()),
+    );
+  }
+
   Future<void> _submitSession() async {
     if (_submitting || _targetUserId == null) return;
     setState(() => _submitting = true);
@@ -88,6 +160,16 @@ class _RankingPagesState extends State<RankingPages> {
 
     if (result['success'] != true) {
       final status = result['status'] as int?;
+      // 404 = Target inzwischen gemeldet/geblockt/gesperrt (auch "No target
+      // found..."). Die Bewertungen sind damit hinfaellig -> kein Fehler-
+      // Screen, sondern still ein neues Target ziehen.
+      if (status == 404) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.rankingTargetGone)),
+        );
+        _reloadWithNewTarget();
+        return;
+      }
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -172,6 +254,8 @@ class _RankingPagesState extends State<RankingPages> {
                   targetUser: _targetUser,
                   totalCards: _posts.length,
                   swipedCards: _swipes.length,
+                  // Waehrend des Abschickens kein Melden/Blocken mehr.
+                  onMore: _submitting ? null : _onMore,
                 ),
                 Expanded(
                   child: _submitting
@@ -250,11 +334,14 @@ class _SessionHeader extends StatelessWidget {
     required this.targetUser,
     required this.totalCards,
     required this.swipedCards,
+    this.onMore,
   });
 
   final Map<String, dynamic>? targetUser;
   final int totalCards;
   final int swipedCards;
+  /// ⋮-Menue (Post melden / Blockieren). null -> Button ausgegraut.
+  final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -352,9 +439,99 @@ class _SessionHeader extends StatelessWidget {
                   ),
                 ),
               ),
+              IconButton(
+                onPressed: onMore,
+                icon: const Icon(Icons.more_vert_rounded),
+                color: AppColors.onSurfaceVariant,
+                disabledColor: AppColors.outlineVariant,
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── ⋮-Menue waehrend der Bewertung ──────────────────────────────────────────
+// Enum statt String: Tippfehler werden zum Compile-Fehler, switch ohne default.
+enum _SessionAction { reportPost, block }
+
+// Gleicher Look wie _ProfileMenuSheet / Melde-Sheet (Griff, 32er Radius).
+// Gibt nur die Wahl per Navigator.pop zurueck, Wegwischen -> null.
+class _SessionMenuSheet extends StatelessWidget {
+  const _SessionMenuSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            _row(
+              context,
+              icon: Icons.flag_outlined,
+              label: context.l10n.reportTitlePost,
+              color: AppColors.onSurface,
+              action: _SessionAction.reportPost,
+            ),
+            _row(
+              context,
+              icon: Icons.block_rounded,
+              label: context.l10n.chatInfoBlock,
+              color: AppColors.primary, // destruktiv hervorgehoben
+              action: _SessionAction.block,
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required _SessionAction action,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pop(context, action),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Row(
+            children: [
+              Icon(icon, color: color, size: 22),
+              const SizedBox(width: 16),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
