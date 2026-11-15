@@ -1876,4 +1876,72 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get resetButton => 'Passwort ändern';
+
+  @override
+  String get profileRankingTitle => 'RANKING';
+
+  @override
+  String get profileRankingEmptyOwn =>
+      'Stell beim Posten einen Post ins Ranking – deine Follower können ihn dann 7 Tage lang bewerten.';
+
+  @override
+  String get profileRankingEmptyForeign => 'Noch keine Posts im Ranking.';
+
+  @override
+  String get profileRankingError => 'Ranking konnte nicht geladen werden.';
+
+  @override
+  String get profileRankingRetry => 'Erneut versuchen';
+
+  @override
+  String get profileRankingActive => 'läuft noch';
+
+  @override
+  String get profileRankingEnded => 'beendet';
+
+  @override
+  String get profileRankingPhotoPost => 'Foto';
+
+  @override
+  String get profileRankingShowMore => 'Mehr anzeigen';
+
+  @override
+  String profileRankingRateCardTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Posts warten auf deine Bewertung',
+      one: '1 Post wartet auf deine Bewertung',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get profileRankingRateButton => 'Bewerten';
+
+  @override
+  String get profileRateHintLike => 'Doppeltipp = Gefällt mir';
+
+  @override
+  String get profileRateHintSkip => 'Wegwerfen = Weiter';
+
+  @override
+  String get profileRateDoneTitle => 'Alles bewertet!';
+
+  @override
+  String get profileRateDoneMessage =>
+      'Danke! Wie die Posts abschneiden, siehst du im Profil.';
+
+  @override
+  String get profileRateDoneButton => 'Fertig';
+
+  @override
+  String get profileRateActionLike => 'Gefällt mir';
+
+  @override
+  String get profileRateActionSkip => 'Weiter';
+
+  @override
+  String get profileRateFailed =>
+      'Bewertung nicht gesendet – der Post kommt am Ende nochmal.';
 }

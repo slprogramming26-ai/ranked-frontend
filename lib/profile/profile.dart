@@ -13,6 +13,7 @@ import '../ranking/ranking_api_service.dart';
 import '../settings/settings_screen.dart';
 import '../l10n/l10n.dart';
 import '../ui/confirm_dialog.dart';
+import 'widgets/profile_ranking_section.dart';
 
 
 class ProfileProvider extends ChangeNotifier {
@@ -80,6 +81,10 @@ class _ProfileState extends State<Profile> {
 
   bool get _isOwn => widget.targetUserId == null;
 
+
+  int _rankingGen = 0;
+
+
   @override
   void initState() {
     super.initState();
@@ -92,8 +97,12 @@ class _ProfileState extends State<Profile> {
     });
   }
 
-  Future<void> _fetchForeignUser() async {
-    setState(() => _foreignLoading = true);
+  Future<void> _fetchForeignUser({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _foreignLoading = true;
+      });
+    }
     final id = widget.targetUserId!;
     // Beide Requests parallel: Record + .wait behaelt die Typen
     // (Map bzw. List?), Future.wait wuerde List<Object?> liefern -> Casts.
@@ -108,7 +117,8 @@ class _ProfileState extends State<Profile> {
         // Fehler (null) -> false, wie im Chat-Sheet: Blockieren auf einen
         // schon Blockierten gibt 409 = Erfolg, also harmlos.
         _isBlocked = blocks?.any((b) => b['id'] == id) ?? false;
-        _foreignLoading = false;
+        _rankingGen++;
+        if (!silent) _foreignLoading = false;
       });
     }
   }
@@ -251,8 +261,15 @@ class _ProfileState extends State<Profile> {
     final String? vibe2     = data['vibe_factor_2'];
     final int? followerCount = data['follower_count'];
     // Gamification (GetUserOut): kann null sein (z.B. Daten aus /users/search),
-    // dann verschwinden Ring, XP-Balken & Liga-Zelle einfach.
+    // dann verschwinden Ring & XP-Balken einfach.
     final int xp = (data['xp'] as num?)?.toInt() ?? 0;
+    // Summe aller Profil-Ranking-Likes. /users/ und /users/{id} liefern nie
+    // null, nur /users/search -> dort 0.
+    final int rankingLikes =
+        (data['ranking_likes_total'] as num?)?.toInt() ?? 0;
+    // Eigenes Profil: id aus /users/, fremdes: die übergebene id.
+    final int? rankingUserId =
+        _isOwn ? data['id'] as int? : widget.targetUserId;
     final Map<String, dynamic>? league =
         data['league'] as Map<String, dynamic>?;
     final int tier = (league?['tier'] as num?)?.toInt() ?? 0;
@@ -396,12 +413,11 @@ class _ProfileState extends State<Profile> {
                         padding: const EdgeInsets.symmetric(vertical: 20),
                         child: Row(
                           children: [
-                            _statCell(
-                              league?['league']?.toString() ?? '—',
-                              'LIGA',
-                            ),
+                            // LIKES statt LIGA: die Liga steht schon im
+                            // Avatar-Ring und im XP-Balken darüber.
+                            _statCell(_fmtCount(rankingLikes), 'LIKES'),
                             _statDivider(),
-                            _statCell(_fmtXp(xp), 'XP'),
+                            _statCell(_fmtCount(xp), 'XP'),
                             _statDivider(),
                             _statCell('${followerCount ?? 0}', 'FOLLOWERS'),
                           ],
@@ -425,6 +441,24 @@ class _ProfileState extends State<Profile> {
                 ),
 
                 const SizedBox(height: 40),
+
+                // Profil-Ranking — eigenes und fremdes Profil.
+                if (rankingUserId != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: ProfileRankingSection(
+                      key: ValueKey((rankingUserId, _rankingGen)),
+                      userId: rankingUserId,
+                      isOwn: _isOwn,
+                      // Eigenes Profil: keine Bewerten-Karte -> kein Callback
+                      // (_fetchForeignUser braucht targetUserId != null).
+                      onRated: _isOwn
+                          ? null
+                          : () => _fetchForeignUser(silent: true),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
 
                 // Recent Activity — echte Events, nur im eigenen Profil
                 if (_isOwn)
@@ -500,9 +534,10 @@ class _ProfileState extends State<Profile> {
   ];
 
   // 12800 -> "12.8k", 950 -> "950"
-  String _fmtXp(int xp) {
-    if (xp >= 1000) return '${(xp / 1000).toStringAsFixed(1)}k';
-    return '$xp';
+  // 1234 -> "1.2k". Für XP und Likes.
+  String _fmtCount(int n) {
+    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
+    return '$n';
   }
 
   // ── Activity-Mapping ───────────────────────────────────────────────────────

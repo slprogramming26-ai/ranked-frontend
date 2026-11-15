@@ -2419,5 +2419,86 @@
   "resetButton": "Passwort ändern",
   "@resetButton": {
     "description": "Passwort vergessen, Phase 2: Button"
+  },
+  "profileRankingTitle": "RANKING",
+  "@profileRankingTitle": {
+    "description": "Profil: Überschrift der Profil-Ranking-Sektion"
+  },
+  "profileRankingEmptyOwn": "Stell beim Posten einen Post ins Ranking – deine Follower können ihn dann 7 Tage lang bewerten.",
+  "@profileRankingEmptyOwn": {
+    "description": "Profil-Ranking: leer, eigenes Profil"
+  },
+  "profileRankingEmptyForeign": "Noch keine Posts im Ranking.",
+  "@profileRankingEmptyForeign": {
+    "description": "Profil-Ranking: leer, fremdes Profil"
+  },
+  "profileRankingError": "Ranking konnte nicht geladen werden.",
+  "@profileRankingError": {
+    "description": "Profil-Ranking: Ladefehler"
+  },
+  "profileRankingRetry": "Erneut versuchen",
+  "@profileRankingRetry": {
+    "description": "Profil-Ranking: Retry-Button nach Ladefehler"
+  },
+  "profileRankingActive": "läuft noch",
+  "@profileRankingActive": {
+    "description": "Profil-Ranking-Eintrag: Bewertungszeit (7 Tage) läuft noch"
+  },
+  "profileRankingEnded": "beendet",
+  "@profileRankingEnded": {
+    "description": "Profil-Ranking-Eintrag: Bewertungszeit vorbei"
+  },
+  "profileRankingPhotoPost": "Foto",
+  "@profileRankingPhotoPost": {
+    "description": "Profil-Ranking-Eintrag: Platzhalter-Text für Posts nur mit Bild"
+  },
+  "profileRankingShowMore": "Mehr anzeigen",
+  "@profileRankingShowMore": {
+    "description": "Profil-Ranking: Button zum Nachladen der nächsten Seite"
+  },
+  "profileRankingRateCardTitle": "{count, plural, =1{1 Post wartet auf deine Bewertung} other{{count} Posts warten auf deine Bewertung}}",
+  "@profileRankingRateCardTitle": {
+    "description": "Profil-Ranking: Karte im fremden Profil, offene Posts zum Bewerten",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileRankingRateButton": "Bewerten",
+  "@profileRankingRateButton": {
+    "description": "Profil-Ranking: Button auf der Karte, öffnet den Bewerten-Screen"
+  },
+  "profileRateHintLike": "Doppeltipp = Gefällt mir",
+  "@profileRateHintLike": {
+    "description": "Bewerten-Screen (Profil-Ranking): Hinweis-Chip unter der Karte. Kein Wort 'Swipe'!"
+  },
+  "profileRateHintSkip": "Wegwerfen = Weiter",
+  "@profileRateHintSkip": {
+    "description": "Bewerten-Screen (Profil-Ranking): Hinweis-Chip, Karte in beliebige Richtung wegwerfen. Kein Wort 'Swipe'!"
+  },
+  "profileRateDoneTitle": "Alles bewertet!",
+  "@profileRateDoneTitle": {
+    "description": "Bewerten-Screen: End-Ansicht, Überschrift"
+  },
+  "profileRateDoneMessage": "Danke! Wie die Posts abschneiden, siehst du im Profil.",
+  "@profileRateDoneMessage": {
+    "description": "Bewerten-Screen: End-Ansicht, Text"
+  },
+  "profileRateDoneButton": "Fertig",
+  "@profileRateDoneButton": {
+    "description": "Bewerten-Screen: End-Ansicht, Button zurück ins Profil"
+  },
+  "profileRateActionLike": "Gefällt mir",
+  "@profileRateActionLike": {
+    "description": "Bewerten-Screen: Screenreader-Aktion auf der Karte (statt Doppeltipp)"
+  },
+  "profileRateActionSkip": "Weiter",
+  "@profileRateActionSkip": {
+    "description": "Bewerten-Screen: Screenreader-Aktion auf der Karte (statt Wegwischen)"
+  },
+  "profileRateFailed": "Bewertung nicht gesendet – der Post kommt am Ende nochmal.",
+  "@profileRateFailed": {
+    "description": "Bewerten-Screen: Snackbar, wenn ratePost fehlschlägt (Post wird hinten wieder angehängt)"
   }
 }

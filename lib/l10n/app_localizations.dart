@@ -3295,6 +3295,120 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Passwort ändern'**
   String get resetButton;
+
+  /// Profil: Überschrift der Profil-Ranking-Sektion
+  ///
+  /// In de, this message translates to:
+  /// **'RANKING'**
+  String get profileRankingTitle;
+
+  /// Profil-Ranking: leer, eigenes Profil
+  ///
+  /// In de, this message translates to:
+  /// **'Stell beim Posten einen Post ins Ranking – deine Follower können ihn dann 7 Tage lang bewerten.'**
+  String get profileRankingEmptyOwn;
+
+  /// Profil-Ranking: leer, fremdes Profil
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Posts im Ranking.'**
+  String get profileRankingEmptyForeign;
+
+  /// Profil-Ranking: Ladefehler
+  ///
+  /// In de, this message translates to:
+  /// **'Ranking konnte nicht geladen werden.'**
+  String get profileRankingError;
+
+  /// Profil-Ranking: Retry-Button nach Ladefehler
+  ///
+  /// In de, this message translates to:
+  /// **'Erneut versuchen'**
+  String get profileRankingRetry;
+
+  /// Profil-Ranking-Eintrag: Bewertungszeit (7 Tage) läuft noch
+  ///
+  /// In de, this message translates to:
+  /// **'läuft noch'**
+  String get profileRankingActive;
+
+  /// Profil-Ranking-Eintrag: Bewertungszeit vorbei
+  ///
+  /// In de, this message translates to:
+  /// **'beendet'**
+  String get profileRankingEnded;
+
+  /// Profil-Ranking-Eintrag: Platzhalter-Text für Posts nur mit Bild
+  ///
+  /// In de, this message translates to:
+  /// **'Foto'**
+  String get profileRankingPhotoPost;
+
+  /// Profil-Ranking: Button zum Nachladen der nächsten Seite
+  ///
+  /// In de, this message translates to:
+  /// **'Mehr anzeigen'**
+  String get profileRankingShowMore;
+
+  /// Profil-Ranking: Karte im fremden Profil, offene Posts zum Bewerten
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Post wartet auf deine Bewertung} other{{count} Posts warten auf deine Bewertung}}'**
+  String profileRankingRateCardTitle(int count);
+
+  /// Profil-Ranking: Button auf der Karte, öffnet den Bewerten-Screen
+  ///
+  /// In de, this message translates to:
+  /// **'Bewerten'**
+  String get profileRankingRateButton;
+
+  /// Bewerten-Screen (Profil-Ranking): Hinweis-Chip unter der Karte. Kein Wort 'Swipe'!
+  ///
+  /// In de, this message translates to:
+  /// **'Doppeltipp = Gefällt mir'**
+  String get profileRateHintLike;
+
+  /// Bewerten-Screen (Profil-Ranking): Hinweis-Chip, Karte in beliebige Richtung wegwerfen. Kein Wort 'Swipe'!
+  ///
+  /// In de, this message translates to:
+  /// **'Wegwerfen = Weiter'**
+  String get profileRateHintSkip;
+
+  /// Bewerten-Screen: End-Ansicht, Überschrift
+  ///
+  /// In de, this message translates to:
+  /// **'Alles bewertet!'**
+  String get profileRateDoneTitle;
+
+  /// Bewerten-Screen: End-Ansicht, Text
+  ///
+  /// In de, this message translates to:
+  /// **'Danke! Wie die Posts abschneiden, siehst du im Profil.'**
+  String get profileRateDoneMessage;
+
+  /// Bewerten-Screen: End-Ansicht, Button zurück ins Profil
+  ///
+  /// In de, this message translates to:
+  /// **'Fertig'**
+  String get profileRateDoneButton;
+
+  /// Bewerten-Screen: Screenreader-Aktion auf der Karte (statt Doppeltipp)
+  ///
+  /// In de, this message translates to:
+  /// **'Gefällt mir'**
+  String get profileRateActionLike;
+
+  /// Bewerten-Screen: Screenreader-Aktion auf der Karte (statt Wegwischen)
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter'**
+  String get profileRateActionSkip;
+
+  /// Bewerten-Screen: Snackbar, wenn ratePost fehlschlägt (Post wird hinten wieder angehängt)
+  ///
+  /// In de, this message translates to:
+  /// **'Bewertung nicht gesendet – der Post kommt am Ende nochmal.'**
+  String get profileRateFailed;
 }
 
 class _AppLocalizationsDelegate
