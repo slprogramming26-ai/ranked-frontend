@@ -543,6 +543,7 @@
   "profileRankingPhotoPost": "Photo",
   "profileRankingShowMore": "Show more",
   "profileRankingRateCardTitle": "{count, plural, =1{1 post is waiting for your rating} other{{count} posts are waiting for your rating}}",
+  "profileRankingHoldHint": "Press and hold to rate",
   "profileRankingRateButton": "Rate",
   "profileRateHintLike": "Double-tap = Like",
   "profileRateHintSkip": "Flick away = Next",
@@ -551,5 +552,11 @@
   "profileRateDoneButton": "Done",
   "profileRateActionLike": "Like",
   "profileRateActionSkip": "Next",
-  "profileRateFailed": "Rating not sent – the post will come up again at the end."
+  "profileRateFailed": "Rating not sent – the post will come up again at the end.",
+  "createPostRankingTitle": "Add to ranking",
+  "createPostRankingInfo": "Rated by your followers for 7 days · 1 post per day",
+  "createPostRankingTaken": "{hours, plural, =1{Already used today · free again in 1 h} other{Already used today · free again in {hours} h}}",
+  "createPostRankingOk": "Your post is now in the ranking 🎉",
+  "createPostRankingSlotTaken": "Post is live – but you already have a post in the ranking today.",
+  "createPostRankingFailed": "Post is live – adding it to the ranking didn't work."
 }

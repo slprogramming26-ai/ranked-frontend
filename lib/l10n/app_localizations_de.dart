@@ -1917,6 +1917,9 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get profileRankingHoldHint => 'Zum Bewerten gedrückt halten';
+
+  @override
   String get profileRankingRateButton => 'Bewerten';
 
   @override
@@ -1944,4 +1947,33 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get profileRateFailed =>
       'Bewertung nicht gesendet – der Post kommt am Ende nochmal.';
+
+  @override
+  String get createPostRankingTitle => 'Ins Ranking stellen';
+
+  @override
+  String get createPostRankingInfo =>
+      '7 Tage von deinen Followern bewertet · 1 Post pro Tag';
+
+  @override
+  String createPostRankingTaken(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: 'Heute schon vergeben · wieder frei in $hours Std.',
+      one: 'Heute schon vergeben · wieder frei in 1 Std.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get createPostRankingOk => 'Dein Post ist jetzt im Ranking 🎉';
+
+  @override
+  String get createPostRankingSlotTaken =>
+      'Post ist online – heute ist aber schon ein Post im Ranking.';
+
+  @override
+  String get createPostRankingFailed =>
+      'Post ist online – ins Ranking stellen hat nicht geklappt.';
 }

@@ -11,6 +11,8 @@ import '../profile/profile.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../core/image_sanitizer.dart';
+import '../ranking/profile_ranking_api_service.dart';
+import '../ranking/profile_ranking_result.dart';
 import 'package:ranked/local_data/database.dart';
 
 class CreatePost extends StatefulWidget {
@@ -36,6 +38,13 @@ class _CreatePostState extends State<CreatePost> {
   // Override, das Backend nimmt dann den Heimatort.
   Map<String, dynamic>? _overrideLocation;
 
+  // Profil-Ranking: Schalter "Ins Ranking stellen" (Standard aus - man hat
+  // nur einen Platz pro Tag, den soll man nicht aus Versehen verbrauchen).
+  bool _enterRanking = false;
+  // Tagesplatz laut Server. null = noch nicht geladen ODER Fehler ->
+  // Schalter bleibt bedienbar (der 409 beim Einstellen ist das Netz).
+  RankingSlot? _slot;
+
   @override
   void initState() {
     super.initState();
@@ -43,7 +52,23 @@ class _CreatePostState extends State<CreatePost> {
     titleController = TextEditingController();
     contentController = TextEditingController();
     fetchPostDraft();
-    _loadDefaultLocation();
+    // Nach dem ersten Frame: fetchUser() ruft (falls noch nicht geladen)
+    // notifyListeners() VOR seinem ersten await -> mitten in initState wäre
+    // das ein Rebuild während des Builds ("markNeedsBuild called during build").
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDefaultLocation());
+    _loadSlot();
+  }
+
+  // Erstes Statement ist ein await -> setState kommt erst nach initState,
+  // kein postFrameCallback nötig (siehe _loadDefaultLocation).
+  Future<void> _loadSlot() async {
+    final slot = await ProfileRankingApiService.getSlot();
+    if (!mounted || slot == null) return;
+    setState(() {
+      _slot = slot;
+      // Platz weg -> Schalter aus, auch falls schon angetippt.
+      if (!slot.free) _enterRanking = false;
+    });
   }
 
   Future<void> _loadDefaultLocation() async {
@@ -219,7 +244,7 @@ class _CreatePostState extends State<CreatePost> {
         }
       }
 
-      final success = await PostApiService.createPost(
+      final postId = await PostApiService.createPost(
         titleController.text,
         contentController.text,
         imageUrl,
@@ -232,14 +257,50 @@ class _CreatePostState extends State<CreatePost> {
       );
 
       if (!mounted) return;
-      Navigator.pop(context);
 
-      if (success) {
-        Navigator.pop(context);
-      } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.l10n.createPostFailed)));
+      // Profil-Ranking: zweiter Request, NACHDEM der Post existiert (wir
+      // brauchen seine id). Läuft noch unter dem Lade-Dialog.
+      // null = Schalter war aus (oder der Post ist gar nicht erst entstanden).
+      EnterRankingResult? ranking;
+      if (postId != null && _enterRanking) {
+        ranking = await ProfileRankingApiService.enterRanking(postId);
+        if (!mounted) return;
+      }
+
+      // VOR den pops holen: danach ist dieser Screen weg. Der Messenger
+      // selbst hängt an der App, nicht am Screen -> die Snackbar ist auch
+      // auf dem Screen danach (Feed/Profil) zu sehen.
+      final messenger = ScaffoldMessenger.of(context);
+      final l10n = context.l10n;
+      final profile = context.read<ProfileProvider>();
+
+      Navigator.pop(context); // Lade-Dialog
+
+      if (postId == null) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.createPostFailed)));
+        return;
+      }
+
+      Navigator.pop(context); // Create-Post-Screen
+
+      switch (ranking) {
+        case null:
+          break;
+        case EnterRankingOk():
+          // Eigenes Profil (lebt im IndexedStack weiter) -> Ranking-Sektion
+          // bekommt einen neuen Key und lädt neu.
+          profile.rankingChanged();
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.createPostRankingOk)),
+          );
+        case EnterRankingFailed():
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.createPostRankingFailed)),
+          );
+        case EnterRankingSlotTaken():
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.createPostRankingSlotTaken)),
+          );
       }
     } catch (_) {
       // Unerwarteter Fehler: Dialog schließen, damit die UI nicht
@@ -311,6 +372,8 @@ class _CreatePostState extends State<CreatePost> {
                   Expanded(child: _buildComposer()),
                   const SizedBox(height: 12),
                   _buildCategorySection(),
+                  const SizedBox(height: 12),
+                  _buildRankingRow(),
                   const SizedBox(height: 12),
                   _buildLocationRow(),
                 ],
@@ -544,6 +607,80 @@ class _CreatePostState extends State<CreatePost> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // Profil-Ranking-Schalter im Stil der Standort-Zeile. Ganze Zeile tippbar.
+  // Tagesplatz schon weg -> ausgegraut + "wieder frei in X Std.".
+  Widget _buildRankingRow() {
+    final l10n = context.l10n;
+    final slot = _slot;
+    final taken = slot != null && !slot.free;
+
+    final String subtitle;
+    if (taken) {
+      // Aufrunden: 4 Std. 10 Min. -> "5 Std."; nie 0 anzeigen.
+      final left = slot.nextFreeAt.difference(DateTime.now());
+      final hours = (left.inMinutes / 60).ceil().clamp(1, 24);
+      subtitle = l10n.createPostRankingTaken(hours);
+    } else {
+      subtitle = l10n.createPostRankingInfo;
+    }
+
+    void toggle(bool v) => setState(() => _enterRanking = v);
+
+    return _card(
+      child: InkWell(
+        onTap: taken ? null : () => toggle(!_enterRanking),
+        child: Opacity(
+          opacity: taken ? 0.5 : 1,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.emoji_events_outlined,
+                  size: 22,
+                  color: _enterRanking
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.createPostRankingTitle,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _enterRanking,
+                  // M3: Spur in primary, Knopf bleibt hell (sonst wäre
+                  // primary-Knopf auf primary-Spur kaum zu sehen).
+                  activeTrackColor: AppColors.primary,
+                  // null = ausgegraut (Flutter-Standard für "deaktiviert").
+                  onChanged: taken ? null : toggle,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

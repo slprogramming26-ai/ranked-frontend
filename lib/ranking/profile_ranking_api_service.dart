@@ -45,6 +45,10 @@ class RankedPost {
 /// Block, Besitzer gesperrt). posts: max. 7, älteste zuerst, OHNE Like-Zahl.
 typedef OpenPosts = ({bool canRate, List<Map<String, dynamic>> posts});
 
+/// Antwort von GET /profile_ranking/slot: Darf ich heute noch einen Post
+/// ins Ranking stellen? nextFreeAt = nächster 00:00 UTC (kommt immer mit).
+typedef RankingSlot = ({bool free, DateTime nextFreeAt});
+
 class ProfileRankingApiService {
   static const String _base = '${ApiConfig.baseUrl}/profile_ranking';
 
@@ -92,6 +96,27 @@ class ProfileRankingApiService {
             .toList();
       }
       if (response.statusCode == 403) return [];
+    } catch (_) {
+      // kein Netz / kaputtes JSON -> unten null
+    }
+    return null;
+  }
+
+  /// Ist mein Tagesplatz fürs Ranking noch frei?
+  /// null = Fehler (dann lassen wir den Schalter offen - der 409 beim
+  /// Einstellen ist das Sicherheitsnetz).
+  static Future<RankingSlot?> getSlot() async {
+    try {
+      final response = await ApiClient.get(Uri.parse('$_base/slot'));
+      if (response.statusCode == 200) {
+        final body =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        return (
+          free: body['free'] as bool,
+          // "2026-11-17T00:00:00Z" -> DateTime mit isUtc == true
+          nextFreeAt: DateTime.parse(body['next_free_at'] as String),
+        );
+      }
     } catch (_) {
       // kein Netz / kaputtes JSON -> unten null
     }
@@ -156,4 +181,5 @@ class ProfileRankingApiService {
       return null;
     }
   }
+
 }

@@ -3356,6 +3356,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 Post wartet auf deine Bewertung} other{{count} Posts warten auf deine Bewertung}}'**
   String profileRankingRateCardTitle(int count);
 
+  /// PROTOTYP A4e: Untertitel der Bewerten-Karte im Profil (Wasserpegel)
+  ///
+  /// In de, this message translates to:
+  /// **'Zum Bewerten gedrückt halten'**
+  String get profileRankingHoldHint;
+
   /// Profil-Ranking: Button auf der Karte, öffnet den Bewerten-Screen
   ///
   /// In de, this message translates to:
@@ -3409,6 +3415,42 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Bewertung nicht gesendet – der Post kommt am Ende nochmal.'**
   String get profileRateFailed;
+
+  /// Create-Post: Schalter, um den Post ins Profil-Ranking zu stellen
+  ///
+  /// In de, this message translates to:
+  /// **'Ins Ranking stellen'**
+  String get createPostRankingTitle;
+
+  /// Create-Post: Untertitel des Ranking-Schalters, wenn der Tagesplatz frei ist
+  ///
+  /// In de, this message translates to:
+  /// **'7 Tage von deinen Followern bewertet · 1 Post pro Tag'**
+  String get createPostRankingInfo;
+
+  /// Create-Post: Untertitel des (ausgegrauten) Ranking-Schalters, wenn heute schon ein Post im Ranking ist
+  ///
+  /// In de, this message translates to:
+  /// **'{hours, plural, =1{Heute schon vergeben · wieder frei in 1 Std.} other{Heute schon vergeben · wieder frei in {hours} Std.}}'**
+  String createPostRankingTaken(int hours);
+
+  /// Create-Post: Snackbar nach dem Posten, Post wurde ins Profil-Ranking gestellt
+  ///
+  /// In de, this message translates to:
+  /// **'Dein Post ist jetzt im Ranking 🎉'**
+  String get createPostRankingOk;
+
+  /// Create-Post: Snackbar, Post erstellt, aber Tagesplatz war schon weg (409, z. B. anderes Gerät)
+  ///
+  /// In de, this message translates to:
+  /// **'Post ist online – heute ist aber schon ein Post im Ranking.'**
+  String get createPostRankingSlotTaken;
+
+  /// Create-Post: Snackbar, Post erstellt, aber enterRanking fehlgeschlagen (Netz/Server)
+  ///
+  /// In de, this message translates to:
+  /// **'Post ist online – ins Ranking stellen hat nicht geklappt.'**
+  String get createPostRankingFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -1894,6 +1894,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get profileRankingHoldHint => 'Press and hold to rate';
+
+  @override
   String get profileRankingRateButton => 'Rate';
 
   @override
@@ -1921,4 +1924,33 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get profileRateFailed =>
       'Rating not sent – the post will come up again at the end.';
+
+  @override
+  String get createPostRankingTitle => 'Add to ranking';
+
+  @override
+  String get createPostRankingInfo =>
+      'Rated by your followers for 7 days · 1 post per day';
+
+  @override
+  String createPostRankingTaken(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: 'Already used today · free again in $hours h',
+      one: 'Already used today · free again in 1 h',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get createPostRankingOk => 'Your post is now in the ranking 🎉';
+
+  @override
+  String get createPostRankingSlotTaken =>
+      'Post is live – but you already have a post in the ranking today.';
+
+  @override
+  String get createPostRankingFailed =>
+      'Post is live – adding it to the ranking didn\'t work.';
 }

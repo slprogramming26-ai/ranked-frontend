@@ -47,7 +47,9 @@ class PostApiService {
     return null;
   }
 
-  static Future<bool> createPost(String title, String content,
+  /// Erstellt einen Post. Liefert die **id des neuen Posts** (z. B. um ihn
+  /// danach ins Profil-Ranking zu stellen) oder `null` bei einem Fehler.
+  static Future<int?> createPost(String title, String content,
       String? imageUrl, String? flag,
       {int? locationId}) async {
     final response = await ApiClient.post(
@@ -63,7 +65,10 @@ class PostApiService {
         'location_id': locationId,
       }),
     );
-    return response.statusCode == 201;
+    if (response.statusCode != 201) return null;
+    // Antwort = der neue Post (schemas.Post) -> nur die id brauchen wir.
+    final data = jsonDecode(utf8.decode(response.bodyBytes));
+    return data['id'] as int?;
   }
 
   static Future<bool> createVote(int post_id, int dir) async {

@@ -2465,6 +2465,10 @@
       }
     }
   },
+  "profileRankingHoldHint": "Zum Bewerten gedrückt halten",
+  "@profileRankingHoldHint": {
+    "description": "PROTOTYP A4e: Untertitel der Bewerten-Karte im Profil (Wasserpegel)"
+  },
   "profileRankingRateButton": "Bewerten",
   "@profileRankingRateButton": {
     "description": "Profil-Ranking: Button auf der Karte, öffnet den Bewerten-Screen"
@@ -2500,5 +2504,34 @@
   "profileRateFailed": "Bewertung nicht gesendet – der Post kommt am Ende nochmal.",
   "@profileRateFailed": {
     "description": "Bewerten-Screen: Snackbar, wenn ratePost fehlschlägt (Post wird hinten wieder angehängt)"
+  },
+  "createPostRankingTitle": "Ins Ranking stellen",
+  "@createPostRankingTitle": {
+    "description": "Create-Post: Schalter, um den Post ins Profil-Ranking zu stellen"
+  },
+  "createPostRankingInfo": "7 Tage von deinen Followern bewertet · 1 Post pro Tag",
+  "@createPostRankingInfo": {
+    "description": "Create-Post: Untertitel des Ranking-Schalters, wenn der Tagesplatz frei ist"
+  },
+  "createPostRankingTaken": "{hours, plural, =1{Heute schon vergeben · wieder frei in 1 Std.} other{Heute schon vergeben · wieder frei in {hours} Std.}}",
+  "@createPostRankingTaken": {
+    "description": "Create-Post: Untertitel des (ausgegrauten) Ranking-Schalters, wenn heute schon ein Post im Ranking ist",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "createPostRankingOk": "Dein Post ist jetzt im Ranking 🎉",
+  "@createPostRankingOk": {
+    "description": "Create-Post: Snackbar nach dem Posten, Post wurde ins Profil-Ranking gestellt"
+  },
+  "createPostRankingSlotTaken": "Post ist online – heute ist aber schon ein Post im Ranking.",
+  "@createPostRankingSlotTaken": {
+    "description": "Create-Post: Snackbar, Post erstellt, aber Tagesplatz war schon weg (409, z. B. anderes Gerät)"
+  },
+  "createPostRankingFailed": "Post ist online – ins Ranking stellen hat nicht geklappt.",
+  "@createPostRankingFailed": {
+    "description": "Create-Post: Snackbar, Post erstellt, aber enterRanking fehlgeschlagen (Netz/Server)"
   }
 }

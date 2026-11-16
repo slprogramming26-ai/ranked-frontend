@@ -6,7 +6,14 @@ import '../../l10n/l10n.dart';
 import '../../ranking/profile_ranking_api_service.dart';
 import '../../ranking/profile_rate_screen.dart';
 import '../../ui/app_colors.dart';
+// PROTOTYP A4e (Wasserpegel) - Entfern-Anleitung oben in hold_to_fill.dart.
+import '../../ui/hold_to_fill.dart';
 import '../../ui/net_image.dart';
+
+/// PROTOTYP A4e: true = dezente Karte, gedrückt halten füllt sie mit Wasser
+/// (bricht dann übers Profil aus). false = alte Gradient-Karte mit Tippen.
+/// Zum Vergleichen / Meinungen einholen einfach umschalten.
+const _useHoldToFill = true;
 
 /// Sektion "RANKING" im Profil: die Profil-Ranking-Posts von [userId],
 /// meiste Likes zuerst (Reihenfolge kommt vom Server).
@@ -112,14 +119,32 @@ class _ProfileRankingSectionState extends State<ProfileRankingSection> {
   /// Bewerten-Screen öffnen. Kommt er mit `true` zurück (es wurde bewertet),
   /// stimmen Like-Zahlen, Herzen und offene Posts nicht mehr ->
   /// [ProfileRankingSection.onRated].
-  Future<void> _openRateScreen(List<Map<String, dynamic>> posts) async {
+  ///
+  /// [fade] (PROTOTYP A4e): nach dem Wasserpegel blendet der Screen über
+  /// das Wasser ein statt reinzuschieben.
+  Future<void> _openRateScreen(
+    List<Map<String, dynamic>> posts, {
+    bool fade = false,
+  }) async {
+    final screen = ProfileRateScreen(posts: posts);
     final rated = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => ProfileRateScreen(posts: posts)),
+      fade
+          ? _fadeRoute(screen)
+          : MaterialPageRoute(builder: (_) => screen),
     );
     if (rated == true) widget.onRated?.call();
   }
 
+  /// PROTOTYP A4e: 300 ms = HoldToFill._routeFade (danach läuft dort das
+  /// Wasser ab). Ändert man das eine, das andere mit.
+  Route<bool> _fadeRoute(Widget screen) => PageRouteBuilder<bool>(
+    transitionDuration: const Duration(milliseconds: 300),
+    reverseTransitionDuration: const Duration(milliseconds: 250),
+    pageBuilder: (_, _, _) => screen,
+    transitionsBuilder: (_, anim, _, child) =>
+        FadeTransition(opacity: anim, child: child),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -140,10 +165,16 @@ class _ProfileRankingSectionState extends State<ProfileRankingSection> {
         // Record-Pattern: nur wenn der Server "darf bewerten" sagt UND
         // überhaupt Posts offen sind. Im eigenen Profil bleibt _open null.
         if (_open case (canRate: true, :final posts) when posts.isNotEmpty) ...[
-          _RateCard(
-            count: posts.length,
-            onTap: () => _openRateScreen(posts),
-          ),
+          if (_useHoldToFill)
+            _RateCardHold(
+              count: posts.length,
+              onConfirmed: () => _openRateScreen(posts, fade: true),
+            )
+          else
+            _RateCardTap(
+              count: posts.length,
+              onTap: () => _openRateScreen(posts),
+            ),
           const SizedBox(height: 16),
         ],
         ..._buildBody(),
@@ -244,9 +275,9 @@ class _ProfileRankingSectionState extends State<ProfileRankingSection> {
 ///   ( ♥ )  3 Posts warten auf deine Bewertung   [Bewerten]
 ///
 /// Ganze Karte tippbar. Ranked-Gradient wie das Badge in ranking_home.
-/// A4e: hier kommt später ggf. das "gedrückt halten"-Wasserpegel-Widget rein.
-class _RateCard extends StatelessWidget {
-  const _RateCard({required this.count, required this.onTap});
+/// Variante "Tippen" - aktiv, wenn `_useHoldToFill = false`.
+class _RateCardTap extends StatelessWidget {
+  const _RateCardTap({required this.count, required this.onTap});
 
   final int count;
   final VoidCallback onTap;
@@ -328,6 +359,93 @@ class _RateCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// PROTOTYP A4e - Variante "Gedrückt halten" (`_useHoldToFill = true`):
+///
+///   ( ♥ )  3 Posts warten auf deine Bewertung
+///          Zum Bewerten gedrückt halten
+///
+/// In Ruhe dezent (gleicher Grund wie die Ranking-Einträge darunter). Die
+/// Farbe kommt erst durchs Halten: der Gradient steigt als Wasser hoch,
+/// alles darunter wird weiß. Entfern-Anleitung: lib/ui/hold_to_fill.dart.
+class _RateCardHold extends StatelessWidget {
+  const _RateCardHold({required this.count, required this.onConfirmed});
+
+  final int count;
+  final VoidCallback onConfirmed;
+
+  static const double _radius = 16;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return HoldToFill(
+      borderRadius: _radius,
+      onConfirmed: onConfirmed,
+      gradient: LinearGradient(
+        colors: [AppColors.primary, AppColors.primaryContainer],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      // Zweimal gebaut: normal + "unter Wasser" (weiß, transparent).
+      builder: (context, onWater) => Container(
+        padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+        color: onWater ? Colors.transparent : AppColors.surfaceContainerLow,
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: onWater
+                    ? Colors.white.withValues(alpha: 0.2)
+                    : AppColors.primary.withValues(alpha: 0.12),
+              ),
+              child: Icon(
+                Icons.favorite_rounded,
+                size: 20,
+                color: onWater ? Colors.white : AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.profileRankingRateCardTitle(count),
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: onWater ? Colors.white : AppColors.onSurface,
+                      height: 1.3,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.profileRankingHoldHint,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: onWater
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.touch_app_rounded,
+              size: 20,
+              color: onWater ? Colors.white : AppColors.onSurfaceVariant,
+            ),
+          ],
         ),
       ),
     );

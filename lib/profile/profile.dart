@@ -23,12 +23,15 @@ class ProfileProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _hasFetched = false; // verhindert doppeltes Laden
 
+  int _rankingRevision = 0;
+
   Map<String, dynamic> get userdata  => _userdata;
   List<Map<String, dynamic>> get activity => _activity;
   bool get isLoading  => _isLoading;
   bool get hasFetched => _hasFetched;
   // Jedes Mal frisch aus userdata, dann ist sie nach einem Refresh nie veraltet.
   UserRole get role   => UserRole.fromApi(_userdata['role']);
+  int get rankingRevision => _rankingRevision;
 
   Future<void> fetchUser({bool forceRefresh = false}) async {
     if (_hasFetched && !forceRefresh) return; // schon geladen? nichts tun
@@ -47,12 +50,17 @@ class ProfileProvider extends ChangeNotifier {
     _hasFetched = true;
     notifyListeners();
   }
+
+  void rankingChanged() {
+    _rankingRevision++;
+    notifyListeners();
+  }
 }
 
 
 class Profile extends StatefulWidget {
   final int? targetUserId; // null = eigenes Profil
-  const Profile({super.key, this.targetUserId});
+  const Profile({super.key, this.targetUserId,});
 
   @override
   State<Profile> createState() => _ProfileState();
@@ -232,7 +240,13 @@ class _ProfileState extends State<Profile> {
           if (provider.isLoading || !provider.hasFetched) {
             return _loadingScaffold();
           }
-          return _buildScaffold(provider.userdata, provider.activity);
+          // Eigenes Profil: Ranking-Sektion lädt neu, wenn Create-Post einen
+          // Post ins Ranking gestellt hat (ProfileProvider.rankingChanged).
+          return _buildScaffold(
+            provider.userdata,
+            provider.activity,
+            rankingGen: provider.rankingRevision,
+          );
         },
       );
     }
@@ -242,7 +256,8 @@ class _ProfileState extends State<Profile> {
     }
     // Fremdes Profil: /ranking/activity liefert nur die EIGENEN Events,
     // deshalb gibt es hier keine Activity-Sektion.
-    return _buildScaffold(_foreignData, const []);
+    // Fremdes Profil: lädt neu nach dem Bewerten (_fetchForeignUser).
+    return _buildScaffold(_foreignData, const [], rankingGen: _rankingGen);
   }
 
   Widget _loadingScaffold() => Scaffold(
@@ -250,10 +265,13 @@ class _ProfileState extends State<Profile> {
     body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
   );
 
+  /// [rankingGen] steckt im Key der Ranking-Sektion: ändert er sich, baut
+  /// Flutter eine FRISCHE Sektion (neuer State -> initState -> lädt neu).
   Widget _buildScaffold(
     Map<String, dynamic> data,
-    List<Map<String, dynamic>> activity,
-  ) {
+    List<Map<String, dynamic>> activity, {
+    required int rankingGen,
+  }) {
     final String username   = data['username']          ?? '';
     final String biography  = data['biography']         ?? '';
     final String? avatarUrl = data['profile_picture_url'];
@@ -447,7 +465,7 @@ class _ProfileState extends State<Profile> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: ProfileRankingSection(
-                      key: ValueKey((rankingUserId, _rankingGen)),
+                      key: ValueKey((rankingUserId, rankingGen)),
                       userId: rankingUserId,
                       isOwn: _isOwn,
                       // Eigenes Profil: keine Bewerten-Karte -> kein Callback
