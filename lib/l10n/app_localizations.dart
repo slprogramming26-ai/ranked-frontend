@@ -749,44 +749,68 @@ abstract class AppLocalizations {
   /// Untertitel auf Welcome-Seite
   ///
   /// In de, this message translates to:
-  /// **'Poste, was dich bewegt, und lass die Community entscheiden, was oben landet.'**
+  /// **'Posts, Stories und Chats mit deinen Leuten – so wie du es kennst.'**
   String get onboardingWelcomeSubtitle;
 
-  /// Bento-Karte Titel 1: Post your life
+  /// Welcome-Seite: Hinweis unter der Feed-Bühne, dass Ranking/Voting optional sind
   ///
   /// In de, this message translates to:
-  /// **'Teile dein Leben'**
-  String get onboardingWelcomePostTitle;
+  /// **'Ranking und Voting sind freiwillig. Pulse funktioniert auch komplett ohne.'**
+  String get onboardingWelcomeOptional;
 
-  /// Bento-Karte Untertitel 1
+  /// Welcome-Seite: Pille über dem Ranking-Block
   ///
   /// In de, this message translates to:
-  /// **'Teile deinen täglichen Pulse. Echt und ungefiltert.'**
-  String get onboardingWelcomePostSub;
+  /// **'RANKING · TÄGLICH'**
+  String get onboardingWelcomeRankingLabel;
 
-  /// Bento-Karte Titel 2
+  /// Welcome-Seite: eine Zeile unter der Ranking-Pille
   ///
   /// In de, this message translates to:
-  /// **'Get Ranked'**
-  String get onboardingWelcomeRankTitle;
+  /// **'Du bewertest jeden Tag eine fremde Person.'**
+  String get onboardingWelcomeRankingIntro;
 
-  /// Bento-Karte Untertitel 2
+  /// Welcome-Seite: Pille über dem Voting-Block
   ///
   /// In de, this message translates to:
-  /// **'Die Community bewertet deine Kreativität.'**
-  String get onboardingWelcomeRankSub;
+  /// **'VOTING · 7 TAGE'**
+  String get onboardingWelcomeVotingLabel;
 
-  /// Bento-Karte Titel 3
+  /// Welcome-Seite: eine Zeile unter der Voting-Pille
   ///
   /// In de, this message translates to:
-  /// **'Sammle XP & steig auf'**
-  String get onboardingWelcomeEarnTitle;
+  /// **'Deine Follower bewerten deine Posts.'**
+  String get onboardingWelcomeVotingIntro;
 
-  /// Bento-Karte Untertitel 3
+  /// Welcome-Seite: Titel unter der Voting-Bühne
   ///
   /// In de, this message translates to:
-  /// **'Bewerte andere, halte deinen Streak und steig in höhere Ligen auf.'**
-  String get onboardingWelcomeEarnSub;
+  /// **'Deine Follower voten'**
+  String get onboardingWelcomeVotingTitle;
+
+  /// Welcome-Seite: Zeile unter der Voting-Bühne
+  ///
+  /// In de, this message translates to:
+  /// **'Gedrückt halten füllt das Herz – jeder Post 7 Tage lang.'**
+  String get onboardingWelcomeVotingText;
+
+  /// Welcome-Seite: Abgrenzungs-Karte unten, Zeile Ranking
+  ///
+  /// In de, this message translates to:
+  /// **'Ranking: Du bewertest andere.'**
+  String get onboardingWelcomeCompareRanking;
+
+  /// Welcome-Seite: Abgrenzungs-Karte unten, Zeile Voting
+  ///
+  /// In de, this message translates to:
+  /// **'Voting: Andere bewerten deine Posts.'**
+  String get onboardingWelcomeCompareVoting;
+
+  /// Welcome-Seite: Screenreader-Label für den wippenden Pfeil
+  ///
+  /// In de, this message translates to:
+  /// **'Nach unten scrollen'**
+  String get onboardingWelcomeScrollHint;
 
   /// Titel auf Vibe-Seite (Schritt 2)
   ///
@@ -1304,17 +1328,107 @@ abstract class AppLocalizations {
   /// **'MACH MIT BEIM\nRANKING'**
   String get rankingOptinTitle;
 
-  /// Beschreibungstext des Ranking Opt-In Screens
+  /// Ranking Opt-In: Unterzeile im Einstieg, kuendigt die 3 Abschnitte an
   ///
   /// In de, this message translates to:
-  /// **'Aktiviere das Ranking und lass dich täglich von der Community bewerten.'**
-  String get rankingOptinDescription;
+  /// **'Bewerten. Bewertet werden. Aufsteigen.'**
+  String get rankingOptinSubtitle;
 
-  /// Ranking Opt-In: zweiter Absatz, erklaert die Kategorie-Chips aus Create-Post (gleiche Woerter wie die Chips)
+  /// Ranking Opt-In, Schritt 1 (Titel): man bewertet taeglich die Posts einer zugelosten Person
   ///
   /// In de, this message translates to:
-  /// **'Wähle beim Posten eine Kategorie – Produktivität, Kreativität oder Engagement. Sie zählt für die Kategorie-Rankings.'**
-  String get rankingOptinCategoryInfo;
+  /// **'Bewerte täglich eine Person'**
+  String get rankingOptinStep1Title;
+
+  /// Ranking Opt-In, Schritt 1 (Text). LIKE/NOPE = gleiche Woerter wie im Tagesranking
+  ///
+  /// In de, this message translates to:
+  /// **'Like oder Nope – Post für Post.'**
+  String get rankingOptinStep1Text;
+
+  /// Ranking Opt-In, Schritt 2 (Titel)
+  ///
+  /// In de, this message translates to:
+  /// **'Werde selbst bewertet'**
+  String get rankingOptinStep2Title;
+
+  /// Ranking Opt-In, Schritt 2 (Text), ersetzt den frueheren Kategorie-Hinweis (gleiche Woerter wie die Chips in Create-Post)
+  ///
+  /// In de, this message translates to:
+  /// **'Jedes Like bringt dir Punkte.'**
+  String get rankingOptinStep2Text;
+
+  /// Ranking Opt-In, Schritt 3 (Titel)
+  ///
+  /// In de, this message translates to:
+  /// **'Steig auf'**
+  String get rankingOptinStep3Title;
+
+  /// Ranking Opt-In, Schritt 3 (Text)
+  ///
+  /// In de, this message translates to:
+  /// **'Jeden Tag ein neues Leaderboard – dazu XP und Ligen.'**
+  String get rankingOptinStep3Text;
+
+  /// Ranking Opt-In: dezenter Hinweis unter dem Button, grenzt Tagesranking vom Profil-Ranking ab
+  ///
+  /// In de, this message translates to:
+  /// **'Voting für deine Posts? Das stellst du beim Posten ein.'**
+  String get rankingOptinProfileHint;
+
+  /// Chip auf dem Mini-Post in der Voting-Animation: so lange läuft ein Voting
+  ///
+  /// In de, this message translates to:
+  /// **'7 TAGE'**
+  String get votingStageDays;
+
+  /// VotingExplainerSheet: Titel
+  ///
+  /// In de, this message translates to:
+  /// **'So funktioniert Voting'**
+  String get votingExplainerTitle;
+
+  /// VotingExplainerSheet: Zeile 1 (wie kommt ein Post rein)
+  ///
+  /// In de, this message translates to:
+  /// **'Stell beim Posten einen Post ins Voting – einen pro Tag.'**
+  String get votingExplainerStep1;
+
+  /// VotingExplainerSheet: Zeile 2 (wie wird bewertet)
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Follower halten gedrückt und füllen damit das ♥.'**
+  String get votingExplainerStep2;
+
+  /// VotingExplainerSheet: Zeile 3 (wie lange)
+  ///
+  /// In de, this message translates to:
+  /// **'Nach 7 Tagen ist Schluss – das Ergebnis bleibt in deinem Profil.'**
+  String get votingExplainerStep3;
+
+  /// VotingExplainerSheet: Überschrift der Abgrenzungs-Box
+  ///
+  /// In de, this message translates to:
+  /// **'Anders als das Ranking'**
+  String get votingExplainerDiffTitle;
+
+  /// VotingExplainerSheet: Text der Abgrenzungs-Box
+  ///
+  /// In de, this message translates to:
+  /// **'Beim Ranking bewertest du jeden Tag eine fremde Person. Beim Voting bewerten deine Follower deine Posts.'**
+  String get votingExplainerDiffText;
+
+  /// VotingExplainerSheet: Button zum Schließen
+  ///
+  /// In de, this message translates to:
+  /// **'Verstanden'**
+  String get votingExplainerOk;
+
+  /// Tooltip/Screenreader für das ⓘ neben Voting
+  ///
+  /// In de, this message translates to:
+  /// **'Was ist Voting?'**
+  String get votingInfoTooltip;
 
   /// Button zum Aktivieren des Rankings
   ///
@@ -3299,25 +3413,25 @@ abstract class AppLocalizations {
   /// Profil: Überschrift der Profil-Ranking-Sektion
   ///
   /// In de, this message translates to:
-  /// **'RANKING'**
+  /// **'VOTING'**
   String get profileRankingTitle;
 
   /// Profil-Ranking: leer, eigenes Profil
   ///
   /// In de, this message translates to:
-  /// **'Stell beim Posten einen Post ins Ranking – deine Follower können ihn dann 7 Tage lang bewerten.'**
+  /// **'Stell beim Posten einen Post ins Voting – deine Follower können ihn dann 7 Tage lang bewerten.'**
   String get profileRankingEmptyOwn;
 
   /// Profil-Ranking: leer, fremdes Profil
   ///
   /// In de, this message translates to:
-  /// **'Noch keine Posts im Ranking.'**
+  /// **'Noch keine Posts im Voting.'**
   String get profileRankingEmptyForeign;
 
   /// Profil-Ranking: Ladefehler
   ///
   /// In de, this message translates to:
-  /// **'Ranking konnte nicht geladen werden.'**
+  /// **'Voting konnte nicht geladen werden.'**
   String get profileRankingError;
 
   /// Profil-Ranking: Retry-Button nach Ladefehler
@@ -3419,7 +3533,7 @@ abstract class AppLocalizations {
   /// Create-Post: Schalter, um den Post ins Profil-Ranking zu stellen
   ///
   /// In de, this message translates to:
-  /// **'Ins Ranking stellen'**
+  /// **'Ins Voting stellen'**
   String get createPostRankingTitle;
 
   /// Create-Post: Untertitel des Ranking-Schalters, wenn der Tagesplatz frei ist
@@ -3437,20 +3551,38 @@ abstract class AppLocalizations {
   /// Create-Post: Snackbar nach dem Posten, Post wurde ins Profil-Ranking gestellt
   ///
   /// In de, this message translates to:
-  /// **'Dein Post ist jetzt im Ranking 🎉'**
+  /// **'Dein Post ist jetzt im Voting 🎉'**
   String get createPostRankingOk;
 
   /// Create-Post: Snackbar, Post erstellt, aber Tagesplatz war schon weg (409, z. B. anderes Gerät)
   ///
   /// In de, this message translates to:
-  /// **'Post ist online – heute ist aber schon ein Post im Ranking.'**
+  /// **'Post ist online – heute ist aber schon ein Post im Voting.'**
   String get createPostRankingSlotTaken;
 
   /// Create-Post: Snackbar, Post erstellt, aber enterRanking fehlgeschlagen (Netz/Server)
   ///
   /// In de, this message translates to:
-  /// **'Post ist online – ins Ranking stellen hat nicht geklappt.'**
+  /// **'Post ist online – ins Voting stellen hat nicht geklappt.'**
   String get createPostRankingFailed;
+
+  /// Tagesranking: Hinweis auf der verdeckten Target-Karte (Tippen, nicht Halten)
+  ///
+  /// In de, this message translates to:
+  /// **'Tippen zum Aufdecken'**
+  String get rankingRevealTap;
+
+  /// Tagesranking: Label auf der aufgedeckten Target-Karte, ueber dem @Namen
+  ///
+  /// In de, this message translates to:
+  /// **'Heute bewertest du'**
+  String get rankingRevealToday;
+
+  /// Tagesranking: Chip auf der aufgedeckten Target-Karte, Anzahl der zu bewertenden Posts
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Post} other{{count} Posts}}'**
+  String rankingRevealPosts(int count);
 }
 
 class _AppLocalizationsDelegate

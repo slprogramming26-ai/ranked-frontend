@@ -55,9 +55,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String? _credentialsError;
   bool _isSubmitting = false;
 
+  bool _seenAllAnimation = false;
   // Mit diesen Daten wurde das Konto angelegt (null = noch keins). Bricht
   // der User auf dem Code-Screen ab und tippt nochmal, darf createUser
   // nicht erneut laufen -> sonst 409 "E-Mail vergeben" fuers eigene Konto.
@@ -73,6 +75,23 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     _emailController.addListener(_onCredentialsChanged);
     _usernameController.addListener(_onCredentialsChanged);
     _passwordController.addListener(_onCredentialsChanged);
+    _scrollController.addListener(() {
+      if (!_scrollController.hasClients) return;
+      if (_seenAllAnimation) return;               // einmal reicht
+      final pos = _scrollController.position;
+      if (pos.pixels >= pos.maxScrollExtent - 40) { // "unten" = letzte 40 px
+        setState(() => _seenAllAnimation = true);
+      }
+    });
+    // Passt die Seite komplett auf den Bildschirm (z. B. Tablet), gibt es
+    // nichts zu scrollen -> der Listener feuert nie. Darum nach dem ersten
+    // Layout einmal pruefen (erst dann kennt man maxScrollExtent).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (_scrollController.position.maxScrollExtent <= 40) {
+        setState(() => _seenAllAnimation = true);
+      }
+    });
   }
 
   void _onCredentialsChanged() => setState(() {});
@@ -83,13 +102,17 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     _usernameController.dispose();
     _passwordController.dispose();
     _pageController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   // Getter statt Feld: Die Widgets muessen bei jedem setState neu gebaut
   // werden, sonst sieht z.B. der VibeStep eine veraltete Auswahl.
   List<Widget> get _pages => [
-    const WelcomeStep(),
+    WelcomeStep(
+      scrollController: _scrollController,
+      showScrollHint: !_seenAllAnimation,
+    ),
     VibeStep(selections: vibeSelections, onToggle: _toggleVibe),
     AboutMeStep(
       onImagePicked: (file) => _finalImageFile = file,
@@ -112,6 +135,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   // share") — Pflicht-Checks bekommen erst Age/Username/Credentials.
   bool get _canProceed {
     switch (_currentPage) {
+      case 0:
+        return _seenAllAnimation;
       case 3:
         return _age >= 16;
       case 4:
@@ -252,10 +277,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       String imageUrl = "";
       if (_finalImageFile != null) {
         // Metadaten loeschen + verkleinern (Hintergrund-Isolate).
-        final cleanPath = await compute(
-          sanitizeImageFile,
-          (path: _finalImageFile!.path, maxSize: 1024, quality: 85),
-        );
+        final cleanPath = await compute(sanitizeImageFile, (
+          path: _finalImageFile!.path,
+          maxSize: 1024,
+          quality: 85,
+        ));
 
         if (!mounted) return;
 
@@ -265,9 +291,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         // siehe oben), nachtragen kann er es im Profil.
         if (cleanPath == null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.l10n.onboardingImageProcessError),
-            ),
+            SnackBar(content: Text(context.l10n.onboardingImageProcessError)),
           );
         } else {
           imageUrl =
@@ -452,7 +476,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  _isLastPage ? context.l10n.onboardingCreateButton : context.l10n.onboardingNextButton,
+                  _isLastPage
+                      ? context.l10n.onboardingCreateButton
+                      : context.l10n.onboardingNextButton,
                   style: GoogleFonts.plusJakartaSans(
                     color: Colors.white,
                     fontSize: 18,

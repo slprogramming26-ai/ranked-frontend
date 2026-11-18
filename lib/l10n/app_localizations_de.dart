@@ -379,28 +379,42 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get onboardingWelcomeSubtitle =>
-      'Poste, was dich bewegt, und lass die Community entscheiden, was oben landet.';
+      'Posts, Stories und Chats mit deinen Leuten – so wie du es kennst.';
 
   @override
-  String get onboardingWelcomePostTitle => 'Teile dein Leben';
+  String get onboardingWelcomeOptional =>
+      'Ranking und Voting sind freiwillig. Pulse funktioniert auch komplett ohne.';
 
   @override
-  String get onboardingWelcomePostSub =>
-      'Teile deinen täglichen Pulse. Echt und ungefiltert.';
+  String get onboardingWelcomeRankingLabel => 'RANKING · TÄGLICH';
 
   @override
-  String get onboardingWelcomeRankTitle => 'Get Ranked';
+  String get onboardingWelcomeRankingIntro =>
+      'Du bewertest jeden Tag eine fremde Person.';
 
   @override
-  String get onboardingWelcomeRankSub =>
-      'Die Community bewertet deine Kreativität.';
+  String get onboardingWelcomeVotingLabel => 'VOTING · 7 TAGE';
 
   @override
-  String get onboardingWelcomeEarnTitle => 'Sammle XP & steig auf';
+  String get onboardingWelcomeVotingIntro =>
+      'Deine Follower bewerten deine Posts.';
 
   @override
-  String get onboardingWelcomeEarnSub =>
-      'Bewerte andere, halte deinen Streak und steig in höhere Ligen auf.';
+  String get onboardingWelcomeVotingTitle => 'Deine Follower voten';
+
+  @override
+  String get onboardingWelcomeVotingText =>
+      'Gedrückt halten füllt das Herz – jeder Post 7 Tage lang.';
+
+  @override
+  String get onboardingWelcomeCompareRanking => 'Ranking: Du bewertest andere.';
+
+  @override
+  String get onboardingWelcomeCompareVoting =>
+      'Voting: Andere bewerten deine Posts.';
+
+  @override
+  String get onboardingWelcomeScrollHint => 'Nach unten scrollen';
 
   @override
   String get onboardingVibeTitle => 'Was ist dein Vibe?';
@@ -683,12 +697,61 @@ class AppLocalizationsDe extends AppLocalizations {
   String get rankingOptinTitle => 'MACH MIT BEIM\nRANKING';
 
   @override
-  String get rankingOptinDescription =>
-      'Aktiviere das Ranking und lass dich täglich von der Community bewerten.';
+  String get rankingOptinSubtitle => 'Bewerten. Bewertet werden. Aufsteigen.';
 
   @override
-  String get rankingOptinCategoryInfo =>
-      'Wähle beim Posten eine Kategorie – Produktivität, Kreativität oder Engagement. Sie zählt für die Kategorie-Rankings.';
+  String get rankingOptinStep1Title => 'Bewerte täglich eine Person';
+
+  @override
+  String get rankingOptinStep1Text => 'Like oder Nope – Post für Post.';
+
+  @override
+  String get rankingOptinStep2Title => 'Werde selbst bewertet';
+
+  @override
+  String get rankingOptinStep2Text => 'Jedes Like bringt dir Punkte.';
+
+  @override
+  String get rankingOptinStep3Title => 'Steig auf';
+
+  @override
+  String get rankingOptinStep3Text =>
+      'Jeden Tag ein neues Leaderboard – dazu XP und Ligen.';
+
+  @override
+  String get rankingOptinProfileHint =>
+      'Voting für deine Posts? Das stellst du beim Posten ein.';
+
+  @override
+  String get votingStageDays => '7 TAGE';
+
+  @override
+  String get votingExplainerTitle => 'So funktioniert Voting';
+
+  @override
+  String get votingExplainerStep1 =>
+      'Stell beim Posten einen Post ins Voting – einen pro Tag.';
+
+  @override
+  String get votingExplainerStep2 =>
+      'Deine Follower halten gedrückt und füllen damit das ♥.';
+
+  @override
+  String get votingExplainerStep3 =>
+      'Nach 7 Tagen ist Schluss – das Ergebnis bleibt in deinem Profil.';
+
+  @override
+  String get votingExplainerDiffTitle => 'Anders als das Ranking';
+
+  @override
+  String get votingExplainerDiffText =>
+      'Beim Ranking bewertest du jeden Tag eine fremde Person. Beim Voting bewerten deine Follower deine Posts.';
+
+  @override
+  String get votingExplainerOk => 'Verstanden';
+
+  @override
+  String get votingInfoTooltip => 'Was ist Voting?';
 
   @override
   String get rankingOptinButton => 'AKTIVIEREN';
@@ -1878,17 +1941,17 @@ class AppLocalizationsDe extends AppLocalizations {
   String get resetButton => 'Passwort ändern';
 
   @override
-  String get profileRankingTitle => 'RANKING';
+  String get profileRankingTitle => 'VOTING';
 
   @override
   String get profileRankingEmptyOwn =>
-      'Stell beim Posten einen Post ins Ranking – deine Follower können ihn dann 7 Tage lang bewerten.';
+      'Stell beim Posten einen Post ins Voting – deine Follower können ihn dann 7 Tage lang bewerten.';
 
   @override
-  String get profileRankingEmptyForeign => 'Noch keine Posts im Ranking.';
+  String get profileRankingEmptyForeign => 'Noch keine Posts im Voting.';
 
   @override
-  String get profileRankingError => 'Ranking konnte nicht geladen werden.';
+  String get profileRankingError => 'Voting konnte nicht geladen werden.';
 
   @override
   String get profileRankingRetry => 'Erneut versuchen';
@@ -1949,7 +2012,7 @@ class AppLocalizationsDe extends AppLocalizations {
       'Bewertung nicht gesendet – der Post kommt am Ende nochmal.';
 
   @override
-  String get createPostRankingTitle => 'Ins Ranking stellen';
+  String get createPostRankingTitle => 'Ins Voting stellen';
 
   @override
   String get createPostRankingInfo =>
@@ -1967,13 +2030,30 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get createPostRankingOk => 'Dein Post ist jetzt im Ranking 🎉';
+  String get createPostRankingOk => 'Dein Post ist jetzt im Voting 🎉';
 
   @override
   String get createPostRankingSlotTaken =>
-      'Post ist online – heute ist aber schon ein Post im Ranking.';
+      'Post ist online – heute ist aber schon ein Post im Voting.';
 
   @override
   String get createPostRankingFailed =>
-      'Post ist online – ins Ranking stellen hat nicht geklappt.';
+      'Post ist online – ins Voting stellen hat nicht geklappt.';
+
+  @override
+  String get rankingRevealTap => 'Tippen zum Aufdecken';
+
+  @override
+  String get rankingRevealToday => 'Heute bewertest du';
+
+  @override
+  String rankingRevealPosts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Posts',
+      one: '1 Post',
+    );
+    return '$_temp0';
+  }
 }

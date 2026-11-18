@@ -8,7 +8,6 @@ import 'ranking_api_service.dart';
 // (siehe profile.dart). Doppelter GET /users/-Call sonst bei jedem ersten
 // Besuch des Ranking-Tabs.
 class RankingProvider extends ChangeNotifier {
-
   bool _isLoading = false;
   List<Map<String, dynamic>> _leaderboardData = [];
   // Die "Du"-Zeile: eigener Stand (my_rank / my_points / points_to_next).
@@ -99,6 +98,8 @@ class RankingProvider extends ChangeNotifier {
   }
 }
 
+// "YYYY-MM-DD" in UTC — gleiche Tagesgrenze wie das Backend (Reset 00:00 UTC).
+String _todayUtc() => DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
 // "Heute schon gerankt?" als lokaler Cache. Die Wahrheit liegt beim Server:
 // my_target meldet "bereits abgeschlossen" -> dann wird hier nachgezogen.
@@ -107,10 +108,6 @@ class Streak {
   // getString() auf einen int-Wert wirft einen TypeError.
   static const _rankedOnKey = 'ranked_on_utc';
   static const _legacyKey = 'saved_date_time_key';
-
-  // "YYYY-MM-DD" in UTC — gleiche Tagesgrenze wie das Backend (Reset 00:00 UTC).
-  static String _todayUtc() =>
-      DateTime.now().toUtc().toIso8601String().substring(0, 10);
 
   static bool didActivityToday(SharedPreferences prefs) =>
       prefs.getString(_rankedOnKey) == _todayUtc();
@@ -126,5 +123,35 @@ class Streak {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_rankedOnKey);
     await prefs.remove(_legacyKey);
+  }
+}
+
+// Welches Target wurde zuletzt aufgedeckt? Ein fester Key, wird bei jedem
+// Aufdecken überschrieben -> es sammelt sich nichts an. Logout -> clear().
+class TargetReveal {
+  static const _key = 'revealed_target';
+
+  // "Heute schon IRGENDEIN Target aufgedeckt?" -> geht vor my_target,
+  // entscheidet nur Skeleton vs. verdeckte Karte waehrend des Ladens.
+  static Future<bool> revealedToday() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_key)?.startsWith('${_todayUtc()}:') ?? false;
+  }
+
+  // "GENAU dieses Target aufgedeckt?" -> erst nach my_target moeglich,
+  // wichtig fuer die Neuziehung (neues Target = wieder verdeckt).
+  static Future<bool> isRevealed(int targetId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_key) == '${_todayUtc()}:$targetId';
+  }
+
+  static Future<void> markRevealed(int targetId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, '${_todayUtc()}:$targetId');
+  }
+
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
   }
 }

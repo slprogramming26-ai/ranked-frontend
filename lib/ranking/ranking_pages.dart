@@ -15,6 +15,7 @@ import 'ranking_api_service.dart';
 import 'ranking_provider.dart';
 import 'ranking_widgets.dart' show PrimaryButton, PopIn;
 import 'target_result.dart';
+import 'target_reveal.dart';
 import 'package:ranked/core/user_api_service.dart';
 
 // ─── RankingPages: Tinder-Style Swipe ─────────────────────────────────────────
@@ -37,11 +38,18 @@ class _RankingPagesState extends State<RankingPages> {
   Map<String, dynamic>? _targetUser;
   TargetResult? _target;
   bool _submitting = false;
+  bool _revealed = false;
+  bool? _revealedToday;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+      TargetReveal.revealedToday().then((v) {
+        if (mounted) setState(() => _revealedToday = v);
+      });
+    });
   }
 
   @override
@@ -52,9 +60,15 @@ class _RankingPagesState extends State<RankingPages> {
 
   Future<void> _loadData() async {
     final result = await RankingApiService.getMyTarget();
+    var revealed = false;
+    if (result case TargetFound(:final targetUser)) {
+      final id = targetUser['id'] as int?;
+      revealed = id == null || await TargetReveal.isRevealed(id);
+    }
     if (!mounted) return;
     setState(() {
       _target = result;
+      _revealed = revealed;
       // Nur im Erfolgsfall gibt es Posts und Target, alle anderen Fälle
       // zeigt build() direkt anhand von _target an.
       if (result case TargetFound(:final posts, :final targetUser)) {
@@ -68,6 +82,19 @@ class _RankingPagesState extends State<RankingPages> {
     if (result case TargetLimitReached()) {
       context.read<RankingProvider>().markRankedToday();
     }
+  }
+
+  // Vorderseite sichtbar -> ab jetzt gilt das Target als aufgedeckt. Schon
+  // hier speichern, nicht erst in _onRevealDone: wer nach dem Namen
+  // zurueckgeht, soll beim naechsten Oeffnen nicht nochmal aufdecken.
+  void _onRevealed() {
+    final id = _targetUserId;
+    if (id != null) TargetReveal.markRevealed(id); // ohne await, nur Persistenz
+  }
+
+  // Enthuellung fertig -> Wechsel zum Stapel.
+  void _onRevealDone() {
+    setState(() => _revealed = true);
   }
 
   /// Nur bei Offline/Error: zurück auf den Spinner, dann neu laden.
@@ -200,12 +227,24 @@ class _RankingPagesState extends State<RankingPages> {
   @override
   Widget build(BuildContext context) {
     switch (_target) {
+      // Laden, Prefs noch nicht gelesen (1-2 Frames): nur Hintergrund,
+      // damit weder Karte noch Skeleton kurz aufblitzt.
+      case null when _revealedToday == null:
+        return Scaffold(backgroundColor: AppColors.surface);
+      // Laden, heute schon aufgedeckt: Stapel-Skeleton statt verdeckter Karte.
+      case null when _revealedToday!:
+        return const StackSkeleton();
+      // Leerer case faellt durch: Laden (heute noch nichts aufgedeckt) UND
+      // "noch nicht aufgedeckt" zeigen dieselbe verdeckte Karte, nur ready
+      // unterscheidet sich.
       case null:
-        return Scaffold(
-          backgroundColor: AppColors.surface,
-          body: Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
-          ),
+      case TargetFound() when !_revealed:
+        return TargetRevealCard(
+          ready: _target != null,
+          onRevealed: _onRevealed,
+          onDone: _onRevealDone,
+          targetUser: _targetUser,
+          postCount: _posts.length,
         );
       case TargetLimitReached():  return _SwipeErrorScreen(notice: _RankingNotice.limitReached);
       case TargetOffline():       return _SwipeErrorScreen(notice: _RankingNotice.offline, onRetry: _retry);
@@ -247,18 +286,19 @@ class _RankingPagesState extends State<RankingPages> {
         return Scaffold(
           backgroundColor: AppColors.surface,
           body: SafeArea(
-            child: Column(
-              children: [
+            // Einzug: Header, Stapel + Leiste kommen beim ersten Aufbau
+            // gestaffelt herein (nach dem Reveal bzw. direkt, wenn schon
+            // aufgedeckt). Inhalt unveraendert, nur die Huelle.
+            child: StackDealIn(
                 // Header: Story-Progress + Target-User + Karten-Zaehler
-                _SessionHeader(
+                header: _SessionHeader(
                   targetUser: _targetUser,
                   totalCards: _posts.length,
                   swipedCards: _swipes.length,
                   // Waehrend des Abschickens kein Melden/Blocken mehr.
                   onMore: _submitting ? null : _onMore,
                 ),
-                Expanded(
-                  child: _submitting
+                cards: _submitting
                       ? Center(
                     child: CircularProgressIndicator(color: AppColors.primary),
                   )
@@ -290,10 +330,10 @@ class _RankingPagesState extends State<RankingPages> {
                       );
                     },
                   ),
-                ),
                 // Like / Nope Buttons
-                if (!_submitting)
-                  Padding(
+                footer: _submitting
+                    ? const SizedBox.shrink()
+                    : Padding(
                     padding: const EdgeInsets.fromLTRB(40, 8, 40, 24),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -317,7 +357,6 @@ class _RankingPagesState extends State<RankingPages> {
                       ],
                     ),
                   ),
-              ],
             ),
           ),
         );

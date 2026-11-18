@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../l10n/l10n.dart';
 import '../../ranking/profile_ranking_api_service.dart';
 import '../../ranking/profile_rate_screen.dart';
+import '../../ranking/voting_explainer_sheet.dart';
 import '../../ui/app_colors.dart';
 // PROTOTYP A4e (Wasserpegel) - Entfern-Anleitung oben in hold_to_fill.dart.
 import '../../ui/hold_to_fill.dart';
@@ -129,9 +130,7 @@ class _ProfileRankingSectionState extends State<ProfileRankingSection> {
     final screen = ProfileRateScreen(posts: posts);
     final rated = await Navigator.push<bool>(
       context,
-      fade
-          ? _fadeRoute(screen)
-          : MaterialPageRoute(builder: (_) => screen),
+      fade ? _fadeRoute(screen) : MaterialPageRoute(builder: (_) => screen),
     );
     if (rated == true) widget.onRated?.call();
   }
@@ -152,16 +151,24 @@ class _ProfileRankingSectionState extends State<ProfileRankingSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          l10n.profileRankingTitle,
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.5,
-            color: AppColors.onSurfaceVariant,
-          ),
+        Row(
+          children: [
+            Text(
+              l10n.profileRankingTitle,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1.5,
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 2),
+            const VotingInfoButton(size: 16),
+          ],
         ),
-        const SizedBox(height: 20),
+        // 11 statt 20: die Zeile ist durch die 32er-Tippfläche vom ⓘ
+        // schon ~18 px höher als der Text allein.
+        const SizedBox(height: 11),
         // Record-Pattern: nur wenn der Server "darf bewerten" sagt UND
         // überhaupt Posts offen sind. Im eigenen Profil bleibt _open null.
         if (_open case (canRate: true, :final posts) when posts.isNotEmpty) ...[
@@ -199,10 +206,7 @@ class _ProfileRankingSectionState extends State<ProfileRankingSection> {
       ];
     }
 
-    return [
-      for (final p in _posts) _RankedPostTile(entry: p),
-      ..._footer(),
-    ];
+    return [for (final p in _posts) _RankedPostTile(entry: p), ..._footer()];
   }
 
   /// Unter der Liste: Spinner / Fehler + Retry / "Mehr anzeigen" / nichts.
@@ -479,8 +483,8 @@ class _RankedPostTile extends StatelessWidget {
     final preview = title.isNotEmpty
         ? title
         : content.isNotEmpty
-            ? content
-            : l10n.profileRankingPhotoPost;
+        ? content
+        : l10n.profileRankingPhotoPost;
 
     // "2026-11-12" -> "12. Nov." / "Nov 12". Reines Datum, kein toLocal:
     // der Server meint den UTC-Tag, genau den zeigen wir.

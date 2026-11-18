@@ -497,33 +497,49 @@
   "@onboardingWelcomeTitle": {
     "description": "Großer Titel auf Welcome-Seite (Onboarding Schritt 1)"
   },
-  "onboardingWelcomeSubtitle": "Poste, was dich bewegt, und lass die Community entscheiden, was oben landet.",
+  "onboardingWelcomeSubtitle": "Posts, Stories und Chats mit deinen Leuten – so wie du es kennst.",
   "@onboardingWelcomeSubtitle": {
     "description": "Untertitel auf Welcome-Seite"
   },
-  "onboardingWelcomePostTitle": "Teile dein Leben",
-  "@onboardingWelcomePostTitle": {
-    "description": "Bento-Karte Titel 1: Post your life"
+  "onboardingWelcomeOptional": "Ranking und Voting sind freiwillig. Pulse funktioniert auch komplett ohne.",
+  "@onboardingWelcomeOptional": {
+    "description": "Welcome-Seite: Hinweis unter der Feed-Bühne, dass Ranking/Voting optional sind"
   },
-  "onboardingWelcomePostSub": "Teile deinen täglichen Pulse. Echt und ungefiltert.",
-  "@onboardingWelcomePostSub": {
-    "description": "Bento-Karte Untertitel 1"
+  "onboardingWelcomeRankingLabel": "RANKING · TÄGLICH",
+  "@onboardingWelcomeRankingLabel": {
+    "description": "Welcome-Seite: Pille über dem Ranking-Block"
   },
-  "onboardingWelcomeRankTitle": "Get Ranked",
-  "@onboardingWelcomeRankTitle": {
-    "description": "Bento-Karte Titel 2"
+  "onboardingWelcomeRankingIntro": "Du bewertest jeden Tag eine fremde Person.",
+  "@onboardingWelcomeRankingIntro": {
+    "description": "Welcome-Seite: eine Zeile unter der Ranking-Pille"
   },
-  "onboardingWelcomeRankSub": "Die Community bewertet deine Kreativität.",
-  "@onboardingWelcomeRankSub": {
-    "description": "Bento-Karte Untertitel 2"
+  "onboardingWelcomeVotingLabel": "VOTING · 7 TAGE",
+  "@onboardingWelcomeVotingLabel": {
+    "description": "Welcome-Seite: Pille über dem Voting-Block"
   },
-  "onboardingWelcomeEarnTitle": "Sammle XP & steig auf",
-  "@onboardingWelcomeEarnTitle": {
-    "description": "Bento-Karte Titel 3"
+  "onboardingWelcomeVotingIntro": "Deine Follower bewerten deine Posts.",
+  "@onboardingWelcomeVotingIntro": {
+    "description": "Welcome-Seite: eine Zeile unter der Voting-Pille"
   },
-  "onboardingWelcomeEarnSub": "Bewerte andere, halte deinen Streak und steig in höhere Ligen auf.",
-  "@onboardingWelcomeEarnSub": {
-    "description": "Bento-Karte Untertitel 3"
+  "onboardingWelcomeVotingTitle": "Deine Follower voten",
+  "@onboardingWelcomeVotingTitle": {
+    "description": "Welcome-Seite: Titel unter der Voting-Bühne"
+  },
+  "onboardingWelcomeVotingText": "Gedrückt halten füllt das Herz – jeder Post 7 Tage lang.",
+  "@onboardingWelcomeVotingText": {
+    "description": "Welcome-Seite: Zeile unter der Voting-Bühne"
+  },
+  "onboardingWelcomeCompareRanking": "Ranking: Du bewertest andere.",
+  "@onboardingWelcomeCompareRanking": {
+    "description": "Welcome-Seite: Abgrenzungs-Karte unten, Zeile Ranking"
+  },
+  "onboardingWelcomeCompareVoting": "Voting: Andere bewerten deine Posts.",
+  "@onboardingWelcomeCompareVoting": {
+    "description": "Welcome-Seite: Abgrenzungs-Karte unten, Zeile Voting"
+  },
+  "onboardingWelcomeScrollHint": "Nach unten scrollen",
+  "@onboardingWelcomeScrollHint": {
+    "description": "Welcome-Seite: Screenreader-Label für den wippenden Pfeil"
   },
   "onboardingVibeTitle": "Was ist dein Vibe?",
   "@onboardingVibeTitle": {
@@ -888,13 +904,73 @@
   "@rankingOptinTitle": {
     "description": "Titel des Ranking Opt-In Screens"
   },
-  "rankingOptinDescription": "Aktiviere das Ranking und lass dich täglich von der Community bewerten.",
-  "@rankingOptinDescription": {
-    "description": "Beschreibungstext des Ranking Opt-In Screens"
+  "rankingOptinSubtitle": "Bewerten. Bewertet werden. Aufsteigen.",
+  "@rankingOptinSubtitle": {
+    "description": "Ranking Opt-In: Unterzeile im Einstieg, kuendigt die 3 Abschnitte an"
   },
-  "rankingOptinCategoryInfo": "Wähle beim Posten eine Kategorie – Produktivität, Kreativität oder Engagement. Sie zählt für die Kategorie-Rankings.",
-  "@rankingOptinCategoryInfo": {
-    "description": "Ranking Opt-In: zweiter Absatz, erklaert die Kategorie-Chips aus Create-Post (gleiche Woerter wie die Chips)"
+  "rankingOptinStep1Title": "Bewerte täglich eine Person",
+  "@rankingOptinStep1Title": {
+    "description": "Ranking Opt-In, Schritt 1 (Titel): man bewertet taeglich die Posts einer zugelosten Person"
+  },
+  "rankingOptinStep1Text": "Like oder Nope – Post für Post.",
+  "@rankingOptinStep1Text": {
+    "description": "Ranking Opt-In, Schritt 1 (Text). LIKE/NOPE = gleiche Woerter wie im Tagesranking"
+  },
+  "rankingOptinStep2Title": "Werde selbst bewertet",
+  "@rankingOptinStep2Title": {
+    "description": "Ranking Opt-In, Schritt 2 (Titel)"
+  },
+  "rankingOptinStep2Text": "Jedes Like bringt dir Punkte.",
+  "@rankingOptinStep2Text": {
+    "description": "Ranking Opt-In, Schritt 2 (Text), ersetzt den frueheren Kategorie-Hinweis (gleiche Woerter wie die Chips in Create-Post)"
+  },
+  "rankingOptinStep3Title": "Steig auf",
+  "@rankingOptinStep3Title": {
+    "description": "Ranking Opt-In, Schritt 3 (Titel)"
+  },
+  "rankingOptinStep3Text": "Jeden Tag ein neues Leaderboard – dazu XP und Ligen.",
+  "@rankingOptinStep3Text": {
+    "description": "Ranking Opt-In, Schritt 3 (Text)"
+  },
+  "rankingOptinProfileHint": "Voting für deine Posts? Das stellst du beim Posten ein.",
+  "@rankingOptinProfileHint": {
+    "description": "Ranking Opt-In: dezenter Hinweis unter dem Button, grenzt Tagesranking vom Profil-Ranking ab"
+  },
+  "votingStageDays": "7 TAGE",
+  "@votingStageDays": {
+    "description": "Chip auf dem Mini-Post in der Voting-Animation: so lange läuft ein Voting"
+  },
+  "votingExplainerTitle": "So funktioniert Voting",
+  "@votingExplainerTitle": {
+    "description": "VotingExplainerSheet: Titel"
+  },
+  "votingExplainerStep1": "Stell beim Posten einen Post ins Voting – einen pro Tag.",
+  "@votingExplainerStep1": {
+    "description": "VotingExplainerSheet: Zeile 1 (wie kommt ein Post rein)"
+  },
+  "votingExplainerStep2": "Deine Follower halten gedrückt und füllen damit das ♥.",
+  "@votingExplainerStep2": {
+    "description": "VotingExplainerSheet: Zeile 2 (wie wird bewertet)"
+  },
+  "votingExplainerStep3": "Nach 7 Tagen ist Schluss – das Ergebnis bleibt in deinem Profil.",
+  "@votingExplainerStep3": {
+    "description": "VotingExplainerSheet: Zeile 3 (wie lange)"
+  },
+  "votingExplainerDiffTitle": "Anders als das Ranking",
+  "@votingExplainerDiffTitle": {
+    "description": "VotingExplainerSheet: Überschrift der Abgrenzungs-Box"
+  },
+  "votingExplainerDiffText": "Beim Ranking bewertest du jeden Tag eine fremde Person. Beim Voting bewerten deine Follower deine Posts.",
+  "@votingExplainerDiffText": {
+    "description": "VotingExplainerSheet: Text der Abgrenzungs-Box"
+  },
+  "votingExplainerOk": "Verstanden",
+  "@votingExplainerOk": {
+    "description": "VotingExplainerSheet: Button zum Schließen"
+  },
+  "votingInfoTooltip": "Was ist Voting?",
+  "@votingInfoTooltip": {
+    "description": "Tooltip/Screenreader für das ⓘ neben Voting"
   },
   "rankingOptinButton": "AKTIVIEREN",
   "@rankingOptinButton": {
@@ -2420,19 +2496,19 @@
   "@resetButton": {
     "description": "Passwort vergessen, Phase 2: Button"
   },
-  "profileRankingTitle": "RANKING",
+  "profileRankingTitle": "VOTING",
   "@profileRankingTitle": {
     "description": "Profil: Überschrift der Profil-Ranking-Sektion"
   },
-  "profileRankingEmptyOwn": "Stell beim Posten einen Post ins Ranking – deine Follower können ihn dann 7 Tage lang bewerten.",
+  "profileRankingEmptyOwn": "Stell beim Posten einen Post ins Voting – deine Follower können ihn dann 7 Tage lang bewerten.",
   "@profileRankingEmptyOwn": {
     "description": "Profil-Ranking: leer, eigenes Profil"
   },
-  "profileRankingEmptyForeign": "Noch keine Posts im Ranking.",
+  "profileRankingEmptyForeign": "Noch keine Posts im Voting.",
   "@profileRankingEmptyForeign": {
     "description": "Profil-Ranking: leer, fremdes Profil"
   },
-  "profileRankingError": "Ranking konnte nicht geladen werden.",
+  "profileRankingError": "Voting konnte nicht geladen werden.",
   "@profileRankingError": {
     "description": "Profil-Ranking: Ladefehler"
   },
@@ -2505,7 +2581,7 @@
   "@profileRateFailed": {
     "description": "Bewerten-Screen: Snackbar, wenn ratePost fehlschlägt (Post wird hinten wieder angehängt)"
   },
-  "createPostRankingTitle": "Ins Ranking stellen",
+  "createPostRankingTitle": "Ins Voting stellen",
   "@createPostRankingTitle": {
     "description": "Create-Post: Schalter, um den Post ins Profil-Ranking zu stellen"
   },
@@ -2522,16 +2598,33 @@
       }
     }
   },
-  "createPostRankingOk": "Dein Post ist jetzt im Ranking 🎉",
+  "createPostRankingOk": "Dein Post ist jetzt im Voting 🎉",
   "@createPostRankingOk": {
     "description": "Create-Post: Snackbar nach dem Posten, Post wurde ins Profil-Ranking gestellt"
   },
-  "createPostRankingSlotTaken": "Post ist online – heute ist aber schon ein Post im Ranking.",
+  "createPostRankingSlotTaken": "Post ist online – heute ist aber schon ein Post im Voting.",
   "@createPostRankingSlotTaken": {
     "description": "Create-Post: Snackbar, Post erstellt, aber Tagesplatz war schon weg (409, z. B. anderes Gerät)"
   },
-  "createPostRankingFailed": "Post ist online – ins Ranking stellen hat nicht geklappt.",
+  "createPostRankingFailed": "Post ist online – ins Voting stellen hat nicht geklappt.",
   "@createPostRankingFailed": {
     "description": "Create-Post: Snackbar, Post erstellt, aber enterRanking fehlgeschlagen (Netz/Server)"
+  },
+  "rankingRevealTap": "Tippen zum Aufdecken",
+  "@rankingRevealTap": {
+    "description": "Tagesranking: Hinweis auf der verdeckten Target-Karte (Tippen, nicht Halten)"
+  },
+  "rankingRevealToday": "Heute bewertest du",
+  "@rankingRevealToday": {
+    "description": "Tagesranking: Label auf der aufgedeckten Target-Karte, ueber dem @Namen"
+  },
+  "rankingRevealPosts": "{count, plural, =1{1 Post} other{{count} Posts}}",
+  "@rankingRevealPosts": {
+    "description": "Tagesranking: Chip auf der aufgedeckten Target-Karte, Anzahl der zu bewertenden Posts",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

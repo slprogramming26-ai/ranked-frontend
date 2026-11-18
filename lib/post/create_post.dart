@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 import '../core/image_sanitizer.dart';
 import '../ranking/profile_ranking_api_service.dart';
 import '../ranking/profile_ranking_result.dart';
+import '../ranking/voting_explainer_sheet.dart';
 import 'package:ranked/local_data/database.dart';
 
 class CreatePost extends StatefulWidget {
@@ -670,6 +671,8 @@ class _CreatePostState extends State<CreatePost> {
                     ],
                   ),
                 ),
+                // Eigene Tippfläche -> öffnet das Sheet, schaltet NICHT um.
+                const VotingInfoButton(),
                 Switch(
                   value: _enterRanking,
                   // M3: Spur in primary, Knopf bleibt hell (sonst wäre

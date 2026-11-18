@@ -372,28 +372,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingWelcomeSubtitle =>
-      'Post what moves you and let the community decide what rises to the top.';
+      'Posts, stories and chats with your people – just the way you know it.';
 
   @override
-  String get onboardingWelcomePostTitle => 'Post your life';
+  String get onboardingWelcomeOptional =>
+      'Ranking and voting are optional. Pulse works perfectly without them.';
 
   @override
-  String get onboardingWelcomePostSub =>
-      'Share your daily Pulse. Authentic and raw.';
+  String get onboardingWelcomeRankingLabel => 'RANKING · DAILY';
 
   @override
-  String get onboardingWelcomeRankTitle => 'Get Ranked';
+  String get onboardingWelcomeRankingIntro =>
+      'Every day you rate someone you don\'t know.';
 
   @override
-  String get onboardingWelcomeRankSub =>
-      'The community evaluates your creativity.';
+  String get onboardingWelcomeVotingLabel => 'VOTING · 7 DAYS';
 
   @override
-  String get onboardingWelcomeEarnTitle => 'Earn XP & level up';
+  String get onboardingWelcomeVotingIntro => 'Your followers rate your posts.';
 
   @override
-  String get onboardingWelcomeEarnSub =>
-      'Rank others, keep your streak alive and climb into higher leagues.';
+  String get onboardingWelcomeVotingTitle => 'Your followers vote';
+
+  @override
+  String get onboardingWelcomeVotingText =>
+      'Holding fills the heart – for 7 days per post.';
+
+  @override
+  String get onboardingWelcomeCompareRanking => 'Ranking: you rate others.';
+
+  @override
+  String get onboardingWelcomeCompareVoting =>
+      'Voting: others rate your posts.';
+
+  @override
+  String get onboardingWelcomeScrollHint => 'Scroll down';
 
   @override
   String get onboardingVibeTitle => 'What\'s Your Vibe?';
@@ -675,12 +688,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rankingOptinTitle => 'JOIN THE\nRANKING';
 
   @override
-  String get rankingOptinDescription =>
-      'Enable ranking and let the community rate you daily.';
+  String get rankingOptinSubtitle => 'Rate. Get rated. Climb.';
 
   @override
-  String get rankingOptinCategoryInfo =>
-      'Pick a category when you post – Productivity, Creativity or Engagement. It counts toward the category rankings.';
+  String get rankingOptinStep1Title => 'Rate one person a day';
+
+  @override
+  String get rankingOptinStep1Text => 'Like or Nope – post by post.';
+
+  @override
+  String get rankingOptinStep2Title => 'Get rated yourself';
+
+  @override
+  String get rankingOptinStep2Text => 'Every Like earns you points.';
+
+  @override
+  String get rankingOptinStep3Title => 'Climb up';
+
+  @override
+  String get rankingOptinStep3Text =>
+      'A fresh leaderboard every day – plus XP and leagues.';
+
+  @override
+  String get rankingOptinProfileHint =>
+      'Voting on your posts? You set that up when posting.';
+
+  @override
+  String get votingStageDays => '7 DAYS';
+
+  @override
+  String get votingExplainerTitle => 'How voting works';
+
+  @override
+  String get votingExplainerStep1 =>
+      'When you post, put a post into voting – one per day.';
+
+  @override
+  String get votingExplainerStep2 =>
+      'Your followers press and hold to fill the ♥.';
+
+  @override
+  String get votingExplainerStep3 =>
+      'After 7 days it ends – the result stays on your profile.';
+
+  @override
+  String get votingExplainerDiffTitle => 'Not the same as ranking';
+
+  @override
+  String get votingExplainerDiffText =>
+      'In ranking, you rate a stranger every day. In voting, your followers rate your posts.';
+
+  @override
+  String get votingExplainerOk => 'Got it';
+
+  @override
+  String get votingInfoTooltip => 'What is voting?';
 
   @override
   String get rankingOptinButton => 'ACTIVATE';
@@ -1855,17 +1917,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resetButton => 'Change password';
 
   @override
-  String get profileRankingTitle => 'RANKING';
+  String get profileRankingTitle => 'VOTING';
 
   @override
   String get profileRankingEmptyOwn =>
-      'Add a post to the ranking when you create it – your followers can then rate it for 7 days.';
+      'Put a post up for voting when you create it – your followers can then rate it for 7 days.';
 
   @override
-  String get profileRankingEmptyForeign => 'No posts in the ranking yet.';
+  String get profileRankingEmptyForeign => 'No posts up for voting yet.';
 
   @override
-  String get profileRankingError => 'Couldn\'t load the ranking.';
+  String get profileRankingError => 'Couldn\'t load voting.';
 
   @override
   String get profileRankingRetry => 'Try again';
@@ -1926,7 +1988,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Rating not sent – the post will come up again at the end.';
 
   @override
-  String get createPostRankingTitle => 'Add to ranking';
+  String get createPostRankingTitle => 'Put up for voting';
 
   @override
   String get createPostRankingInfo =>
@@ -1944,13 +2006,30 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get createPostRankingOk => 'Your post is now in the ranking 🎉';
+  String get createPostRankingOk => 'Your post is now up for voting 🎉';
 
   @override
   String get createPostRankingSlotTaken =>
-      'Post is live – but you already have a post in the ranking today.';
+      'Post is live – but you already have a post up for voting today.';
 
   @override
   String get createPostRankingFailed =>
-      'Post is live – adding it to the ranking didn\'t work.';
+      'Post is live – putting it up for voting didn\'t work.';
+
+  @override
+  String get rankingRevealTap => 'Tap to reveal';
+
+  @override
+  String get rankingRevealToday => 'Today you\'re rating';
+
+  @override
+  String rankingRevealPosts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts',
+      one: '1 post',
+    );
+    return '$_temp0';
+  }
 }

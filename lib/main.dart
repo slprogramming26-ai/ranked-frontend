@@ -246,6 +246,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // startNewSession leeren: der neue RankingProvider liest ihn sofort
         // im Konstruktor.
         await Streak.clear();
+        await TargetReveal.clear();
         if (mounted) {
           // Wirft RankingProvider/PostProvider/StoryProvider/ProfileProvider/
           // MessengerController und den kompletten Riverpod-Speicher (z.B.
