@@ -55,6 +55,15 @@ class ProfileProvider extends ChangeNotifier {
     _rankingRevision++;
     notifyListeners();
   }
+
+  /// Ein Feld lokal ueberschreiben, ohne neu zu laden — fuer Werte, die wir
+  /// gerade selbst erfolgreich per PUT gesetzt haben. Neue Map statt
+  /// _userdata[key] = value: so sehen select()-Lauscher wirklich eine Aenderung.
+  void setUserField(String key, Object? value) {
+    _userdata = {..._userdata, key: value};
+    notifyListeners();
+  }
+
 }
 
 

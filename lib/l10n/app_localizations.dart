@@ -1772,6 +1772,60 @@ abstract class AppLocalizations {
   /// **'Blockierungen ansehen und aufheben'**
   String get settingsBlockedAccountsSubtitle;
 
+  /// Settings section label for personalization / usage data toggles
+  ///
+  /// In de, this message translates to:
+  /// **'DATEN & PERSONALISIERUNG'**
+  String get settingsSectionData;
+
+  /// Toggle title: personalized feed + daily ranking (personalized_feed)
+  ///
+  /// In de, this message translates to:
+  /// **'Personalisierter Feed'**
+  String get settingsPersonalized;
+
+  /// Subtitle of the personalized feed toggle
+  ///
+  /// In de, this message translates to:
+  /// **'Feed und Tagesranking passen sich deinen Interessen an'**
+  String get settingsPersonalizedSubtitle;
+
+  /// Toggle title: opt-in for impression tracking (impressions_enabled)
+  ///
+  /// In de, this message translates to:
+  /// **'Nutzungsdaten teilen'**
+  String get settingsImpressions;
+
+  /// Subtitle of the usage data toggle, explains what is collected
+  ///
+  /// In de, this message translates to:
+  /// **'Welche Posts du wie lange ansiehst – hilft, Empfehlungen zu verbessern'**
+  String get settingsImpressionsSubtitle;
+
+  /// Confirm dialog title when turning impression tracking off
+  ///
+  /// In de, this message translates to:
+  /// **'Nutzungsdaten nicht mehr teilen?'**
+  String get settingsImpressionsOffTitle;
+
+  /// Confirm dialog message: turning off deletes collected impressions on the server
+  ///
+  /// In de, this message translates to:
+  /// **'Bereits gesammelte Nutzungsdaten werden gelöscht. Du kannst das jederzeit wieder einschalten.'**
+  String get settingsImpressionsOffMessage;
+
+  /// Confirm button when turning impression tracking off
+  ///
+  /// In de, this message translates to:
+  /// **'Ausschalten & löschen'**
+  String get settingsImpressionsOffButton;
+
+  /// Snackbar when saving a privacy toggle failed
+  ///
+  /// In de, this message translates to:
+  /// **'Einstellung konnte nicht gespeichert werden.'**
+  String get settingsPrivacyToggleFailed;
+
   /// Header of the blocked accounts screen
   ///
   /// In de, this message translates to:

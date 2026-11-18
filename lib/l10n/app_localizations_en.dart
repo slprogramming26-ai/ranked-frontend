@@ -931,6 +931,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBlockedAccountsSubtitle => 'View and remove blocks';
 
   @override
+  String get settingsSectionData => 'DATA & PERSONALIZATION';
+
+  @override
+  String get settingsPersonalized => 'Personalized feed';
+
+  @override
+  String get settingsPersonalizedSubtitle =>
+      'Feed and daily ranking adapt to your interests';
+
+  @override
+  String get settingsImpressions => 'Share usage data';
+
+  @override
+  String get settingsImpressionsSubtitle =>
+      'Which posts you view and for how long – helps improve recommendations';
+
+  @override
+  String get settingsImpressionsOffTitle => 'Stop sharing usage data?';
+
+  @override
+  String get settingsImpressionsOffMessage =>
+      'Usage data collected so far will be deleted. You can turn this back on at any time.';
+
+  @override
+  String get settingsImpressionsOffButton => 'Turn off & delete';
+
+  @override
+  String get settingsPrivacyToggleFailed => 'Couldn\'t save the setting.';
+
+  @override
   String get blockedTitle => 'Blocked accounts';
 
   @override

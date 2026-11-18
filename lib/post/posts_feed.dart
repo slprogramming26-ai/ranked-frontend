@@ -46,6 +46,11 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
   // -> Empty-State mit "Ort waehlen"-Button statt leerem Feed.
   bool _noLocation = false;
 
+  // Zuletzt verarbeitete Reload-Revision vom PostProvider. Weicht sie ab,
+  // hat jemand von aussen (Settings) einen Neuaufbau angefordert.
+  late PostProvider _postProvider;
+  int _seenReloadRevision = 0;
+
   late ImpressionTracker _tracker;
 
   // app geschlossen?
@@ -63,6 +68,10 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
         _fetchMoreData();
       }
     });
+    // context.read ist in initState erlaubt (nur listen: true nicht).
+    _postProvider = context.read<PostProvider>();
+    _seenReloadRevision = _postProvider.reloadRevision;
+    _postProvider.addListener(_onPostProviderChanged);
     _lifecycleListener = AppLifecycleListener(
       // App verschwindet vom Schirm -> Stopuhren einfrieren, sonst zaehlt die
       // ganze Nacht auf dem Sperrbildschirm als Dwell.
@@ -89,7 +98,27 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
     routeObserver.unsubscribe(this);
     _lifecycleListener.dispose();
     _scrollController.dispose();
+    _postProvider.removeListener(_onPostProviderChanged);
     super.dispose();
+  }
+
+  // Feuert bei JEDEM notify vom PostProvider (Likes, Nachladen, …) —
+  // reagiert aber nur, wenn sich die Reload-Revision geaendert hat.
+  void _onPostProviderChanged() {
+    final rev = _postProvider.reloadRevision;
+    if (rev == _seenReloadRevision) return;
+    _seenReloadRevision = rev;
+
+    // Gleicher Reset wie in _switchFeed — vor allem _hasMore, sonst laedt
+    // ein vorher ausgeschoepfter Feed nach dem Neuaufbau nie weiter.
+    setState(() {
+      _hasMore = true;
+      _isFetchingMore = false;
+      _seenPostIds.clear();
+    });
+    // Neue Sortierung beginnt oben, nicht an der alten Scroll-Position.
+    if (_scrollController.hasClients) _scrollController.jumpTo(0);
+    _fetchData();
   }
 
 

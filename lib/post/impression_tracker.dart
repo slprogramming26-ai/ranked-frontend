@@ -78,7 +78,7 @@ class ImpressionTracker {
 
   // Post hat die Sichtbarkeitsschwelle von oben erreicht.
   void onVisible(int postId, int position) {
-    if (!_active) return;
+    if (!_enabled || !_active) return;
     final record = _records.putIfAbsent(
       postId,
       () => _Record(position: position, shownAt: DateTime.timestamp()),
@@ -124,6 +124,26 @@ class ImpressionTracker {
 
   final Set<ImpressionGate> _blockedBy = {};
   bool get _active => _blockedBy.isEmpty;
+
+
+  /// Einwilligung des Users (impressions_enabled). Startet AUS: Solange das
+  /// Profil nicht geladen ist, wissen wir nicht, ob er zugestimmt hat — und
+  /// bei einem Opt-in heisst "unbekannt" immer "nein".
+  bool _enabled = false;
+
+  void setEnabled(bool value) {
+    // Der ProxyProvider ruft das bei JEDEM notify vom ProfileProvider —
+    // also meistens mit dem Wert, den wir schon haben.
+    if (value == _enabled) return;
+    _enabled = value;
+    if (value) return;
+    // Einwilligung zurueckgezogen: alles verwerfen, NICHT mehr flushen.
+    // Der Server loescht ohnehin alles — nachschicken waere genau das,
+    // was der User gerade abgelehnt hat.
+    _records.clear();
+    _dirty.clear();
+    _pausedIds.clear();
+  }
 
   // posts deren stoppuhr beim pausieren wechsel lief.
   final Set<int> _pausedIds = {};
@@ -220,6 +240,7 @@ class ImpressionTracker {
   /// Schickt den aktuellen kumulativen Stand raus. Fire-and-forget:
   /// darf nie werfen und nie den Aufrufer warten lassen.
   void flush() {
+    if (!_enabled) return;
     final payload = _buildPayload();
     if (payload == null) return;
 

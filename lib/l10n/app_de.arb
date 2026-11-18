@@ -1218,6 +1218,42 @@
   "@settingsBlockedAccountsSubtitle": {
     "description": "Subtitle of the blocked accounts tile"
   },
+  "settingsSectionData": "DATEN & PERSONALISIERUNG",
+  "@settingsSectionData": {
+    "description": "Settings section label for personalization / usage data toggles"
+  },
+  "settingsPersonalized": "Personalisierter Feed",
+  "@settingsPersonalized": {
+    "description": "Toggle title: personalized feed + daily ranking (personalized_feed)"
+  },
+  "settingsPersonalizedSubtitle": "Feed und Tagesranking passen sich deinen Interessen an",
+  "@settingsPersonalizedSubtitle": {
+    "description": "Subtitle of the personalized feed toggle"
+  },
+  "settingsImpressions": "Nutzungsdaten teilen",
+  "@settingsImpressions": {
+    "description": "Toggle title: opt-in for impression tracking (impressions_enabled)"
+  },
+  "settingsImpressionsSubtitle": "Welche Posts du wie lange ansiehst – hilft, Empfehlungen zu verbessern",
+  "@settingsImpressionsSubtitle": {
+    "description": "Subtitle of the usage data toggle, explains what is collected"
+  },
+  "settingsImpressionsOffTitle": "Nutzungsdaten nicht mehr teilen?",
+  "@settingsImpressionsOffTitle": {
+    "description": "Confirm dialog title when turning impression tracking off"
+  },
+  "settingsImpressionsOffMessage": "Bereits gesammelte Nutzungsdaten werden gelöscht. Du kannst das jederzeit wieder einschalten.",
+  "@settingsImpressionsOffMessage": {
+    "description": "Confirm dialog message: turning off deletes collected impressions on the server"
+  },
+  "settingsImpressionsOffButton": "Ausschalten & löschen",
+  "@settingsImpressionsOffButton": {
+    "description": "Confirm button when turning impression tracking off"
+  },
+  "settingsPrivacyToggleFailed": "Einstellung konnte nicht gespeichert werden.",
+  "@settingsPrivacyToggleFailed": {
+    "description": "Snackbar when saving a privacy toggle failed"
+  },
   "blockedTitle": "Blockierte Konten",
   "@blockedTitle": {
     "description": "Header of the blocked accounts screen"

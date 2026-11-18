@@ -15,6 +15,7 @@ import '../profile/profile.dart';
 import 'theme_provider.dart';
 import '../core/user_api_service.dart';
 import '../l10n/l10n.dart';
+import '../post/post_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -82,6 +83,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _busy = false;
     });
     if (!ok) _showSnack(context.l10n.settingsClearLocationError);
+  }
+
+  // ── Daten & Personalisierung ──────────────────────────────────────────────
+  // Beide Werte leben im ProfileProvider (userdata). Erst nach Server-OK
+  // lokal setzen — die Ausnahme ist das Ausschalten der Nutzungsdaten, siehe
+  // unten.
+
+  Future<void> _handlePersonalizedToggle(bool value) async {
+    final profile = context.read<ProfileProvider>();
+    final postProvider = context.read<PostProvider>();
+    setState(() => _busy = true);
+    final ok = await UserApiService.setPrivacyFlag('personalized_feed', value);
+    // Provider lebt laenger als dieser Screen -> auch ohne mounted updaten.
+    if (ok) {
+      profile.setUserField('personalized_feed', value);
+      postProvider.requestReload();
+    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!ok) _showSnack(context.l10n.settingsPrivacyToggleFailed);
+  }
+
+  Future<void> _handleImpressionsToggle(bool value) async {
+    final profile = context.read<ProfileProvider>();
+
+    // Einschalten: bewusst ohne Dialog und ohne Hervorhebung — eine Einwilligung
+    // darf nicht leichter zu geben als zurueckzuziehen sein (kein Dark Pattern).
+    // Ausschalten: Dialog, weil serverseitig Daten geloescht werden.
+    if (!value) {
+      final confirmed = await _confirm(
+        title: context.l10n.settingsImpressionsOffTitle,
+        message: context.l10n.settingsImpressionsOffMessage,
+        confirmLabel: context.l10n.settingsImpressionsOffButton,
+        destructive: true,
+      );
+      if (confirmed != true || !mounted) return;
+      // ERST lokal aus, DANN PUT: Der ProxyProvider in main.dart ruft sofort
+      // tracker.setEnabled(false) -> Records verworfen, kein Flush mehr.
+      // Andersrum koennte der 10-s-Timer zwischen PUT und Antwort noch
+      // Daten nachschicken, nachdem der Server schon geloescht hat.
+      profile.setUserField('impressions_enabled', false);
+    }
+
+    setState(() => _busy = true);
+    final ok =
+        await UserApiService.setPrivacyFlag('impressions_enabled', value);
+    // Server-Stand ist die Wahrheit: bei Erfolg der neue Wert, sonst der alte.
+    // Deckt alle 4 Faelle ab — u. a. "Ausschalten fehlgeschlagen" -> wieder
+    // true, damit der Schalter nicht "aus" zeigt, waehrend der Server noch
+    // speichert.
+    profile.setUserField('impressions_enabled', ok ? value : !value);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (!ok) _showSnack(context.l10n.settingsPrivacyToggleFailed);
   }
 
   // ── Logout ────────────────────────────────────────────────────────────────
@@ -199,7 +254,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final language = context.watch<LocaleProvider>();
     // watch: Laedt das Profil noch, ist die Rolle erst "user" und die
     // Moderations-Kachel taucht auf, sobald die Daten da sind.
-    final role = context.watch<ProfileProvider>().role;
+    final profile = context.watch<ProfileProvider>();
+    final role = profile.role;
+    // personalized_feed ist Opt-out (fehlt/null = an), impressions_enabled
+    // Opt-in (fehlt/null = aus) — daher != false vs. == true.
+    final personalized = profile.userdata['personalized_feed'] != false;
+    final impressions = profile.userdata['impressions_enabled'] == true;
+    // Solange das Profil laedt, zeigen die Schalter nur Defaults -> sperren.
+    final privacyLocked = _busy || _locationLoading;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -332,6 +394,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         MaterialPageRoute(
                           builder: (_) => const BlockedAccountsScreen(),
                         ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // ── Daten & Personalisierung ─────────────────────────────
+                _SectionLabel(context.l10n.settingsSectionData),
+                _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.auto_awesome_outlined,
+                      title: context.l10n.settingsPersonalized,
+                      subtitle: context.l10n.settingsPersonalizedSubtitle,
+                      trailing: Switch(
+                        value: personalized,
+                        activeColor: AppColors.primary,
+                        onChanged:
+                            privacyLocked ? null : _handlePersonalizedToggle,
+                      ),
+                    ),
+                    const _TileDivider(),
+                    _SettingsTile(
+                      icon: Icons.insights_outlined,
+                      title: context.l10n.settingsImpressions,
+                      subtitle: context.l10n.settingsImpressionsSubtitle,
+                      trailing: Switch(
+                        value: impressions,
+                        activeColor: AppColors.primary,
+                        onChanged:
+                            privacyLocked ? null : _handleImpressionsToggle,
                       ),
                     ),
                   ],

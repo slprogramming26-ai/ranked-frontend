@@ -941,6 +941,37 @@ class AppLocalizationsDe extends AppLocalizations {
       'Blockierungen ansehen und aufheben';
 
   @override
+  String get settingsSectionData => 'DATEN & PERSONALISIERUNG';
+
+  @override
+  String get settingsPersonalized => 'Personalisierter Feed';
+
+  @override
+  String get settingsPersonalizedSubtitle =>
+      'Feed und Tagesranking passen sich deinen Interessen an';
+
+  @override
+  String get settingsImpressions => 'Nutzungsdaten teilen';
+
+  @override
+  String get settingsImpressionsSubtitle =>
+      'Welche Posts du wie lange ansiehst – hilft, Empfehlungen zu verbessern';
+
+  @override
+  String get settingsImpressionsOffTitle => 'Nutzungsdaten nicht mehr teilen?';
+
+  @override
+  String get settingsImpressionsOffMessage =>
+      'Bereits gesammelte Nutzungsdaten werden gelöscht. Du kannst das jederzeit wieder einschalten.';
+
+  @override
+  String get settingsImpressionsOffButton => 'Ausschalten & löschen';
+
+  @override
+  String get settingsPrivacyToggleFailed =>
+      'Einstellung konnte nicht gespeichert werden.';
+
+  @override
   String get blockedTitle => 'Blockierte Konten';
 
   @override

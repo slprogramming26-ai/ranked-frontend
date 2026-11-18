@@ -104,8 +104,14 @@ class SessionScopeState extends State<SessionScope> {
           ChangeNotifierProvider(create: (_) => StoryProvider()),
           ChangeNotifierProvider(create: (_) => ProfileProvider()),
           ChangeNotifierProvider(create: (_) => MessengerController()),
-          Provider(
+          ProxyProvider<ProfileProvider, ImpressionTracker>(
             create: (_) => ImpressionTracker(),
+            // Laeuft beim Erzeugen und danach bei JEDEM notifyListeners() des
+            // ProfileProviders (App-Start-Fetch, Settings-Toggle, forceRefresh).
+            // Liefert dasselbe Objekt zurueck — der Tracker wird nie neu gebaut,
+            // er bekommt nur den aktuellen Einwilligungs-Stand.
+            update: (_, profile, tracker) => tracker!
+              ..setEnabled(profile.userdata['impressions_enabled'] == true),
             dispose: (_, tracker) => tracker.dispose(),
           ),
         ],

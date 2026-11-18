@@ -252,22 +252,14 @@ class UserApiService {
     if (vibe_factor_1 != null) body["vibe_factor_1"] = vibe_factor_1;
     if (vibe_factor_2 != null) body["vibe_factor_2"] = vibe_factor_2;
     if (locationId != null) body["location_id"] = locationId;
-    await ApiClient.put(
-      Uri.parse('$baseUrl/users/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(body),
-    );
+    await _updateMe(body);
     return {};
   }
 
   static Future<Map<String, dynamic>> setRankingEnabled(
     bool rankingEnabled,
   ) async {
-    await ApiClient.put(
-      Uri.parse('$baseUrl/users/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({"ranking_enabled": rankingEnabled}),
-    );
+    await _updateMe({"ranking_enabled": rankingEnabled});
     return {};
   }
 
@@ -403,18 +395,7 @@ class UserApiService {
     return [];
   }
 
-  /// Setzt (oder loescht mit `null`) den Heimatort des Users.
-  /// Wichtig: Das Backend nutzt exclude_unset — der Key "location_id" muss
-  /// also explizit im JSON stehen, sonst passiert gar nichts. jsonEncode
-  /// schreibt `"location_id": null` mit rein, das reicht.
-  static Future<bool> setLocation(int? locationId) async {
-    final response = await ApiClient.put(
-      Uri.parse('$baseUrl/users/'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({"location_id": locationId}),
-    );
-    return response.statusCode >= 200 && response.statusCode < 300;
-  }
+
 
   // Gibt den HTTP-Status zurueck, damit der Aufrufer 201 (ok) von
   // 409 (schon gemeldet) und echten Fehlern unterscheiden kann.
@@ -436,4 +417,32 @@ class UserApiService {
     );
     return response.statusCode;
   }
+
+  /// Gemeinsamer Unterbau fuer alle PUT /users/-Aufrufe. Gibt die Felder
+  /// zurueck, die der Server wirklich geaendert hat — null = fehlgeschlagen.
+  static Future<Set<String>?> _updateMe(Map<String, dynamic> body) async {
+    try {
+      final response = await ApiClient.put(
+        Uri.parse('$baseUrl/users/'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      final fields = jsonDecode(utf8.decode(response.bodyBytes))['updated_fields'];
+      return fields is List ? fields.cast<String>().toSet() : <String>{};
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<bool> setPrivacyFlag(String key, bool value) async =>
+      (await _updateMe({key: value}))?.contains(key) ?? false;
+
+
+  /// Setzt (oder loescht mit `null`) den Heimatort des Users.
+  /// Wichtig: Das Backend nutzt exclude_unset — der Key "location_id" muss
+  /// also explizit im JSON stehen, sonst passiert gar nichts. jsonEncode
+  /// schreibt `"location_id": null` mit rein, das reicht.
+  static Future<bool> setLocation(int? locationId) async =>
+      await _updateMe({"location_id": locationId}) != null;
 }

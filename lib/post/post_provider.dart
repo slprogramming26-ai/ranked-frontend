@@ -20,6 +20,18 @@ class PostProvider extends ChangeNotifier {
 
   final Set<int> _hiddenIds = {};
 
+  int _reloadRevision = 0;
+  int get reloadRevision => _reloadRevision;
+
+  void requestReload() {
+    if (_isLocalFeed) return;   // Lokal-Feed ist nicht personalisiert
+    _posts = [];
+    _isLoading = true;          // Skeletons statt alter Sortierung
+    _reloadRevision++;
+    notifyListeners();
+  }
+
+
   void hidePost(int id) {
     _hiddenIds.add(id);
     _posts.removeWhere((p) => p['post']['id'] == id);
