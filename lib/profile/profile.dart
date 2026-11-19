@@ -14,6 +14,8 @@ import '../settings/settings_screen.dart';
 import '../l10n/l10n.dart';
 import '../ui/confirm_dialog.dart';
 import 'widgets/profile_ranking_section.dart';
+import 'edit_profile_screen.dart';
+import 'vibes.dart';
 
 
 class ProfileProvider extends ChangeNotifier {
@@ -76,17 +78,6 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-
-  static const Map<String, IconData> _vibeIcons = {
-    'Gaming':       Icons.sports_esports,
-    'Fitness':      Icons.fitness_center,
-    'Productivity': Icons.bolt,
-    'Coding':       Icons.computer,
-    'Sports':       Icons.sports_soccer,
-    'Creativity':   Icons.palette,
-    'Reading':      Icons.book,
-    'Music':        Icons.music_note,
-  };
 
   // Zustand für fremdes Profil
   Map<String, dynamic> _foreignData = {};
@@ -394,6 +385,23 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
 
+                      // Bewusst KEIN gefuellter Button: der grosse rote
+                      // Button weiter unten ist bei fremden Profilen "Folgen".
+                      if (_isOwn) ...[
+                        const SizedBox(height: 14),
+                        _EditProfilePill(
+                          // Kein await/Reload danach noetig: der Edit-Screen
+                          // schreibt per setUserField in den Provider, und
+                          // der Consumer in build() baut das Profil neu.
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EditProfileScreen(),
+                            ),
+                          ),
+                        ),
+                      ],
+
                       const SizedBox(height: 16),
 
                       Text(
@@ -652,7 +660,7 @@ class _ProfileState extends State<Profile> {
   );
 
   Widget _vibeChip(String vibe) {
-    final icon = _vibeIcons[vibe] ?? Icons.star_outline;
+    final icon = kVibes[vibe] ?? Icons.star_outline;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -990,6 +998,48 @@ class _TopBar extends StatelessWidget {
       ),
     ),
   );
+}
+
+// ── Profil-bearbeiten-Pille (nur eigenes Profil) ──────────────────────────────
+class _EditProfilePill extends StatelessWidget {
+  final VoidCallback onTap;
+  const _EditProfilePill({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: AppColors.onSurfaceVariant.withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.edit_outlined,
+                  size: 14, color: AppColors.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text(
+                context.l10n.editProfileTitle,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ── Primary Button ────────────────────────────────────────────────────────────

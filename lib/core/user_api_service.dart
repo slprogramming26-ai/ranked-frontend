@@ -445,4 +445,33 @@ class UserApiService {
   /// schreibt `"location_id": null` mit rein, das reicht.
   static Future<bool> setLocation(int? locationId) async =>
       await _updateMe({"location_id": locationId}) != null;
+
+  /// Fuer "Profil bearbeiten": schickt NUR die Felder, die der Aufrufer
+  /// wirklich aendern will (anders als addUserDetails, das immer Bild + Bio
+  /// mitschickt — "" wuerde dort das Profilbild loeschen).
+  ///
+  /// - `bio` / `imageUrl`: null = nicht anfassen.
+  /// - `vibes`: null = Vibes nicht anfassen. Ein Record = beide Slots setzen,
+  ///   und zwar auch mit null: `("chill", null)` loescht Vibe 2 explizit.
+  ///   Ohne den expliziten Key wuerde exclude_unset den alten Vibe behalten.
+  ///
+  /// Rueckgabe wie _updateMe: geaenderte Felder, null = fehlgeschlagen.
+  /// Leerer Body -> gar kein Request, sofort leeres Set.
+  static Future<Set<String>?> updateProfile({
+    String? bio,
+    String? imageUrl,
+    (String?, String?)? vibes,
+  }) async {
+    final body = <String, dynamic>{
+      // `?wert` = Key nur einfuegen, wenn wert != null (Dart 3.8)
+      "biography": ?bio,
+      "profile_picture_url": ?imageUrl,
+      if (vibes != null) ...{
+        "vibe_factor_1": vibes.$1,
+        "vibe_factor_2": vibes.$2,
+      },
+    };
+    if (body.isEmpty) return <String>{};
+    return _updateMe(body);
+  }
 }

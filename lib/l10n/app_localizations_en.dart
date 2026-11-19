@@ -2062,4 +2062,45 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get editProfileImageProcessFailed => 'Couldn\'t process the image';
+
+  @override
+  String get editProfileImageUploadFailed =>
+      'Image upload failed. Please try again.';
+
+  @override
+  String get editProfileSaveFailed =>
+      'Couldn\'t save your profile. Please try again.';
+
+  @override
+  String get editProfileTitle => 'Edit profile';
+
+  @override
+  String get editProfilePhotoHint => 'Tap to change your photo';
+
+  @override
+  String get editProfileBioLabel => 'YOUR STORY';
+
+  @override
+  String get editProfileVibesLabel => 'YOUR VIBES';
+
+  @override
+  String get editProfileSave => 'Save';
+
+  @override
+  String get editProfileDiscardTitle => 'Discard changes?';
+
+  @override
+  String get editProfileDiscardMessage =>
+      'Your profile changes won\'t be saved.';
+
+  @override
+  String get editProfileDiscardConfirm => 'Discard';
+
+  @override
+  String editProfileVibesHint(int max) {
+    return 'Pick up to $max';
+  }
 }

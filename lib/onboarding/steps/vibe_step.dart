@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ranked/l10n/l10n.dart';
-import '../../ui/app_colors.dart';
+import '../../profile/vibes.dart';
 
 // Zustandslos: Auswahl-Map und Toggle-Callback kommen vom OnboardingFlow,
 // damit die gewaehlten Vibes dort fuer addUserDetails verfuegbar bleiben.
+// Das Grid selbst liegt in profile/vibes.dart (teilt sich der Edit-Screen).
 class VibeStep extends StatelessWidget {
   final Map<String, bool> selections;
   final void Function(String name) onToggle;
@@ -36,59 +37,9 @@ class VibeStep extends StatelessWidget {
           ),
           const SizedBox(height: 30),
           Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 15,
-              crossAxisSpacing: 15,
-              childAspectRatio: 1.2,
-              children: [
-                _vibeCard(Icons.bolt, "Productivity"),
-                _vibeCard(Icons.palette, "Creativity"),
-                _vibeCard(Icons.fitness_center, "Fitness"),
-                _vibeCard(Icons.sports_esports, "Gaming"),
-                _vibeCard(Icons.computer, 'Coding'),
-                _vibeCard(Icons.music_note, 'Music'),
-                _vibeCard(Icons.book, 'Reading'),
-                _vibeCard(Icons.sports_soccer, 'Sports'),
-              ],
-            ),
+            child: VibeGrid(selections: selections, onToggle: onToggle),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _vibeCard(IconData icon, String label) {
-    final bool isActive = selections[label] ?? false;
-
-    return InkWell(
-      onTap: () => onToggle(label),
-      borderRadius: BorderRadius.circular(30),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primary : AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isActive ? Colors.white : AppColors.primary,
-              size: 32,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? Colors.white : AppColors.onSurface,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

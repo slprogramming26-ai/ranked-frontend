@@ -3637,6 +3637,78 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'{count, plural, =1{1 Post} other{{count} Posts}}'**
   String rankingRevealPosts(int count);
+
+  /// Profil bearbeiten: EXIF-Strip/Dekodieren fehlgeschlagen
+  ///
+  /// In de, this message translates to:
+  /// **'Bild konnte nicht verarbeitet werden'**
+  String get editProfileImageProcessFailed;
+
+  /// Profil bearbeiten: /users/upload fehlgeschlagen
+  ///
+  /// In de, this message translates to:
+  /// **'Bild-Upload fehlgeschlagen. Versuch es erneut.'**
+  String get editProfileImageUploadFailed;
+
+  /// Profil bearbeiten: PUT /users/ fehlgeschlagen
+  ///
+  /// In de, this message translates to:
+  /// **'Profil konnte nicht gespeichert werden. Versuch es erneut.'**
+  String get editProfileSaveFailed;
+
+  /// Profil bearbeiten: Screen-Titel
+  ///
+  /// In de, this message translates to:
+  /// **'Profil bearbeiten'**
+  String get editProfileTitle;
+
+  /// Profil bearbeiten: Hinweis unter dem Avatar
+  ///
+  /// In de, this message translates to:
+  /// **'Tippen, um dein Bild zu ändern'**
+  String get editProfilePhotoHint;
+
+  /// Profil bearbeiten: Label über dem Bio-Feld
+  ///
+  /// In de, this message translates to:
+  /// **'DEINE STORY'**
+  String get editProfileBioLabel;
+
+  /// Profil bearbeiten: Label über dem Vibe-Grid
+  ///
+  /// In de, this message translates to:
+  /// **'DEINE VIBES'**
+  String get editProfileVibesLabel;
+
+  /// Profil bearbeiten: Speichern-Button
+  ///
+  /// In de, this message translates to:
+  /// **'Speichern'**
+  String get editProfileSave;
+
+  /// Profil bearbeiten: Dialog beim Verlassen mit ungespeicherten Änderungen
+  ///
+  /// In de, this message translates to:
+  /// **'Änderungen verwerfen?'**
+  String get editProfileDiscardTitle;
+
+  /// Profil bearbeiten: Text im Verwerfen-Dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Änderungen am Profil werden nicht gespeichert.'**
+  String get editProfileDiscardMessage;
+
+  /// Profil bearbeiten: Bestätigen im Verwerfen-Dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Verwerfen'**
+  String get editProfileDiscardConfirm;
+
+  /// Profil bearbeiten: Hinweis neben dem Vibes-Label
+  ///
+  /// In de, this message translates to:
+  /// **'Wähle bis zu {max}'**
+  String editProfileVibesHint(int max);
 }
 
 class _AppLocalizationsDelegate

@@ -19,6 +19,7 @@ import 'steps/age_step.dart';
 import 'steps/credentials_step.dart';
 import 'steps/vibe_step.dart';
 import 'steps/welcome_step.dart';
+import '../profile/vibes.dart';
 import 'package:ranked/e2ee/key_setup.dart';
 
 class OnboardingFlow extends StatefulWidget {
@@ -37,15 +38,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   File? _finalImageFile;
   String _finalBio = '';
 
-  Map<String, bool> vibeSelections = {
-    'Productivity': false,
-    'Creativity': false,
-    'Fitness': false,
-    'Gaming': false,
-    'Coding': false,
-    'Music': false,
-    'Reading': false,
-    'Sports': false,
+  // Alle Vibes aus kVibes, anfangs keiner gewaehlt.
+  final Map<String, bool> vibeSelections = {
+    for (final name in kVibes.keys) name: false,
   };
 
   int _age = 18;
@@ -149,14 +144,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 
   void _toggleVibe(String name) {
-    final isActive = vibeSelections[name] ?? false;
-    final activeCount = vibeSelections.values.where((v) => v).length;
-
-    if (activeCount >= 2 && !isActive) return;
-
-    setState(() {
-      vibeSelections[name] = !isActive;
-    });
+    // Max-2-Regel steckt in toggleVibe (teilt sich der Edit-Screen).
+    setState(() => toggleVibe(vibeSelections, name));
   }
 
   void _goBack() {

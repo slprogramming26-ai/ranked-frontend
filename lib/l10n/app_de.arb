@@ -2662,5 +2662,58 @@
         "type": "int"
       }
     }
+  },
+  "editProfileImageProcessFailed": "Bild konnte nicht verarbeitet werden",
+  "@editProfileImageProcessFailed": {
+    "description": "Profil bearbeiten: EXIF-Strip/Dekodieren fehlgeschlagen"
+  },
+  "editProfileImageUploadFailed": "Bild-Upload fehlgeschlagen. Versuch es erneut.",
+  "@editProfileImageUploadFailed": {
+    "description": "Profil bearbeiten: /users/upload fehlgeschlagen"
+  },
+  "editProfileSaveFailed": "Profil konnte nicht gespeichert werden. Versuch es erneut.",
+  "@editProfileSaveFailed": {
+    "description": "Profil bearbeiten: PUT /users/ fehlgeschlagen"
+  },
+  "editProfileTitle": "Profil bearbeiten",
+  "@editProfileTitle": {
+    "description": "Profil bearbeiten: Screen-Titel"
+  },
+  "editProfilePhotoHint": "Tippen, um dein Bild zu ändern",
+  "@editProfilePhotoHint": {
+    "description": "Profil bearbeiten: Hinweis unter dem Avatar"
+  },
+  "editProfileBioLabel": "DEINE STORY",
+  "@editProfileBioLabel": {
+    "description": "Profil bearbeiten: Label über dem Bio-Feld"
+  },
+  "editProfileVibesLabel": "DEINE VIBES",
+  "@editProfileVibesLabel": {
+    "description": "Profil bearbeiten: Label über dem Vibe-Grid"
+  },
+  "editProfileSave": "Speichern",
+  "@editProfileSave": {
+    "description": "Profil bearbeiten: Speichern-Button"
+  },
+  "editProfileDiscardTitle": "Änderungen verwerfen?",
+  "@editProfileDiscardTitle": {
+    "description": "Profil bearbeiten: Dialog beim Verlassen mit ungespeicherten Änderungen"
+  },
+  "editProfileDiscardMessage": "Deine Änderungen am Profil werden nicht gespeichert.",
+  "@editProfileDiscardMessage": {
+    "description": "Profil bearbeiten: Text im Verwerfen-Dialog"
+  },
+  "editProfileDiscardConfirm": "Verwerfen",
+  "@editProfileDiscardConfirm": {
+    "description": "Profil bearbeiten: Bestätigen im Verwerfen-Dialog"
+  },
+  "editProfileVibesHint": "Wähle bis zu {max}",
+  "@editProfileVibesHint": {
+    "description": "Profil bearbeiten: Hinweis neben dem Vibes-Label",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   }
 }

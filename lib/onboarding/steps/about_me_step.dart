@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:ranked/l10n/l10n.dart';
 import '../../ui/app_colors.dart';
+import '../../ui/avatar_picker.dart';
 import '../onboarding_text_field.dart';
 
 class AboutMeStep extends StatefulWidget {
@@ -25,7 +25,6 @@ class AboutMeStep extends StatefulWidget {
 
 class _AboutMeStepState extends State<AboutMeStep> {
   File? _image;
-  final _picker = ImagePicker();
   late TextEditingController _bioController;
 
   @override
@@ -43,22 +42,6 @@ class _AboutMeStepState extends State<AboutMeStep> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    // Picker skaliert nativ runter: Das Backend lehnt Bilder >20 Mio. Pixel
-    // mit 400 ab (Decompression-Bomb-Schutz) — moderne 48/50-MP-Kameras
-    // liegen darueber. 1024px passt zum Backend-Thumbnail, Avatar ist eh klein.
-    final pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1024,
-      maxHeight: 1024,
-      imageQuality: 85,
-    );
-    if (pickedFile == null) return;
-
-    setState(() => _image = File(pickedFile.path));
-    widget.onImagePicked(_image!);
-  }
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -68,68 +51,12 @@ class _AboutMeStepState extends State<AboutMeStep> {
           const SizedBox(height: 20),
 
           // --- Avatar ---
-          GestureDetector(
-            onTap: _pickImage,
-            child: Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary,
-                        AppColors.primaryContainer,
-                        AppColors.tertiaryContainer,
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.surface,
-                        width: 3,
-                      ),
-                      color: AppColors.surfaceContainerHighest,
-                    ),
-                    child: ClipOval(
-                      child: _image != null
-                          ? Image.file(_image!, fit: BoxFit.cover)
-                          : Icon(
-                              Icons.person,
-                              size: 44,
-                              color: AppColors.primary,
-                            ),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.35),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.photo_camera,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                ),
-              ],
-            ),
+          AvatarPicker(
+            localImage: _image,
+            onPicked: (file) {
+              setState(() => _image = file);
+              widget.onImagePicked(file);
+            },
           ),
 
           const SizedBox(height: 20),

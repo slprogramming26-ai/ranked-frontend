@@ -589,5 +589,17 @@
   "createPostRankingFailed": "Post is live – putting it up for voting didn't work.",
   "rankingRevealTap": "Tap to reveal",
   "rankingRevealToday": "Today you're rating",
-  "rankingRevealPosts": "{count, plural, =1{1 post} other{{count} posts}}"
+  "rankingRevealPosts": "{count, plural, =1{1 post} other{{count} posts}}",
+  "editProfileImageProcessFailed": "Couldn't process the image",
+  "editProfileImageUploadFailed": "Image upload failed. Please try again.",
+  "editProfileSaveFailed": "Couldn't save your profile. Please try again.",
+  "editProfileTitle": "Edit profile",
+  "editProfilePhotoHint": "Tap to change your photo",
+  "editProfileBioLabel": "YOUR STORY",
+  "editProfileVibesLabel": "YOUR VIBES",
+  "editProfileSave": "Save",
+  "editProfileDiscardTitle": "Discard changes?",
+  "editProfileDiscardMessage": "Your profile changes won't be saved.",
+  "editProfileDiscardConfirm": "Discard",
+  "editProfileVibesHint": "Pick up to {max}"
 }

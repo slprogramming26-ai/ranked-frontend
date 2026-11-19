@@ -2087,4 +2087,46 @@ class AppLocalizationsDe extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get editProfileImageProcessFailed =>
+      'Bild konnte nicht verarbeitet werden';
+
+  @override
+  String get editProfileImageUploadFailed =>
+      'Bild-Upload fehlgeschlagen. Versuch es erneut.';
+
+  @override
+  String get editProfileSaveFailed =>
+      'Profil konnte nicht gespeichert werden. Versuch es erneut.';
+
+  @override
+  String get editProfileTitle => 'Profil bearbeiten';
+
+  @override
+  String get editProfilePhotoHint => 'Tippen, um dein Bild zu ändern';
+
+  @override
+  String get editProfileBioLabel => 'DEINE STORY';
+
+  @override
+  String get editProfileVibesLabel => 'DEINE VIBES';
+
+  @override
+  String get editProfileSave => 'Speichern';
+
+  @override
+  String get editProfileDiscardTitle => 'Änderungen verwerfen?';
+
+  @override
+  String get editProfileDiscardMessage =>
+      'Deine Änderungen am Profil werden nicht gespeichert.';
+
+  @override
+  String get editProfileDiscardConfirm => 'Verwerfen';
+
+  @override
+  String editProfileVibesHint(int max) {
+    return 'Wähle bis zu $max';
+  }
 }
