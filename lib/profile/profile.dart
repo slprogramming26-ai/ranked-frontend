@@ -71,7 +71,12 @@ class ProfileProvider extends ChangeNotifier {
 
 class Profile extends StatefulWidget {
   final int? targetUserId; // null = eigenes Profil
-  const Profile({super.key, this.targetUserId,});
+  // true, wenn das EIGENE Profil per push geoeffnet wird (z.B. Tap auf den
+  // eigenen Post-Header). Dann braucht es links einen Zurueck-Pfeil statt
+  // des Mini-Avatars. Im Profil-Tab bleibt es false (dort gibt's kein Zurueck).
+  // Fremde Profile zeigen den Pfeil sowieso immer.
+  final bool showBack;
+  const Profile({super.key, this.targetUserId, this.showBack = false});
 
   @override
   State<Profile> createState() => _ProfileState();
@@ -545,6 +550,7 @@ class _ProfileState extends State<Profile> {
             username: username,
             avatarUrl: avatarUrl,
             isOwn: _isOwn,
+            showBack: !_isOwn || widget.showBack,
             onSettings: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SettingsScreen()),
             ),
@@ -913,12 +919,14 @@ class _TopBar extends StatelessWidget {
   final String username;
   final String? avatarUrl;
   final bool isOwn;
+  final bool showBack;
   final VoidCallback? onSettings;
   final VoidCallback? onMore;
   const _TopBar({
     required this.username,
     this.avatarUrl,
     required this.isOwn,
+    required this.showBack,
     this.onSettings,
     this.onMore,
   });
@@ -936,8 +944,8 @@ class _TopBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Links: Mini-Avatar (eigen) oder Zurück-Button (fremd)
-          if (isOwn)
+          // Links: Zurück-Button (fremd oder eigenes per push) sonst Mini-Avatar
+          if (!showBack)
             Container(
               width: 32,
               height: 32,

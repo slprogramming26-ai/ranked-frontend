@@ -335,6 +335,7 @@ class _PostsFeedState extends State<PostsFeed> with RouteAware{
                   title: postData['post']['title'],
                   content: postData['post']['content'],
                   owner_username: postData['post']['owner']['username'].toString(),
+                  ownerId: postData['post']['owner']['id'],
                   created_at: DateTime.parse(postData['post']['created_at']),
                   likes: postData['votes'],
                   post_id: postData['post']['id'],

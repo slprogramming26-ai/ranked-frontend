@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 // Datei braucht weiterhin das alte Paket fuer PostProvider und AppDatabase,
 // deshalb steht an jeder Riverpod-Stelle sichtbar rp. davor.
 import 'package:flutter_riverpod/flutter_riverpod.dart' as rp;
+import 'package:ranked/profile/profile.dart';
 import 'dart:ui';
 import '../../ui/app_colors.dart';
 import '../../l10n/l10n.dart';
@@ -29,6 +30,7 @@ class TextPost extends StatefulWidget {
     required this.title,
     required this.content,
     required this.owner_username,
+    required this.ownerId,
     required this.created_at,
     required this.likes,
     required this.post_id,
@@ -55,6 +57,7 @@ class TextPost extends StatefulWidget {
   final String? locationName;
   final bool isMine;
   final bool isLiked;
+  final int ownerId;
 
   @override
   State<TextPost> createState() => _TextPostState();
@@ -419,91 +422,100 @@ class _TextPostState extends State<TextPost>
   }
 
   Widget _buildHeader(BuildContext context) {
-    return ListTile(
-      // Rechts 8 statt 16: der ...-IconButton bringt selbst 8px Innenabstand
-      // mit, so sitzt das Icon optisch auf derselben 16er-Kante.
-      contentPadding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
-      leading: Container(
-        width: 44,
-        height: 44,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerHighest,
-          shape: BoxShape.circle,
-        ),
-        child: ClipOval(
-          child: widget.profilePictureUrl != null
-              ? Image(
-                  // 44er-Avatar → 44 logische px Dekodier-Breite.
-                  image: netImage(
-                    context,
-                    widget.profilePictureUrl.toString(),
-                    logicalWidth: 44,
-                  ),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) =>
-                      _avatarFallback(widget.owner_username),
-                  // Weich einblenden statt aufpoppen; aus dem Cache
-                  // (wasSync) sofort zeigen, sonst blendet jedes
-                  // Zurueckscrollen erneut.
-                  frameBuilder: (_, child, frame, wasSync) => wasSync
-                      ? child
-                      : AnimatedOpacity(
-                          opacity: frame != null ? 1 : 0,
-                          duration: const Duration(milliseconds: 250),
-                          child: child,
-                        ),
-                )
-              : _avatarFallback(widget.owner_username),
-        ),
-      ),
-      title: Row(
-        children: [
-          Flexible(
-            child: Text(
-              widget.owner_username,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-            ),
+    return InkWell(
+      onTap: () {
+        if (widget.isMine == true) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const Profile(showBack: true)));
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => Profile(targetUserId: widget.ownerId,)));
+        }
+      },
+      child: ListTile(
+        // Rechts 8 statt 16: der ...-IconButton bringt selbst 8px Innenabstand
+        // mit, so sitzt das Icon optisch auf derselben 16er-Kante.
+        contentPadding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+        leading: Container(
+          width: 44,
+          height: 44,
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerHighest,
+            shape: BoxShape.circle,
           ),
-          if (widget.isMine) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              // Reine Info, kein Zustand -> neutral (3-Ebenen-Regel).
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
+          child: ClipOval(
+            child: widget.profilePictureUrl != null
+                ? Image(
+                    // 44er-Avatar → 44 logische px Dekodier-Breite.
+                    image: netImage(
+                      context,
+                      widget.profilePictureUrl.toString(),
+                      logicalWidth: 44,
+                    ),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) =>
+                        _avatarFallback(widget.owner_username),
+                    // Weich einblenden statt aufpoppen; aus dem Cache
+                    // (wasSync) sofort zeigen, sonst blendet jedes
+                    // Zurueckscrollen erneut.
+                    frameBuilder: (_, child, frame, wasSync) => wasSync
+                        ? child
+                        : AnimatedOpacity(
+                            opacity: frame != null ? 1 : 0,
+                            duration: const Duration(milliseconds: 250),
+                            child: child,
+                          ),
+                  )
+                : _avatarFallback(widget.owner_username),
+          ),
+        ),
+        title: Row(
+          children: [
+            Flexible(
               child: Text(
-                "Du",
-                style: TextStyle(
-                  color: AppColors.onSurfaceVariant,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
+                widget.owner_username,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (widget.isMine) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                // Reine Info, kein Zustand -> neutral (3-Ebenen-Regel).
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "Du",
+                  style: TextStyle(
+                    color: AppColors.onSurfaceVariant,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
-      ),
-      // Nur vorhandene Teile mit • verbinden — kein haengender Punkt mehr,
-      // und der Ort reiht sich dezent ein statt als eigenes Element.
-      subtitle: Text(
-        [
-          widget.timeDifference,
-          if (widget.flag != null && widget.flag!.isNotEmpty) widget.flag!,
-          if (widget.locationName != null) '📍 ${widget.locationName}',
-        ].join(' • '),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(fontSize: 12),
-      ),
-      trailing: IconButton(
-        icon: const Icon(Icons.more_horiz),
-        onPressed: () {
-          showMiniMenu(context, widget.post_id.toString());
-        },
+        ),
+        // Nur vorhandene Teile mit • verbinden — kein haengender Punkt mehr,
+        // und der Ort reiht sich dezent ein statt als eigenes Element.
+        subtitle: Text(
+          [
+            widget.timeDifference,
+            if (widget.flag != null && widget.flag!.isNotEmpty) widget.flag!,
+            if (widget.locationName != null) '📍 ${widget.locationName}',
+          ].join(' • '),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: 12),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.more_horiz),
+          onPressed: () {
+            showMiniMenu(context, widget.post_id.toString());
+          },
+        ),
       ),
     );
   }
