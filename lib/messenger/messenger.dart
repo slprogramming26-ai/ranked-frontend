@@ -77,6 +77,9 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
             username: Value(username ?? 'User $userId'),
             avatarUrl: Value(avatarUrl),
           ),
+          // Kam zwischen SELECT und INSERT eine Nachricht dieses Users rein,
+          // existiert die Zeile schon (Unique-Index) -> still ignorieren.
+          mode: InsertMode.insertOrIgnore,
         );
   }
 
@@ -139,6 +142,10 @@ class _MessengerHomescreenState extends State<MessengerHomescreen> {
             username: Value(title),
             avatarUrl: Value(avatarUrl),
           ),
+          // Hat ein Resume-Sync die neue Gruppe schon angelegt, nicht werfen —
+          // die Gruppe existiert auf dem Server ja. Name/Bild zieht der
+          // naechste Sync (_upsertGroupFromServer) ggf. nach.
+          mode: InsertMode.insertOrIgnore,
         );
     if (!mounted) return;
     _snack(

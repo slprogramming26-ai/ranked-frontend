@@ -44,6 +44,14 @@ class GroupChatHistory extends Table {
 
 }
 
+// Ein Chat-Partner bzw. eine Gruppe darf nur EINMAL in der Chatliste stehen.
+// Schützt vor Races (zwei Live-Events, Sync gegen Live), die sonst doppelte
+// Zeilen erzeugen -> getSingleOrNull wirft -> Messenger bleibt offline.
+@TableIndex(
+  name: 'open_chats_peer',
+  columns: {#id, #isGroupChat},
+  unique: true,
+)
 
 class OpenChats extends Table {
 

@@ -10,8 +10,12 @@ part 'database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(driftDatabase(name: 'ranked'));
 
+  // Fuer Tests: beliebiger Executor, z.B. NativeDatabase.memory() -> frische
+  // DB im RAM pro Test, nichts landet auf der Platte.
+  AppDatabase.forTesting(super.e);
+
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +67,26 @@ class AppDatabase extends _$AppDatabase {
       if (from < 11) {
         // "Public Post"-Toggle war funktionslos (Frontend + Backend) -> raus.
         await m.alterTable(TableMigration(postDrafts));
+      }
+      if (from < 12) {
+        // Unique-Index auf OpenChats(id, isGroupChat), siehe tables.dart.
+        // Erst Duplikate wegraeumen, sonst scheitert CREATE UNIQUE INDEX.
+        // Regel: Loesche eine Zeile, wenn es einen "besseren Zwilling" gibt.
+        // Besser = angenommen (is_pending 0) vor Anfrage (1), bei Gleichstand
+        // die aeltere Zeile (kleinere local_id). Der Verlauf haengt nicht an
+        // local_id -> es geht keine Nachricht verloren.
+        await customStatement('''
+          DELETE FROM open_chats
+          WHERE EXISTS (
+            SELECT 1 FROM open_chats o2
+            WHERE o2.id = open_chats.id
+              AND o2.is_group_chat = open_chats.is_group_chat
+              AND (o2.is_pending < open_chats.is_pending
+                   OR (o2.is_pending = open_chats.is_pending
+                       AND o2.local_id < open_chats.local_id))
+          )
+        ''');
+        await m.createIndex(openChatsPeer);
       }
     },
   );
@@ -177,20 +201,6 @@ class AppDatabase extends _$AppDatabase {
           ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
           ..limit(chatWindowSize))
         .watch();
-  }
-  
-  Future<void> saveNewOpenChats({
-    required int id, required bool isGroupChat, String? avatarUrl, String? username
-})  async {
-    await into(openChats).insert(OpenChatsCompanion(
-      id: Value(id),
-      isGroupChat: Value(isGroupChat),
-      username: username != null
-          ? Value(username)
-          : const Value.absent(),
-      avatarUrl: Value(avatarUrl)
-      
-    ));
   }
 
   Stream<List<OpenChat>> watchAllContacts() {

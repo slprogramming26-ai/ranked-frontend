@@ -2354,6 +2354,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $OpenChatsTable openChats = $OpenChatsTable(this);
   late final $SyncMarkersTable syncMarkers = $SyncMarkersTable(this);
   late final $PostDraftsTable postDrafts = $PostDraftsTable(this);
+  late final Index openChatsPeer = Index(
+    'open_chats_peer',
+    'CREATE UNIQUE INDEX open_chats_peer ON open_chats (id, is_group_chat)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2365,6 +2369,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     openChats,
     syncMarkers,
     postDrafts,
+    openChatsPeer,
   ];
   @override
   DriftDatabaseOptions get options =>

@@ -80,7 +80,7 @@ class MessengerApiService {
   MessengerApiService(this._db, this._myUserId) {
     // Die Persistenz haengt sich EINMALIG ans dauerhafte _events-Band.
     // (_persistIncoming liegt in der sync-Part-Datei.)
-    _events.stream.listen(_persistIncoming);
+    _events.stream.listen(_enqueue);
   }
 
   // Cache fuer Public Keys der Chat-Partner (Server-Abruf nur einmal pro Partner).
@@ -90,6 +90,31 @@ class MessengerApiService {
   // einzelne WebSocket-Verbindung kippt ihre Nachrichten hier hinein, alle
   // Listener (Persistenz, UI, _awaitGroupResponse) abonnieren genau dieses Band.
   final _events = StreamController<ChatEvent>.broadcast();
+
+  //queue die races verhindert: während erstem persistIncoming kann was neues kommen. das alte
+  //ist aber noch nicht fertig. queue fängt ereignisse auf und arbeitet sie nacheinander ab.
+  Future<void> _persistQueue =
+      Future.value(); // ein schon erledigtes Future als Start
+
+  void _enqueue(ChatEvent e) {
+    _persistQueue = _persistQueue.then((_) => _persistIncoming(e).timeout(const Duration(seconds: 30))).catchError((
+      Object err,
+      StackTrace st,
+    ) {
+      debugPrint('persist fehlgeschlagen: $err\n$st');
+    });
+  }
+
+  // --- Nur fuer Tests (test/messenger_race_test.dart) ---
+  // Schiebt ein Event aufs echte _events-Band -> laeuft wie ein Live-Event
+  // ueber _enqueue in die Persistenz-Kette.
+  @visibleForTesting
+  void debugAddEvent(ChatEvent e) => _events.add(e);
+
+  // Das aktuelle Ende der Kette: wer darauf wartet, wartet bis alles bisher
+  // Eingereihte gespeichert ist.
+  @visibleForTesting
+  Future<void> get debugPersistDone => _persistQueue;
 
   WebSocketChannel? _channel;
   // Unser Griff auf die AKTUELLE Verbindung — zum Zumachen beim disconnect().
@@ -180,9 +205,8 @@ class MessengerApiService {
     // Chatlisten-Eintrag nur anlegen, wenn er fehlt (dieselbe Gruppe kann
     // nicht zweimal in der Liste stehen).
     final existing =
-        await (db.select(db.openChats)..where(
-              (t) => t.id.equals(groupId) & t.isGroupChat.equals(true),
-            ))
+        await (db.select(db.openChats)
+              ..where((t) => t.id.equals(groupId) & t.isGroupChat.equals(true)))
             .getSingleOrNull();
     if (existing == null) {
       await db
@@ -194,6 +218,9 @@ class MessengerApiService {
               username: Value(name),
               avatarUrl: Value(match?.avatarUrl),
             ),
+            // Ein paralleler Sync kann die Gruppe inzwischen angelegt haben ->
+            // kein Fehler, der Beitritt hat ja geklappt.
+            mode: InsertMode.insertOrIgnore,
           );
     }
     return (id: groupId, name: name);
@@ -237,7 +264,10 @@ class MessengerApiService {
     int userId,
     GroupRole role,
   ) async {
-    assert(role != GroupRole.creator, 'Gruender wechselt nur per transferGroup');
+    assert(
+      role != GroupRole.creator,
+      'Gruender wechselt nur per transferGroup',
+    );
     final response = await ApiClient.patch(
       Uri.parse("$_baseUrl/group_chat/$groupChatId/members/$userId/role"),
       headers: {'Content-Type': 'application/json'},

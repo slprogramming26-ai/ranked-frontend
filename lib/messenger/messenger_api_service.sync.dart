@@ -82,6 +82,10 @@ extension MessengerSync on MessengerApiService {
       // Fallback bleibt
     }
 
+    // Das SELECT oben ist nur der schnelle Weg (spart getUser pro Nachricht).
+    // Zwischen SELECT und INSERT kann ein paralleler Aufruf (zweites Live-Event,
+    // Sync) die Zeile schon angelegt haben -> der Unique-Index open_chats_peer
+    // wuerde werfen. insertOrIgnore: "gibt's schon" = Ziel erreicht, kein Fehler.
     await _db
         .into(_db.openChats)
         .insert(
@@ -92,6 +96,7 @@ extension MessengerSync on MessengerApiService {
             avatarUrl: Value(avatarUrl),
             isPending: Value(pending),
           ),
+          mode: InsertMode.insertOrIgnore,
         );
   }
 
@@ -119,6 +124,8 @@ extension MessengerSync on MessengerApiService {
             username: Value(name ?? 'Gruppe $groupChatId'),
             avatarUrl: Value(avatarUrl),
           ),
+          // Siehe _ensureDmOpenChat: Race zwischen SELECT und INSERT abfangen.
+          mode: InsertMode.insertOrIgnore,
         );
   }
 

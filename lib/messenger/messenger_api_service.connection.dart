@@ -42,7 +42,13 @@ extension MessengerConnection on MessengerApiService {
   Future<void> _doConnect() async {
     _manuallyClosed = false;
 
-    await _syncAll();
+    try {
+      await _syncAll();
+    } catch (e) {
+      debugPrint('[WS] Sync fehlgeschlagen: $e');
+      if (!_manuallyClosed) _scheduleReconnect();
+      return; // WS bewusst NICHT öffnen
+    }
     if (_manuallyClosed) return; // waehrend des Syncs kam ein disconnect()
 
     final token = await TokenStorage.getToken();
