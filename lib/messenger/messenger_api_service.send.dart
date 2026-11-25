@@ -60,6 +60,17 @@ extension MessengerSend on MessengerApiService {
       createdAt: DateTime.now().toUtc(),
       clientMsgId: clientMsgId,
     );
+
+    // Selbst senden = deutlichste Zustimmung -> offene Anfrage annehmen.
+    // (Gleiche Regel wie in _startPrivateChat, hier zentral fuer ALLE
+    // Sendewege: Chat, Share-Sheet, spaeter Outbox.)
+    await (_db.update(_db.openChats)..where(
+          (t) =>
+      t.id.equals(recipientId) &
+      t.isGroupChat.equals(false) &
+      t.isPending.equals(true),
+    ))
+        .write(const OpenChatsCompanion(isPending: Value(false)));
   }
 
   /// Sendet eine Gruppennachricht. Zeigt den Klartext optimistisch sofort an

@@ -78,12 +78,29 @@ Reihenfolge beim Logout ist wichtig: **erst Messenger stoppen, dann DB leeren.**
  WebSocket #1 ──┐
  WebSocket #2 ──┼──▶  _events (StreamController.broadcast, lebt so lange wie der Service)
  WebSocket #3 ──┘          │
-                           ├──▶ _persistIncoming   (im Konstruktor angehängt → DB)
+                           ├──▶ _enqueue → _persistIncoming   (im Konstruktor angehängt → DB)
                            ├──▶ MessengerController._handleEvent (nur Debug-Log)
                            └──▶ _awaitGroupResponse (kurzzeitig, pro Gruppen-Send)
 ```
 
 Jede einzelne WebSocket-Verbindung kippt ihre geparsten Events auf **dasselbe** Band. Deshalb muss nach einem Reconnect niemand neu abonnieren. `disconnect()` schließt nur die Verbindung, `dispose()` schließt zusätzlich das Band.
+
+### Die Persistenz-Kette (`_persistQueue`)
+
+Das Band ruft seinen Listener für jedes Event sofort auf, auch wenn das vorige noch mitten in einem `await` steckt. Früher liefen deshalb zwei schnelle DMs eines Fremden **parallel** durch `_ensureDmOpenChat`: Beide sahen „kein Chat da“, beide legten eine Zeile an. Danach warf `getSingleOrNull` einen `StateError`, und Live-Empfang und Sync waren tot.
+
+Heute hängt `_enqueue` jedes Event hinten an eine Future-Kette:
+
+```
+_persistQueue = _persistQueue
+    .then((_) => _persistIncoming(e).timeout(30 s))   ← erst wenn das vorige fertig ist
+    .catchError(log)                                   ← ohne das würde ein Fehler die Kette für immer töten
+```
+
+- **Nacheinander:** Events werden genau in Empfangsreihenfolge gespeichert, keine Duplikate, keine vertauschte Reihenfolge.
+- **Timeout innen:** Die 30 s laufen erst, wenn das Event an der Reihe ist. Ein hängendes Event blockiert so nicht alle folgenden. (Das Timeout bricht die Arbeit nicht ab. Ein Nachzügler trifft dann auf `insertOrIgnore`.)
+- Zweite Schutzschicht für Wege, die **nicht** durch die Kette laufen (Sync gegen Live, UI-Inserts): der Unique-Index auf `OpenChats` (Abschnitt 6).
+- Test: `test/messenger_race_test.dart` (3 DMs direkt hintereinander → genau 1 Anfrage, 3 Nachrichten in Reihenfolge).
 
 ### `connect()` — Single-Flight
 
@@ -95,11 +112,14 @@ connect()
 _doConnect()
  1. _manuallyClosed = false
  2. await _syncAll()            ← REST-Nachsync (Abschnitt 3)
+    wirft (offline, Server down) → _scheduleReconnect, WS bewusst NICHT öffnen
  3. abgebrochen? (disconnect() kam dazwischen) → raus
  4. Token lesen, IOWebSocketChannel.connect('$wsUrl/ws/chat?token=…', pingInterval: 20 s)
  5. stream.listen: JSON → parseChatEvent → _events.add
                    onDone / onError → _handleDrop
 ```
+
+Warum bei Sync-Fehler kein WebSocket? Würde der WS trotzdem aufgehen, schöbe die erste Live-Nachricht den Marker über die nicht nachgeholte Lücke hinweg, und die verpassten Nachrichten kämen nie mehr. Früher fing niemand den Fehler, der Reconnect-Timer starb, und der Messenger blieb bis zum Logout offline.
 
 Nebeneffekt von Schritt 2: Der Sync geht über `ApiClient`. Ist der Access-Token abgelaufen, wird er dort refresht. Der Token, der in Schritt 4 in die WS-URL wandert, ist deshalb frisch.
 
@@ -109,6 +129,7 @@ Nebeneffekt von Schritt 2: Der Sync geht über `ApiClient`. Ist der Access-Token
 |---|---|
 | Verbindung still tot (Funkloch, OS kappt im Standby) | `dart:io` schickt alle **20 s** ein Ping. Bleibt das Pong aus, wird geschlossen → `_handleDrop` |
 | `_handleDrop`, normal | `_scheduleReconnect`: Backoff **1, 2, 4, 8, 16 s**, gedeckelt bei 30 s. Jede empfangene Nachricht setzt den Zähler auf 0 |
+| Sync in `_doConnect` scheitert (z. B. Flugmodus) | Log `[WS] Sync fehlgeschlagen`, `_scheduleReconnect` mit demselben Backoff. Kein WS, bis ein Sync klappt |
 | `_handleDrop`, Close-Code **4003** (Account gesperrt) | **Kein** Reconnect. `ApiClient.checkSuspension()` macht einen REST-Call, der liefert das 403 mit Sperr-Details → Zwangs-Logout + Sperr-Screen (siehe `AUTH.md`) |
 | `_handleDrop` nach `disconnect()` | `_manuallyClosed` ist true → nichts tun |
 | App kommt in den Vordergrund (`resumed`) | `MessengerController.didChangeAppLifecycleState` → `reconnect()`: wartet einen laufenden Aufbau ab, dann `disconnect()` + `connect()`. Also **immer** frische Verbindung + Nachsync |
@@ -211,6 +232,7 @@ Ohne Schritt 2 wäre die Gruppenschleife nach einem frischen Login leer. DMs bra
 - **Live:** Entsteht durch eine eingehende DM eine **neue** Chatlisten-Zeile, ist das ein Erstkontakt durch einen Fremden → `isPending = true`. Bestehende Zeilen werden nie umgeflaggt, einmal angenommen bleibt angenommen.
 - **Nach Re-Login** (DB leer, der Server kennt kein „angenommen“): Habe ich dem Partner jemals selbst geschrieben → angenommen, sonst Anfrage.
 - Selbst gestartete Chats (User-Suche, Gruppen-Beitritt) sind nie pending.
+- **Selbst senden nimmt an.** `sendDirectMessage` setzt nach erfolgreichem Versand `isPending = false`. Das gilt zentral für jeden Sendeweg (Chat, Share-Sheet, später Outbox). Bricht der Versand vorher ab (Key fehlt), bleibt die Anfrage offen. Die User-Suche (`_startPrivateChat`) nimmt schon beim **Öffnen** an.
 
 ---
 
@@ -225,6 +247,8 @@ Ohne Schritt 2 wäre die Gruppenschleife nach einem frischen Login leer. DMs bra
 4. crypto_box → "v1:…"
 5. _channel?.sink.add({kind: dm, …})
 6. KLARTEXT lokal speichern (saveDm, created_at = jetzt)
+7. offene Anfrage zu diesem Partner annehmen (UPDATE nur wo isPending = true,
+   sonst würde die Chatliste bei jeder Nachricht neu bauen)
 ```
 
 Für DMs wird **nicht** auf ein Ack gewartet.
@@ -255,11 +279,12 @@ Alle Anläufe nutzen **dieselbe** `client_msg_id`. Kommt die Nachricht doppelt b
 |---|---|
 | `DmChatHistory` | DMs im **Klartext**, `clientMsgId` unique (nullable, alte Nachrichten haben keine) |
 | `GroupChatHistory` | Gruppennachrichten im Klartext, `clientMsgId` unique |
-| `OpenChats` | Chatliste: `id` (User- bzw. Gruppen-ID), `isGroupChat`, Name, Avatar, `isPending` |
+| `OpenChats` | Chatliste: `id` (User- bzw. Gruppen-ID), `isGroupChat`, Name, Avatar, `isPending`. **Unique-Index `open_chats_peer` auf `(id, isGroupChat)`** (Schema v12), alle Inserts mit `insertOrIgnore` |
 | `SyncMarkers` | `dm` / `group:<id>` → neuestes `created_at` |
 
 - Die DB ist vom Android-/iOS-Auto-Backup ausgeschlossen und wird bei **jedem** Logout und Login komplett geleert (`clearDatabase`).
 - `removeGroupLocally` löscht Chat, Verlauf und Marker einer Gruppe in einer Transaktion (Prune, Verlassen, Löschen).
+- Die v12-Migration räumt vor dem Index alte Duplikate weg („besserer Zwilling“ bleibt: angenommen vor Anfrage, sonst die ältere Zeile). Nötig, weil Tester-Builds den Race-Bug schon hatten.
 
 ---
 
@@ -267,9 +292,10 @@ Alle Anläufe nutzen **dieselbe** `client_msg_id`. Kommt die Nachricht doppelt b
 
 1. **Nur der `MessengerController` besitzt den Service.** Screens holen ihn über `context.read<MessengerController>().service`, sie bauen nie selbst eine Verbindung.
 2. **Ein Band, ein Abo.** `_events` überlebt alle Reconnects. Wer einen neuen Listener braucht, hängt sich an `incoming` und baut keinen zweiten WebSocket.
-3. **Erst Sync, dann Live.** `_doConnect` holt per REST nach und öffnet erst danach den WebSocket.
+3. **Erst Sync, dann Live.** `_doConnect` holt per REST nach und öffnet erst danach den WebSocket. Scheitert der Sync, bleibt der WebSocket zu.
 4. **Nie ohne Server-Antwort löschen.** Fehler ≠ leere Liste (`fetchMyGroups`).
 5. **Gewollt geschlossen heißt still.** `_manuallyClosed` blockt jeden Auto-Reconnect, und 4003 setzt es ebenfalls.
+6. **Speichern nacheinander.** Live-Events gehen nur über `_enqueue` in die DB, nie direkt an `_persistIncoming`.
 
 ---
 
@@ -300,3 +326,5 @@ Alle Anläufe nutzen **dieselbe** `client_msg_id`. Kommt die Nachricht doppelt b
 - **Optimistisch speichern:** Die eigene Nachricht wird sofort angezeigt, noch bevor der Server sie bestätigt hat.
 - **Discovery:** „In welchen Gruppen bin ich?“ vom Server holen (`/group_chat/my`), damit der Sync weiß, was er nachholen muss.
 - **Prune:** lokal löschen, was es auf dem Server nicht mehr gibt.
+- **Persistenz-Kette (`_persistQueue`):** Future-Kette, an die jedes Live-Event hinten angehängt wird, damit sie strikt nacheinander gespeichert werden.
+- **Race (Wettlauf):** Zwei Abläufe greifen gleichzeitig auf dieselben Daten zu, das Ergebnis hängt davon ab, wer zuerst fertig ist. Klassiker: beide prüfen „gibt's noch nicht“, beide legen an.
