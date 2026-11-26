@@ -15,7 +15,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -87,6 +87,14 @@ class AppDatabase extends _$AppDatabase {
           )
         ''');
         await m.createIndex(openChatsPeer);
+      }
+      if (from < 13) {
+        // Outbox: status-Spalte an beide Verlaufs-Tabellen. Nicht unique +
+        // fester Default -> einfaches ALTER TABLE ADD COLUMN reicht, kein
+        // Neubau. Alle Bestandszeilen bekommen 'sent' (kamen vom Server oder
+        // wurden schon gesendet).
+        await m.addColumn(dmChatHistory, dmChatHistory.status);
+        await m.addColumn(groupChatHistory, groupChatHistory.status);
       }
     },
   );

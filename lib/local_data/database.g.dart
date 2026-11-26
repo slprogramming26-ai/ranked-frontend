@@ -523,6 +523,16 @@ class $DmChatHistoryTable extends DmChatHistory
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   @override
+  late final GeneratedColumnWithTypeConverter<MessageStatus, String> status =
+      GeneratedColumn<String>(
+        'status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: Constant(MessageStatus.sent.name),
+      ).withConverter<MessageStatus>($DmChatHistoryTable.$converterstatus);
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     senderId,
@@ -530,6 +540,7 @@ class $DmChatHistoryTable extends DmChatHistory
     message,
     createdAt,
     clientMsgId,
+    status,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -623,6 +634,12 @@ class $DmChatHistoryTable extends DmChatHistory
         DriftSqlType.string,
         data['${effectivePrefix}client_msg_id'],
       ),
+      status: $DmChatHistoryTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
     );
   }
 
@@ -630,6 +647,9 @@ class $DmChatHistoryTable extends DmChatHistory
   $DmChatHistoryTable createAlias(String alias) {
     return $DmChatHistoryTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<MessageStatus, String, String> $converterstatus =
+      const EnumNameConverter<MessageStatus>(MessageStatus.values);
 }
 
 class DmChatHistoryData extends DataClass
@@ -640,6 +660,7 @@ class DmChatHistoryData extends DataClass
   final String message;
   final DateTime createdAt;
   final String? clientMsgId;
+  final MessageStatus status;
   const DmChatHistoryData({
     required this.id,
     required this.senderId,
@@ -647,6 +668,7 @@ class DmChatHistoryData extends DataClass
     required this.message,
     required this.createdAt,
     this.clientMsgId,
+    required this.status,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -658,6 +680,11 @@ class DmChatHistoryData extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || clientMsgId != null) {
       map['client_msg_id'] = Variable<String>(clientMsgId);
+    }
+    {
+      map['status'] = Variable<String>(
+        $DmChatHistoryTable.$converterstatus.toSql(status),
+      );
     }
     return map;
   }
@@ -672,6 +699,7 @@ class DmChatHistoryData extends DataClass
       clientMsgId: clientMsgId == null && nullToAbsent
           ? const Value.absent()
           : Value(clientMsgId),
+      status: Value(status),
     );
   }
 
@@ -687,6 +715,9 @@ class DmChatHistoryData extends DataClass
       message: serializer.fromJson<String>(json['message']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       clientMsgId: serializer.fromJson<String?>(json['clientMsgId']),
+      status: $DmChatHistoryTable.$converterstatus.fromJson(
+        serializer.fromJson<String>(json['status']),
+      ),
     );
   }
   @override
@@ -699,6 +730,9 @@ class DmChatHistoryData extends DataClass
       'message': serializer.toJson<String>(message),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'clientMsgId': serializer.toJson<String?>(clientMsgId),
+      'status': serializer.toJson<String>(
+        $DmChatHistoryTable.$converterstatus.toJson(status),
+      ),
     };
   }
 
@@ -709,6 +743,7 @@ class DmChatHistoryData extends DataClass
     String? message,
     DateTime? createdAt,
     Value<String?> clientMsgId = const Value.absent(),
+    MessageStatus? status,
   }) => DmChatHistoryData(
     id: id ?? this.id,
     senderId: senderId ?? this.senderId,
@@ -716,6 +751,7 @@ class DmChatHistoryData extends DataClass
     message: message ?? this.message,
     createdAt: createdAt ?? this.createdAt,
     clientMsgId: clientMsgId.present ? clientMsgId.value : this.clientMsgId,
+    status: status ?? this.status,
   );
   DmChatHistoryData copyWithCompanion(DmChatHistoryCompanion data) {
     return DmChatHistoryData(
@@ -729,6 +765,7 @@ class DmChatHistoryData extends DataClass
       clientMsgId: data.clientMsgId.present
           ? data.clientMsgId.value
           : this.clientMsgId,
+      status: data.status.present ? data.status.value : this.status,
     );
   }
 
@@ -740,14 +777,22 @@ class DmChatHistoryData extends DataClass
           ..write('recipientId: $recipientId, ')
           ..write('message: $message, ')
           ..write('createdAt: $createdAt, ')
-          ..write('clientMsgId: $clientMsgId')
+          ..write('clientMsgId: $clientMsgId, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, senderId, recipientId, message, createdAt, clientMsgId);
+  int get hashCode => Object.hash(
+    id,
+    senderId,
+    recipientId,
+    message,
+    createdAt,
+    clientMsgId,
+    status,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -757,7 +802,8 @@ class DmChatHistoryData extends DataClass
           other.recipientId == this.recipientId &&
           other.message == this.message &&
           other.createdAt == this.createdAt &&
-          other.clientMsgId == this.clientMsgId);
+          other.clientMsgId == this.clientMsgId &&
+          other.status == this.status);
 }
 
 class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
@@ -767,6 +813,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
   final Value<String> message;
   final Value<DateTime> createdAt;
   final Value<String?> clientMsgId;
+  final Value<MessageStatus> status;
   const DmChatHistoryCompanion({
     this.id = const Value.absent(),
     this.senderId = const Value.absent(),
@@ -774,6 +821,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     this.message = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.clientMsgId = const Value.absent(),
+    this.status = const Value.absent(),
   });
   DmChatHistoryCompanion.insert({
     this.id = const Value.absent(),
@@ -782,6 +830,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     required String message,
     required DateTime createdAt,
     this.clientMsgId = const Value.absent(),
+    this.status = const Value.absent(),
   }) : senderId = Value(senderId),
        recipientId = Value(recipientId),
        message = Value(message),
@@ -793,6 +842,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     Expression<String>? message,
     Expression<DateTime>? createdAt,
     Expression<String>? clientMsgId,
+    Expression<String>? status,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -801,6 +851,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
       if (message != null) 'message': message,
       if (createdAt != null) 'created_at': createdAt,
       if (clientMsgId != null) 'client_msg_id': clientMsgId,
+      if (status != null) 'status': status,
     });
   }
 
@@ -811,6 +862,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     Value<String>? message,
     Value<DateTime>? createdAt,
     Value<String?>? clientMsgId,
+    Value<MessageStatus>? status,
   }) {
     return DmChatHistoryCompanion(
       id: id ?? this.id,
@@ -819,6 +871,7 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
       clientMsgId: clientMsgId ?? this.clientMsgId,
+      status: status ?? this.status,
     );
   }
 
@@ -843,6 +896,11 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
     if (clientMsgId.present) {
       map['client_msg_id'] = Variable<String>(clientMsgId.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $DmChatHistoryTable.$converterstatus.toSql(status.value),
+      );
+    }
     return map;
   }
 
@@ -854,7 +912,8 @@ class DmChatHistoryCompanion extends UpdateCompanion<DmChatHistoryData> {
           ..write('recipientId: $recipientId, ')
           ..write('message: $message, ')
           ..write('createdAt: $createdAt, ')
-          ..write('clientMsgId: $clientMsgId')
+          ..write('clientMsgId: $clientMsgId, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
@@ -936,6 +995,16 @@ class $GroupChatHistoryTable extends GroupChatHistory
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
   @override
+  late final GeneratedColumnWithTypeConverter<MessageStatus, String> status =
+      GeneratedColumn<String>(
+        'status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: Constant(MessageStatus.sent.name),
+      ).withConverter<MessageStatus>($GroupChatHistoryTable.$converterstatus);
+  @override
   List<GeneratedColumn> get $columns => [
     id,
     senderId,
@@ -943,6 +1012,7 @@ class $GroupChatHistoryTable extends GroupChatHistory
     message,
     createdAt,
     clientMsgId,
+    status,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1036,6 +1106,12 @@ class $GroupChatHistoryTable extends GroupChatHistory
         DriftSqlType.string,
         data['${effectivePrefix}client_msg_id'],
       ),
+      status: $GroupChatHistoryTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
     );
   }
 
@@ -1043,6 +1119,9 @@ class $GroupChatHistoryTable extends GroupChatHistory
   $GroupChatHistoryTable createAlias(String alias) {
     return $GroupChatHistoryTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<MessageStatus, String, String> $converterstatus =
+      const EnumNameConverter<MessageStatus>(MessageStatus.values);
 }
 
 class GroupChatHistoryData extends DataClass
@@ -1053,6 +1132,7 @@ class GroupChatHistoryData extends DataClass
   final String message;
   final DateTime createdAt;
   final String? clientMsgId;
+  final MessageStatus status;
   const GroupChatHistoryData({
     required this.id,
     required this.senderId,
@@ -1060,6 +1140,7 @@ class GroupChatHistoryData extends DataClass
     required this.message,
     required this.createdAt,
     this.clientMsgId,
+    required this.status,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1071,6 +1152,11 @@ class GroupChatHistoryData extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || clientMsgId != null) {
       map['client_msg_id'] = Variable<String>(clientMsgId);
+    }
+    {
+      map['status'] = Variable<String>(
+        $GroupChatHistoryTable.$converterstatus.toSql(status),
+      );
     }
     return map;
   }
@@ -1085,6 +1171,7 @@ class GroupChatHistoryData extends DataClass
       clientMsgId: clientMsgId == null && nullToAbsent
           ? const Value.absent()
           : Value(clientMsgId),
+      status: Value(status),
     );
   }
 
@@ -1100,6 +1187,9 @@ class GroupChatHistoryData extends DataClass
       message: serializer.fromJson<String>(json['message']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       clientMsgId: serializer.fromJson<String?>(json['clientMsgId']),
+      status: $GroupChatHistoryTable.$converterstatus.fromJson(
+        serializer.fromJson<String>(json['status']),
+      ),
     );
   }
   @override
@@ -1112,6 +1202,9 @@ class GroupChatHistoryData extends DataClass
       'message': serializer.toJson<String>(message),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'clientMsgId': serializer.toJson<String?>(clientMsgId),
+      'status': serializer.toJson<String>(
+        $GroupChatHistoryTable.$converterstatus.toJson(status),
+      ),
     };
   }
 
@@ -1122,6 +1215,7 @@ class GroupChatHistoryData extends DataClass
     String? message,
     DateTime? createdAt,
     Value<String?> clientMsgId = const Value.absent(),
+    MessageStatus? status,
   }) => GroupChatHistoryData(
     id: id ?? this.id,
     senderId: senderId ?? this.senderId,
@@ -1129,6 +1223,7 @@ class GroupChatHistoryData extends DataClass
     message: message ?? this.message,
     createdAt: createdAt ?? this.createdAt,
     clientMsgId: clientMsgId.present ? clientMsgId.value : this.clientMsgId,
+    status: status ?? this.status,
   );
   GroupChatHistoryData copyWithCompanion(GroupChatHistoryCompanion data) {
     return GroupChatHistoryData(
@@ -1142,6 +1237,7 @@ class GroupChatHistoryData extends DataClass
       clientMsgId: data.clientMsgId.present
           ? data.clientMsgId.value
           : this.clientMsgId,
+      status: data.status.present ? data.status.value : this.status,
     );
   }
 
@@ -1153,14 +1249,22 @@ class GroupChatHistoryData extends DataClass
           ..write('groupChatId: $groupChatId, ')
           ..write('message: $message, ')
           ..write('createdAt: $createdAt, ')
-          ..write('clientMsgId: $clientMsgId')
+          ..write('clientMsgId: $clientMsgId, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, senderId, groupChatId, message, createdAt, clientMsgId);
+  int get hashCode => Object.hash(
+    id,
+    senderId,
+    groupChatId,
+    message,
+    createdAt,
+    clientMsgId,
+    status,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1170,7 +1274,8 @@ class GroupChatHistoryData extends DataClass
           other.groupChatId == this.groupChatId &&
           other.message == this.message &&
           other.createdAt == this.createdAt &&
-          other.clientMsgId == this.clientMsgId);
+          other.clientMsgId == this.clientMsgId &&
+          other.status == this.status);
 }
 
 class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
@@ -1180,6 +1285,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
   final Value<String> message;
   final Value<DateTime> createdAt;
   final Value<String?> clientMsgId;
+  final Value<MessageStatus> status;
   const GroupChatHistoryCompanion({
     this.id = const Value.absent(),
     this.senderId = const Value.absent(),
@@ -1187,6 +1293,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     this.message = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.clientMsgId = const Value.absent(),
+    this.status = const Value.absent(),
   });
   GroupChatHistoryCompanion.insert({
     this.id = const Value.absent(),
@@ -1195,6 +1302,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     required String message,
     required DateTime createdAt,
     this.clientMsgId = const Value.absent(),
+    this.status = const Value.absent(),
   }) : senderId = Value(senderId),
        groupChatId = Value(groupChatId),
        message = Value(message),
@@ -1206,6 +1314,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     Expression<String>? message,
     Expression<DateTime>? createdAt,
     Expression<String>? clientMsgId,
+    Expression<String>? status,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1214,6 +1323,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
       if (message != null) 'message': message,
       if (createdAt != null) 'created_at': createdAt,
       if (clientMsgId != null) 'client_msg_id': clientMsgId,
+      if (status != null) 'status': status,
     });
   }
 
@@ -1224,6 +1334,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     Value<String>? message,
     Value<DateTime>? createdAt,
     Value<String?>? clientMsgId,
+    Value<MessageStatus>? status,
   }) {
     return GroupChatHistoryCompanion(
       id: id ?? this.id,
@@ -1232,6 +1343,7 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
       message: message ?? this.message,
       createdAt: createdAt ?? this.createdAt,
       clientMsgId: clientMsgId ?? this.clientMsgId,
+      status: status ?? this.status,
     );
   }
 
@@ -1256,6 +1368,11 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
     if (clientMsgId.present) {
       map['client_msg_id'] = Variable<String>(clientMsgId.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $GroupChatHistoryTable.$converterstatus.toSql(status.value),
+      );
+    }
     return map;
   }
 
@@ -1267,7 +1384,8 @@ class GroupChatHistoryCompanion extends UpdateCompanion<GroupChatHistoryData> {
           ..write('groupChatId: $groupChatId, ')
           ..write('message: $message, ')
           ..write('createdAt: $createdAt, ')
-          ..write('clientMsgId: $clientMsgId')
+          ..write('clientMsgId: $clientMsgId, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
@@ -2629,6 +2747,7 @@ typedef $$DmChatHistoryTableCreateCompanionBuilder =
       required String message,
       required DateTime createdAt,
       Value<String?> clientMsgId,
+      Value<MessageStatus> status,
     });
 typedef $$DmChatHistoryTableUpdateCompanionBuilder =
     DmChatHistoryCompanion Function({
@@ -2638,6 +2757,7 @@ typedef $$DmChatHistoryTableUpdateCompanionBuilder =
       Value<String> message,
       Value<DateTime> createdAt,
       Value<String?> clientMsgId,
+      Value<MessageStatus> status,
     });
 
 class $$DmChatHistoryTableFilterComposer
@@ -2677,6 +2797,12 @@ class $$DmChatHistoryTableFilterComposer
   ColumnFilters<String> get clientMsgId => $composableBuilder(
     column: $table.clientMsgId,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MessageStatus, MessageStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 }
 
@@ -2718,6 +2844,11 @@ class $$DmChatHistoryTableOrderingComposer
     column: $table.clientMsgId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DmChatHistoryTableAnnotationComposer
@@ -2750,6 +2881,9 @@ class $$DmChatHistoryTableAnnotationComposer
     column: $table.clientMsgId,
     builder: (column) => column,
   );
+
+  GeneratedColumnWithTypeConverter<MessageStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 }
 
 class $$DmChatHistoryTableTableManager
@@ -2793,6 +2927,7 @@ class $$DmChatHistoryTableTableManager
                 Value<String> message = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> clientMsgId = const Value.absent(),
+                Value<MessageStatus> status = const Value.absent(),
               }) => DmChatHistoryCompanion(
                 id: id,
                 senderId: senderId,
@@ -2800,6 +2935,7 @@ class $$DmChatHistoryTableTableManager
                 message: message,
                 createdAt: createdAt,
                 clientMsgId: clientMsgId,
+                status: status,
               ),
           createCompanionCallback:
               ({
@@ -2809,6 +2945,7 @@ class $$DmChatHistoryTableTableManager
                 required String message,
                 required DateTime createdAt,
                 Value<String?> clientMsgId = const Value.absent(),
+                Value<MessageStatus> status = const Value.absent(),
               }) => DmChatHistoryCompanion.insert(
                 id: id,
                 senderId: senderId,
@@ -2816,6 +2953,7 @@ class $$DmChatHistoryTableTableManager
                 message: message,
                 createdAt: createdAt,
                 clientMsgId: clientMsgId,
+                status: status,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2850,6 +2988,7 @@ typedef $$GroupChatHistoryTableCreateCompanionBuilder =
       required String message,
       required DateTime createdAt,
       Value<String?> clientMsgId,
+      Value<MessageStatus> status,
     });
 typedef $$GroupChatHistoryTableUpdateCompanionBuilder =
     GroupChatHistoryCompanion Function({
@@ -2859,6 +2998,7 @@ typedef $$GroupChatHistoryTableUpdateCompanionBuilder =
       Value<String> message,
       Value<DateTime> createdAt,
       Value<String?> clientMsgId,
+      Value<MessageStatus> status,
     });
 
 class $$GroupChatHistoryTableFilterComposer
@@ -2898,6 +3038,12 @@ class $$GroupChatHistoryTableFilterComposer
   ColumnFilters<String> get clientMsgId => $composableBuilder(
     column: $table.clientMsgId,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MessageStatus, MessageStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 }
 
@@ -2939,6 +3085,11 @@ class $$GroupChatHistoryTableOrderingComposer
     column: $table.clientMsgId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$GroupChatHistoryTableAnnotationComposer
@@ -2971,6 +3122,9 @@ class $$GroupChatHistoryTableAnnotationComposer
     column: $table.clientMsgId,
     builder: (column) => column,
   );
+
+  GeneratedColumnWithTypeConverter<MessageStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 }
 
 class $$GroupChatHistoryTableTableManager
@@ -3016,6 +3170,7 @@ class $$GroupChatHistoryTableTableManager
                 Value<String> message = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> clientMsgId = const Value.absent(),
+                Value<MessageStatus> status = const Value.absent(),
               }) => GroupChatHistoryCompanion(
                 id: id,
                 senderId: senderId,
@@ -3023,6 +3178,7 @@ class $$GroupChatHistoryTableTableManager
                 message: message,
                 createdAt: createdAt,
                 clientMsgId: clientMsgId,
+                status: status,
               ),
           createCompanionCallback:
               ({
@@ -3032,6 +3188,7 @@ class $$GroupChatHistoryTableTableManager
                 required String message,
                 required DateTime createdAt,
                 Value<String?> clientMsgId = const Value.absent(),
+                Value<MessageStatus> status = const Value.absent(),
               }) => GroupChatHistoryCompanion.insert(
                 id: id,
                 senderId: senderId,
@@ -3039,6 +3196,7 @@ class $$GroupChatHistoryTableTableManager
                 message: message,
                 createdAt: createdAt,
                 clientMsgId: clientMsgId,
+                status: status,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

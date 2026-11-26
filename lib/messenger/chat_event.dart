@@ -47,14 +47,23 @@ class InComingGroupChat extends ChatEvent {
 class MessageAck extends ChatEvent {
   final int to;
   final int deliveredLive;
-  const MessageAck({required this.to, required this.deliveredLive});
+  final String? clientMsgId;
+  const MessageAck({
+    required this.to,
+    required this.deliveredLive,
+    this.clientMsgId,
+  });
 }
 
 // Antwort auf einen Gruppen-Send: der Schlüssel muss erst NEU erzeugt werden
 // (Gruppe ist "dirty" oder hat noch keine Epoche). -> Rekey-Flow, dann erneut senden.
 class GroupRekeyRequired extends ChatEvent {
   final int groupChatId;
-  const GroupRekeyRequired(this.groupChatId);
+  final String? clientMsgId;
+  const GroupRekeyRequired({
+    required this.groupChatId,
+    this.clientMsgId,
+  });
 }
 
 // Antwort auf einen Gruppen-Send: wir sind hinterher, der aktuelle Schlüssel
@@ -62,16 +71,24 @@ class GroupRekeyRequired extends ChatEvent {
 class GroupKeyOutdated extends ChatEvent {
   final int groupChatId;
   final int currentVersion;
+  final String? clientMsgId;
   const GroupKeyOutdated({
     required this.groupChatId,
     required this.currentVersion,
+    this.clientMsgId,
   });
 }
 
 /// Server meldet einen Fehler (z.B. ungueltiges Ziel).
 class ChatErrorEvent extends ChatEvent {
   final String detail;
-  const ChatErrorEvent(this.detail);
+  final String? clientMsgId;
+  final bool retryable;
+  const ChatErrorEvent({
+    this.clientMsgId,
+    required this.retryable,
+    required this.detail,
+  });
 }
 
 /// Uebersetzt ein rohes JSON-Objekt vom Server in das passende [ChatEvent].
@@ -79,11 +96,18 @@ class ChatErrorEvent extends ChatEvent {
 ChatEvent? parseChatEvent(Map<String, dynamic> json) {
   switch (json["kind"]) {
     case "error":
-      return ChatErrorEvent(json['detail'].toString());
+      return ChatErrorEvent(
+        detail: json['detail'].toString(),
+        // client_msg_id: null ODER fehlend (z.B. Formfehler) -> beides null.
+        // String? deckt beides ab, ein fehlender Key liefert in Dart null.
+        clientMsgId: json['client_msg_id'] as String?,
+        retryable: json['retryable'] as bool? ?? false,
+      );
     case "ack":
       return MessageAck(
         to: json['to'] as int,
         deliveredLive: json['delivered_live'] as int,
+        clientMsgId: json['client_msg_id'] as String?,
       );
     case "dm":
       return IncomingDm(
@@ -102,11 +126,15 @@ ChatEvent? parseChatEvent(Map<String, dynamic> json) {
         keyVersion: json['key_version'] as int?,
       );
     case "rekey_required":
-      return GroupRekeyRequired(json['group_chat_id'] as int);
+      return GroupRekeyRequired(
+        groupChatId: json['group_chat_id'] as int,
+        clientMsgId: json['client_msg_id'] as String?,
+      );
     case "key_outdated":
       return GroupKeyOutdated(
         groupChatId: json['group_chat_id'] as int,
         currentVersion: json['current_version'] as int,
+        clientMsgId: json['client_msg_id'] as String?,
       );
     default:
       return null;

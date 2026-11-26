@@ -14,6 +14,15 @@ class UserSearchHistory extends Table {
 }
 
 
+// Outbox-Status einer Nachricht (Schema v13).
+// pending = lokal gespeichert, Server hat noch nicht bestaetigt (kein ack).
+// sent    = Server hat sie gespeichert (ack) ODER sie kam vom Server
+//           (fremde Nachricht, Sync) -> Default fuer alles, was nicht wir senden.
+// failed  = Server hat endgueltig abgelehnt (error mit retryable=false).
+// Als textEnum gespeichert: in der DB steht lesbar 'pending'/'sent'/'failed',
+// Umsortieren des Enums macht keine Daten kaputt (anders als intEnum).
+enum MessageStatus { pending, sent, failed }
+
 class DmChatHistory extends Table {
 
   IntColumn get id => integer().autoIncrement()();
@@ -29,6 +38,11 @@ class DmChatHistory extends Table {
   // Nachrichten (noch) keinen Key haben; mehrere NULLs sind in SQLite erlaubt.
   TextColumn get clientMsgId => text().nullable().unique()();
 
+  // Siehe MessageStatus. Default sent -> Bestandszeilen und alle eingehenden
+  // Nachrichten brauchen keinen eigenen Wert.
+  TextColumn get status => textEnum<MessageStatus>()
+      .withDefault(Constant(MessageStatus.sent.name))();
+
 }
 
 class GroupChatHistory extends Table {
@@ -41,6 +55,10 @@ class GroupChatHistory extends Table {
 
   // Siehe DmChatHistory.clientMsgId.
   TextColumn get clientMsgId => text().nullable().unique()();
+
+  // Siehe DmChatHistory.status.
+  TextColumn get status => textEnum<MessageStatus>()
+      .withDefault(Constant(MessageStatus.sent.name))();
 
 }
 
